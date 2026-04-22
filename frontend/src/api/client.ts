@@ -47,6 +47,118 @@ export interface MeResponse {
 }
 export interface Space { id: string; name: string; key: string; description?: string; visibility: string; owner: { id: string; name: string } }
 export interface Page { id: string; title: string; slug: string; content?: string; status: string; parentId?: string | null; createdAt: string; updatedAt: string; creator?: { id: string; name: string } }
+export type DashboardWidgetType =
+  | 'CLOCK'
+  | 'WIKI_SEARCH'
+  | 'WEB_SEARCH'
+  | 'WEATHER'
+  | 'FAVORITE_SPACES'
+  | 'NOTES'
+  | 'STATS'
+  | 'SPACES'
+  | 'COMMUTE'
+  | 'TIME_TRACKER'
+  | 'BOOKMARKS';
+export interface DashboardWidget {
+  id: string;
+  type: DashboardWidgetType;
+  title: string;
+  isVisible: boolean;
+  isCollapsed: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  minWidth: number;
+  minHeight: number;
+  maxWidth?: number | null;
+  maxHeight?: number | null;
+  mobileOrder: number;
+  settings: Record<string, unknown>;
+}
+export interface Bookmark {
+  id: string;
+  title: string;
+  url: string;
+  description?: string | null;
+  category?: string | null;
+  faviconUrl?: string | null;
+  isFavorite: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface CommuteProfile {
+  id: string;
+  sourceAddress: string;
+  destinationAddress: string;
+  officeDays: string[];
+  homeOfficeDays: string[];
+  outboundLabel?: string | null;
+  returnLabel?: string | null;
+  departureTime?: string | null;
+  returnDepartureTime?: string | null;
+}
+export interface CommuteRoute {
+  status: 'ok' | 'fallback';
+  summary?: string;
+  distanceKm?: number;
+  durationMinutes?: number;
+  message?: string;
+  trafficNote?: string;
+  source?: { label: string };
+  destination?: { label: string };
+}
+export interface TimeTrackingProject {
+  id: string;
+  name: string;
+  description?: string | null;
+  color?: string | null;
+  client?: string | null;
+  category?: string | null;
+  isArchived: boolean;
+}
+export interface TimeEntry {
+  id: string;
+  projectId: string;
+  startTime: string;
+  endTime?: string | null;
+  durationMinutes?: number | null;
+  note?: string | null;
+  entryType: 'TIMER' | 'MANUAL';
+  project: TimeTrackingProject;
+}
+export interface DashboardResponse {
+  widgets: DashboardWidget[];
+  bookmarks: Bookmark[];
+  commute: {
+    profile: CommuteProfile | null;
+    todayMode: 'office' | 'homeOffice' | 'unspecified' | 'unset';
+    route: CommuteRoute | null;
+  };
+  timeTracking: {
+    projects: TimeTrackingProject[];
+    runningEntry: TimeEntry | null;
+    entries: TimeEntry[];
+    summary: {
+      todayMinutes: number;
+      weekMinutes: number;
+    };
+  };
+  spaces: {
+    total: number;
+    publicCount: number;
+    items: Space[];
+    favorites: Space[];
+  };
+}
+export interface WeatherResponse {
+  location: string;
+  temperatureC: string;
+  description: string;
+  humidity: string;
+  windKph: string;
+}
 
 export const authApi = {
   login: (data: LoginRequest) => api.post<{ accessToken: string; refreshToken: string; user: any }>('/auth/login', data),
@@ -86,4 +198,73 @@ export const pagesApi = {
 
 export const searchApi = {
   search: (params: { q: string; space?: string; type?: string }) => api.get('/search', { params }),
+};
+
+export const dashboardApi = {
+  get: () => api.get<DashboardResponse>('/dashboard'),
+  createWidget: (data: { type: DashboardWidgetType; title?: string }) => api.post<DashboardWidget>('/dashboard/widgets', data),
+  updateWidget: (widgetId: string, data: {
+    title?: string | null;
+    isVisible?: boolean;
+    isCollapsed?: boolean;
+    settings?: Record<string, unknown>;
+  }) => api.patch<DashboardWidget>(`/dashboard/widgets/${widgetId}`, data),
+  updateLayout: (widgets: Array<{ id: string; x: number; y: number; width: number; height: number; mobileOrder: number }>) =>
+    api.patch<DashboardWidget[]>('/dashboard/widgets/layout', { widgets }),
+  deleteWidget: (widgetId: string) => api.delete(`/dashboard/widgets/${widgetId}`),
+  bookmarks: {
+    list: () => api.get<Bookmark[]>('/dashboard/bookmarks'),
+    create: (data: {
+      title: string;
+      url: string;
+      description?: string | null;
+      category?: string | null;
+      faviconUrl?: string | null;
+      isFavorite?: boolean;
+    }) => api.post<Bookmark>('/dashboard/bookmarks', data),
+    update: (bookmarkId: string, data: Partial<Bookmark>) => api.patch<Bookmark>(`/dashboard/bookmarks/${bookmarkId}`, data),
+    delete: (bookmarkId: string) => api.delete(`/dashboard/bookmarks/${bookmarkId}`),
+  },
+  commute: {
+    get: () => api.get<DashboardResponse['commute']>('/dashboard/commute'),
+    update: (data: {
+      sourceAddress: string;
+      destinationAddress: string;
+      officeDays: string[];
+      homeOfficeDays: string[];
+      outboundLabel?: string | null;
+      returnLabel?: string | null;
+      departureTime?: string | null;
+      returnDepartureTime?: string | null;
+    }) => api.put<CommuteProfile>('/dashboard/commute', data),
+  },
+  weather: {
+    get: (city: string) => api.get<WeatherResponse>('/dashboard/weather', { params: { city } }),
+  },
+  timeTracking: {
+    get: () => api.get<DashboardResponse['timeTracking']>('/dashboard/time-tracking'),
+    createProject: (data: {
+      name: string;
+      description?: string | null;
+      color?: string | null;
+      client?: string | null;
+      category?: string | null;
+    }) => api.post<TimeTrackingProject>('/dashboard/time-tracking/projects', data),
+    updateProject: (projectId: string, data: Partial<TimeTrackingProject>) =>
+      api.patch<TimeTrackingProject>(`/dashboard/time-tracking/projects/${projectId}`, data),
+    deleteProject: (projectId: string) => api.delete(`/dashboard/time-tracking/projects/${projectId}`),
+    startTimer: (data: { projectId: string; note?: string | null }) =>
+      api.post<TimeEntry>('/dashboard/time-tracking/entries/start', data),
+    stopTimer: (entryId: string, endTime?: string) =>
+      api.post<TimeEntry>(`/dashboard/time-tracking/entries/${entryId}/stop`, { endTime }),
+    createEntry: (data: {
+      projectId: string;
+      startTime: string;
+      endTime: string;
+      note?: string | null;
+    }) => api.post<TimeEntry>('/dashboard/time-tracking/entries', data),
+    updateEntry: (entryId: string, data: Partial<TimeEntry> & { projectId?: string }) =>
+      api.patch<TimeEntry>(`/dashboard/time-tracking/entries/${entryId}`, data),
+    deleteEntry: (entryId: string) => api.delete(`/dashboard/time-tracking/entries/${entryId}`),
+  },
 };

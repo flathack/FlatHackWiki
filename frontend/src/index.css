@@ -1,3 +1,5 @@
+@import 'react-grid-layout/css/styles.css';
+@import 'react-resizable/css/styles.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -78,6 +80,417 @@ html[data-theme='midnight'] .bg-blue-100 {
 html[data-theme='midnight'] .text-blue-800,
 html[data-theme='midnight'] .text-blue-600 {
   color: #bfdbfe !important;
+}
+
+.page-loader {
+  @apply flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center text-gray-600;
+}
+
+.dashboard-page-shell {
+  @apply min-h-screen bg-gray-50;
+}
+
+.dashboard-topbar {
+  @apply sticky top-0 z-40 flex flex-col gap-4 border-b border-gray-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between md:px-8;
+}
+
+.dashboard-brand {
+  @apply text-xs font-semibold uppercase tracking-[0.35em] text-sky-600;
+}
+
+.dashboard-brand-copy {
+  @apply mt-1 text-sm text-gray-500;
+}
+
+.dashboard-topbar-actions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.dashboard-main-shell {
+  @apply mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8 md:py-8;
+}
+
+.dashboard-hero-card {
+  @apply flex flex-col gap-6 rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 px-6 py-8 text-white shadow-xl md:flex-row md:items-start md:justify-between md:px-8;
+}
+
+.dashboard-hero-label {
+  @apply text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300;
+}
+
+.dashboard-hero-title {
+  @apply mt-4 text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl;
+}
+
+.dashboard-hero-copy {
+  @apply mt-4 max-w-3xl text-base text-sky-100/90 sm:text-lg;
+}
+
+.dashboard-hero-hint {
+  @apply mt-4 text-sm text-cyan-200;
+}
+
+.dashboard-user-chip {
+  @apply flex w-fit flex-col rounded-2xl bg-white/10 px-4 py-3 text-sm backdrop-blur;
+}
+
+.dashboard-edit-hint {
+  @apply flex flex-col gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900;
+}
+
+.dashboard-mobile-stack {
+  @apply flex flex-col gap-4;
+}
+
+.dashboard-widget-frame {
+  @apply flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm;
+}
+
+.mobile-frame {
+  @apply overflow-hidden;
+}
+
+.dashboard-widget-toolbar {
+  @apply flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-3;
+}
+
+.dashboard-widget-toolbar-actions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.widget-drag-handle {
+  @apply cursor-move rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-500;
+}
+
+.widget-shell {
+  @apply flex h-full min-h-0 flex-1 flex-col gap-5 p-5;
+}
+
+.widget-shell-header {
+  @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+}
+
+.widget-shell-title-row {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.widget-shell-title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.widget-shell-badge {
+  @apply rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-800;
+}
+
+.widget-shell-subtitle {
+  @apply mt-1 text-sm text-gray-500;
+}
+
+.widget-shell-actions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.widget-shell-body {
+  @apply flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden pr-1;
+}
+
+.widget-shell-body > * {
+  @apply shrink-0;
+}
+
+.widget-inline-form {
+  @apply flex flex-col gap-3 sm:flex-row;
+}
+
+.stretch-mobile {
+  @apply sm:items-center;
+}
+
+.widget-stack {
+  @apply flex min-h-0 flex-col gap-4;
+}
+
+.widget-form-grid {
+  @apply grid gap-3 md:grid-cols-2;
+}
+
+.widget-subsection {
+  @apply flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4;
+}
+
+.widget-subsection h4 {
+  @apply text-sm font-semibold uppercase tracking-[0.16em] text-gray-600;
+}
+
+.widget-toolbar-end {
+  @apply flex flex-wrap justify-end gap-2;
+}
+
+.widget-inline-actions {
+  @apply flex flex-wrap gap-2;
+}
+
+.widget-notes {
+  @apply min-h-36;
+}
+
+.widget-stat-grid {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.widget-stat-box {
+  @apply rounded-2xl bg-gray-50 px-4 py-4;
+}
+
+.widget-stat-box span {
+  @apply text-sm text-gray-500;
+}
+
+.widget-stat-box strong {
+  @apply mt-2 block text-xl font-semibold text-gray-900;
+}
+
+.widget-message {
+  @apply rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600;
+}
+
+.widget-message-error {
+  @apply border-red-300 bg-red-50 text-red-700;
+}
+
+.widget-message-success {
+  @apply border-emerald-300 bg-emerald-50 text-emerald-700;
+}
+
+.card-list {
+  @apply grid gap-3;
+}
+
+.widget-shell-body .card-list,
+.widget-shell-body .widget-stat-grid,
+.widget-shell-body .weather-widget-grid {
+  min-height: 0;
+}
+
+.compact-list {
+  @apply md:grid-cols-2;
+}
+
+.mini-card-link {
+  @apply flex flex-col gap-1 rounded-2xl border border-gray-200 bg-white px-4 py-4 text-left transition hover:border-sky-300 hover:shadow-sm;
+}
+
+.mini-card-link strong {
+  @apply text-base text-gray-900;
+}
+
+.mini-card-link span {
+  @apply text-sm text-gray-500;
+}
+
+.static-card {
+  @apply cursor-default hover:border-gray-200;
+}
+
+.align-left {
+  @apply items-start;
+}
+
+.clock-widget-panel {
+  @apply rounded-[24px] bg-gradient-to-br from-sky-100 via-white to-cyan-50 px-5 py-6;
+}
+
+.clock-widget-time {
+  @apply text-4xl font-bold text-slate-900 md:text-5xl;
+}
+
+.clock-widget-date {
+  @apply mt-3 text-base text-slate-600;
+}
+
+.weather-widget-grid {
+  @apply grid gap-4;
+}
+
+.weather-widget-hero {
+  @apply rounded-[24px] bg-gradient-to-br from-sky-100 via-cyan-50 to-white px-5 py-5;
+}
+
+.weather-widget-temp {
+  @apply text-4xl font-bold text-slate-900;
+}
+
+.weather-widget-copy {
+  @apply mt-2 text-sm text-slate-600;
+}
+
+.dialog-backdrop {
+  @apply fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-0 sm:items-center sm:p-6;
+}
+
+.dialog-panel {
+  @apply max-h-[92vh] w-full overflow-y-auto rounded-t-[28px] border border-gray-200 bg-white p-5 shadow-2xl sm:max-w-3xl sm:rounded-[28px] sm:p-8;
+}
+
+.large-panel {
+  @apply sm:max-w-5xl;
+}
+
+.dialog-header {
+  @apply flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+}
+
+.dialog-eyebrow {
+  @apply text-sm font-semibold uppercase tracking-[0.25em] text-gray-500;
+}
+
+.dialog-header h2 {
+  @apply mt-1 text-2xl font-bold text-gray-900;
+}
+
+.dialog-grid {
+  @apply mt-6 grid gap-6 lg:grid-cols-2;
+}
+
+.dialog-card {
+  @apply rounded-3xl border border-gray-200 bg-white p-5;
+}
+
+.dialog-card h3 {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.span-2 {
+  @apply lg:col-span-2;
+}
+
+.checkbox-row {
+  @apply flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700;
+}
+
+.checkbox-card {
+  @apply flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700;
+}
+
+.option-grid {
+  @apply flex flex-wrap gap-2;
+}
+
+.chip-button {
+  @apply rounded-full border border-gray-300 px-3 py-2 text-sm text-gray-600 transition;
+}
+
+.chip-button.active {
+  @apply border-sky-300 bg-sky-100 text-sky-900;
+}
+
+.form-label {
+  @apply text-sm font-medium text-gray-700;
+}
+
+.text-button {
+  @apply text-sm font-medium text-gray-600 transition hover:text-gray-900;
+}
+
+.text-button.danger {
+  @apply text-red-600 hover:text-red-800;
+}
+
+html[data-theme='midnight'] .dashboard-page-shell,
+html[data-theme='midnight'] .page-loader {
+  background-color: #0f172a !important;
+}
+
+html[data-theme='midnight'] .dashboard-widget-frame,
+html[data-theme='midnight'] .dialog-panel,
+html[data-theme='midnight'] .dialog-card,
+html[data-theme='midnight'] .mini-card-link,
+html[data-theme='midnight'] .widget-subsection,
+html[data-theme='midnight'] .widget-message,
+html[data-theme='midnight'] .widget-stat-box,
+html[data-theme='midnight'] .checkbox-row,
+html[data-theme='midnight'] .checkbox-card,
+html[data-theme='midnight'] .widget-drag-handle {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .widget-shell-title,
+html[data-theme='midnight'] .mini-card-link strong,
+html[data-theme='midnight'] .dialog-header h2,
+html[data-theme='midnight'] .dialog-card h3,
+html[data-theme='midnight'] .widget-stat-box strong,
+html[data-theme='midnight'] .form-label,
+html[data-theme='midnight'] .dashboard-brand-copy,
+html[data-theme='midnight'] .widget-subsection h4 {
+  color: #f3f4f6 !important;
+}
+
+html[data-theme='midnight'] .widget-shell-subtitle,
+html[data-theme='midnight'] .mini-card-link span,
+html[data-theme='midnight'] .widget-stat-box span,
+html[data-theme='midnight'] .dialog-eyebrow,
+html[data-theme='midnight'] .dashboard-edit-hint span,
+html[data-theme='midnight'] .checkbox-row,
+html[data-theme='midnight'] .checkbox-card,
+html[data-theme='midnight'] .text-button,
+html[data-theme='midnight'] .widget-message {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .dashboard-edit-hint {
+  background-color: rgba(14, 116, 144, 0.2) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #e0f2fe !important;
+}
+
+html[data-theme='midnight'] .clock-widget-panel {
+  background-image: linear-gradient(135deg, #0f172a 0%, #0b2239 55%, #12304b 100%) !important;
+}
+
+html[data-theme='midnight'] .clock-widget-time,
+html[data-theme='midnight'] .clock-widget-date,
+html[data-theme='midnight'] .weather-widget-temp,
+html[data-theme='midnight'] .weather-widget-copy {
+  color: #e5eefb !important;
+}
+
+html[data-theme='midnight'] .weather-widget-hero {
+  background-image: linear-gradient(135deg, #0f172a 0%, #082f49 55%, #164e63 100%) !important;
+}
+
+html[data-theme='midnight'] .widget-shell-badge,
+html[data-theme='midnight'] .chip-button.active {
+  background-color: rgba(14, 165, 233, 0.2) !important;
+  color: #bae6fd !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+html[data-theme='midnight'] .react-grid-item.react-grid-placeholder {
+  background: rgba(56, 189, 248, 0.18) !important;
+  border-radius: 24px;
+}
+
+@media (max-width: 767px) {
+  .dashboard-topbar {
+    @apply px-4;
+  }
+
+  .dashboard-topbar-actions {
+    @apply w-full items-stretch;
+  }
+
+  .dashboard-topbar-actions > * {
+    @apply w-full;
+  }
+
+  .dashboard-user-chip {
+    @apply w-full;
+  }
+
+  .compact-list {
+    @apply grid-cols-1;
+  }
 }
 
 html[data-theme='midnight'] .bg-red-50 {

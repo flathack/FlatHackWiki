@@ -36,6 +36,11 @@ model User {
   SpaceMember       SpaceMember[]
   PageRestriction   PageRestriction[]
   AttachmentVersion AttachmentVersion[]
+  dashboard         UserDashboard?
+  bookmarks         Bookmark[]
+  commuteProfile    CommuteProfile?
+  timeProjects      TimeTrackingProject[]
+  timeEntries       TimeEntry[]
 
   @@map("users")
 }
@@ -74,6 +79,144 @@ model UserSession {
   @@index([refreshToken])
   @@index([userId])
   @@map("user_sessions")
+}
+
+// ============================================
+// DASHBOARD & PERSONAL WORKSPACE
+// ============================================
+
+model UserDashboard {
+  id        String          @id @default(uuid())
+  userId    String          @unique @map("user_id")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  widgets UserDashboardWidget[]
+
+  @@map("user_dashboards")
+}
+
+model UserDashboardWidget {
+  id          String              @id @default(uuid())
+  dashboardId String              @map("dashboard_id")
+  type        DashboardWidgetType
+  title       String?             @db.VarChar(255)
+  isVisible   Boolean             @default(true) @map("is_visible")
+  isCollapsed Boolean             @default(false) @map("is_collapsed")
+  x           Int                 @default(0)
+  y           Int                 @default(0)
+  width       Int                 @default(4)
+  height      Int                 @default(4)
+  minWidth    Int                 @default(2) @map("min_width")
+  minHeight   Int                 @default(2) @map("min_height")
+  maxWidth    Int?                @map("max_width")
+  maxHeight   Int?                @map("max_height")
+  mobileOrder Int                 @default(0) @map("mobile_order")
+  settings    Json?
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  dashboard UserDashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([dashboardId, type])
+  @@map("user_dashboard_widgets")
+}
+
+enum DashboardWidgetType {
+  CLOCK
+  WIKI_SEARCH
+  WEB_SEARCH
+  WEATHER
+  FAVORITE_SPACES
+  NOTES
+  STATS
+  SPACES
+  COMMUTE
+  TIME_TRACKER
+  BOOKMARKS
+}
+
+model Bookmark {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String   @db.VarChar(255)
+  url         String   @db.VarChar(2048)
+  description String?  @db.Text
+  category    String?  @db.VarChar(100)
+  faviconUrl  String?  @map("favicon_url") @db.VarChar(2048)
+  isFavorite  Boolean  @default(false) @map("is_favorite")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sortOrder])
+  @@map("bookmarks")
+}
+
+model CommuteProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique @map("user_id")
+  sourceAddress       String   @map("source_address") @db.VarChar(500)
+  destinationAddress  String   @map("destination_address") @db.VarChar(500)
+  officeDays          String[] @default([]) @map("office_days")
+  homeOfficeDays      String[] @default([]) @map("home_office_days")
+  outboundLabel       String?  @map("outbound_label") @db.VarChar(100)
+  returnLabel         String?  @map("return_label") @db.VarChar(100)
+  departureTime       String?  @map("departure_time") @db.VarChar(10)
+  returnDepartureTime String?  @map("return_departure_time") @db.VarChar(10)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("commute_profiles")
+}
+
+model TimeTrackingProject {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  color       String?  @db.VarChar(20)
+  client      String?  @db.VarChar(255)
+  category    String?  @db.VarChar(100)
+  isArchived  Boolean  @default(false) @map("is_archived")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries TimeEntry[]
+
+  @@index([userId, isArchived])
+  @@map("time_tracking_projects")
+}
+
+model TimeEntry {
+  id               String        @id @default(uuid())
+  userId           String        @map("user_id")
+  projectId        String        @map("project_id")
+  entryType        TimeEntryType @default(TIMER) @map("entry_type")
+  startTime        DateTime      @map("start_time")
+  endTime          DateTime?     @map("end_time")
+  durationMinutes  Int?          @map("duration_minutes")
+  note             String?       @db.Text
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project TimeTrackingProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startTime])
+  @@index([projectId, startTime])
+  @@map("time_entries")
+}
+
+enum TimeEntryType {
+  TIMER
+  MANUAL
 }
 
 // ============================================

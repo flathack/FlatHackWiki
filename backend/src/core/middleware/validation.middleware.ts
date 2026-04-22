@@ -23,7 +23,8 @@ export const validate = (schema: z.ZodSchema) => {
           return acc;
         }, {} as Record<string, string>);
 
-        throw new ValidationError('Validation failed', { errors: details });
+        next(new ValidationError('Validation failed', { errors: details }));
+        return;
       }
       next(error);
     }

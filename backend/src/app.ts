@@ -12,6 +12,7 @@ import commentsRoutes from './modules/comments/comments.routes.js';
 import attachmentsRoutes from './modules/attachments/attachments.routes.js';
 import searchRoutes from './modules/search/search.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
+import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/v1/pages/:pageId/comments', commentsRoutes);
 app.use('/api/v1/pages/:pageId/attachments', attachmentsRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
