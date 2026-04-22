@@ -1,0 +1,354 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique @db.VarChar(255)
+  passwordHash  String     @map("password_hash") @db.VarChar(255)
+  name          String     @db.VarChar(255)
+  status        UserStatus @default(ACTIVE)
+  emailVerified Boolean    @default(false)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  profile           UserProfile?
+  sessions          UserSession[]
+  roleAssignments   RoleAssignment[]
+  ownedSpaces       Space[]             @relation("SpaceOwner")
+  createdPages      Page[]              @relation("PageCreator")
+  createdVersions   PageVersion[]       @relation("VersionCreator")
+  comments          Comment[]
+  attachments       Attachment[]
+  auditLogs         AuditLog[]
+  addedSpaces       SpaceMember[]       @relation("MemberAddedBy")
+  invites           SpaceInvite[]
+  SpaceMember       SpaceMember[]
+  PageRestriction   PageRestriction[]
+  AttachmentVersion AttachmentVersion[]
+
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+model UserProfile {
+  userId      String  @id @map("user_id")
+  displayName String? @map("display_name") @db.VarChar(255)
+  avatarUrl   String? @map("avatar_url") @db.VarChar(500)
+  timezone    String  @default("UTC") @db.VarChar(50)
+  locale      String  @default("en") @db.VarChar(10)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  refreshToken String   @map("refresh_token") @db.VarChar(500)
+  expiresAt    DateTime @map("expires_at")
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  userAgent    String?  @map("user_agent") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([refreshToken])
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+// ============================================
+// RBAC - ROLES & PERMISSIONS
+// ============================================
+
+model RoleAssignment {
+  id            String    @id @default(uuid())
+  roleName      Role      @map("role_name")
+  scopeType     ScopeType @default(GLOBAL) @map("scope_type")
+  scopeId       String?   @map("scope_id")
+  principalType String    @default("user") @map("principal_type")
+  principalId   String    @map("principal_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user User? @relation(fields: [principalId], references: [id], onDelete: Cascade, map: "role_assignment_user")
+
+  @@unique([roleName, scopeType, scopeId, principalType, principalId])
+  @@index([principalType, principalId])
+  @@map("role_assignments")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SYSTEM_ADMIN
+  SPACE_ADMIN
+  EDITOR
+  AUTHOR
+  COMMENTER
+  VIEWER
+  GUEST
+}
+
+enum ScopeType {
+  GLOBAL
+  SPACE
+}
+
+// ============================================
+// SPACES
+// ============================================
+
+model Space {
+  id          String          @id @default(uuid())
+  name        String          @db.VarChar(255)
+  key         String          @unique @db.VarChar(100)
+  description String?         @db.Text
+  visibility  SpaceVisibility @default(PRIVATE)
+  ownerId     String          @map("owner_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  owner   User          @relation("SpaceOwner", fields: [ownerId], references: [id])
+  members SpaceMember[]
+  pages   Page[]
+  invites SpaceInvite[]
+
+  @@map("spaces")
+}
+
+enum SpaceVisibility {
+  PUBLIC
+  PRIVATE
+  RESTRICTED
+}
+
+model SpaceMember {
+  spaceId   String   @map("space_id")
+  userId    String   @map("user_id")
+  role      Role     @default(VIEWER)
+  addedAt   DateTime @default(now()) @map("added_at")
+  addedById String?  @map("added_by_id")
+
+  space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User? @relation("MemberAddedBy", fields: [addedById], references: [id])
+
+  @@id([spaceId, userId])
+  @@index([userId])
+  @@map("space_members")
+}
+
+model SpaceInvite {
+  id          String    @id @default(uuid())
+  spaceId     String    @map("space_id")
+  email       String    @db.VarChar(255)
+  role        Role      @default(VIEWER)
+  token       String    @unique @db.VarChar(255)
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  space     Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  createdBy User  @relation(fields: [createdById], references: [id])
+
+  @@index([email])
+  @@index([token])
+  @@map("space_invites")
+}
+
+// ============================================
+// PAGES
+// ============================================
+
+model Page {
+  id          String     @id @default(uuid())
+  spaceId     String     @map("space_id")
+  parentId    String?    @map("parent_id")
+  title       String     @db.VarChar(500)
+  slug        String     @db.VarChar(500)
+  content     String?    @db.Text
+  status      PageStatus @default(DRAFT)
+  position    Int        @default(0)
+  createdById String     @map("created_by_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+
+  space        Space             @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  parent       Page?             @relation("PageHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Page[]            @relation("PageHierarchy")
+  creator      User              @relation("PageCreator", fields: [createdById], references: [id])
+  versions     PageVersion[]
+  comments     Comment[]
+  attachments  Attachment[]
+  restrictions PageRestriction[]
+
+  @@unique([spaceId, slug])
+  @@index([spaceId])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@map("pages")
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  TRASHED
+}
+
+model PageVersion {
+  id            String   @id @default(uuid())
+  pageId        String   @map("page_id")
+  versionNumber Int      @map("version_number")
+  content       String   @db.Text
+  changeNote    String?  @map("change_note") @db.VarChar(500)
+  createdById   String   @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  page    Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  creator User @relation("VersionCreator", fields: [createdById], references: [id])
+
+  @@unique([pageId, versionNumber])
+  @@index([pageId])
+  @@map("page_versions")
+}
+
+model PageRestriction {
+  id              String          @id @default(uuid())
+  pageId          String          @map("page_id")
+  restrictionType RestrictionType @map("restriction_type")
+  principalType   String          @map("principal_type")
+  principalId     String          @map("principal_id")
+  createdById     String          @map("created_by_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  page    Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  creator User @relation(fields: [createdById], references: [id])
+
+  @@unique([pageId, restrictionType, principalType, principalId])
+  @@index([pageId])
+  @@map("page_restrictions")
+}
+
+enum RestrictionType {
+  READ
+  EDIT
+}
+
+// ============================================
+// COMMENTS
+// ============================================
+
+model Comment {
+  id        String        @id @default(uuid())
+  pageId    String        @map("page_id")
+  parentId  String?       @map("parent_id")
+  userId    String        @map("user_id")
+  content   String        @db.Text
+  status    CommentStatus @default(VISIBLE)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  deletedAt DateTime?     @map("deleted_at")
+
+  page    Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([pageId])
+  @@index([userId])
+  @@map("comments")
+}
+
+enum CommentStatus {
+  VISIBLE
+  HIDDEN
+  DELETED
+}
+
+// ============================================
+// ATTACHMENTS
+// ============================================
+
+model Attachment {
+  id             String    @id @default(uuid())
+  pageId         String    @map("page_id")
+  uploaderId     String    @map("uploader_id")
+  filename       String    @db.VarChar(255)
+  originalName   String    @map("original_name") @db.VarChar(255)
+  mimeType       String    @map("mime_type") @db.VarChar(100)
+  sizeBytes      Int       @map("size_bytes")
+  storageKey     String    @map("storage_key") @db.VarChar(500)
+  versionCount   Int       @default(1) @map("version_count")
+  currentVersion Int       @default(1) @map("current_version")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  page     Page                @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  uploader User                @relation(fields: [uploaderId], references: [id])
+  versions AttachmentVersion[]
+
+  @@index([pageId])
+  @@index([uploaderId])
+  @@index([deletedAt])
+  @@map("attachments")
+}
+
+model AttachmentVersion {
+  id            String   @id @default(uuid())
+  attachmentId  String   @map("attachment_id")
+  versionNumber Int      @map("version_number")
+  storageKey    String   @map("storage_key") @db.VarChar(500)
+  sizeBytes     Int      @map("size_bytes")
+  uploadedById  String   @map("uploaded_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  attachment Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+  uploadedBy User       @relation(fields: [uploadedById], references: [id])
+
+  @@unique([attachmentId, versionNumber])
+  @@index([attachmentId])
+  @@map("attachment_versions")
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  action       String   @db.VarChar(100)
+  resourceType String   @map("resource_type") @db.VarChar(50)
+  resourceId   String?  @map("resource_id")
+  metadata     Json?
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  userAgent    String?  @map("user_agent") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([resourceType, resourceId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

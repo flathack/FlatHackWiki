@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: openclaw-wiki-db
+    environment:
+      POSTGRES_USER: wikiuser
+      POSTGRES_PASSWORD: wikipass
+      POSTGRES_DB: openclaw_wiki
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wikiuser -d openclaw_wiki"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: openclaw-wiki-api
+    environment:
+      DATABASE_URL: postgresql://wikiuser:wikipass@postgres:5432/openclaw_wiki?schema=public
+      JWT_SECRET: change-this-super-secret-jwt-key-in-production-minimum-32-chars
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      APP_ENV: development
+      APP_PORT: 3001
+      APP_URL: http://localhost:3001
+      CORS_ORIGIN: http://localhost:80
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_PATH: /app/uploads
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: openclaw-wiki-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  uploads:
