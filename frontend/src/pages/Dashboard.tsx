@@ -9,6 +9,7 @@ import {
 import {
   authApi,
   dashboardApi,
+  type BookmarkItem,
   type CommuteProfile,
   type DashboardResponse,
   type DashboardWidget,
@@ -106,6 +107,7 @@ export default function Dashboard() {
   const [profileMessage, setProfileMessage] = useState('');
   const [profileError, setProfileError] = useState('');
   const [bookmarkManagerOpen, setBookmarkManagerOpen] = useState(false);
+  const [bookmarkEditItem, setBookmarkEditItem] = useState<BookmarkItem | null>(null);
   const [projectForm, setProjectForm] = useState({ name: '', client: '', category: '', color: '#0f766e' });
   const [manualEntryForm, setManualEntryForm] = useState({ projectId: '', startTime: '', endTime: '', note: '' });
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -452,6 +454,11 @@ export default function Dashboard() {
       setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht gelöscht werden');
       throw err;
     }
+  };
+
+  const openBookmarkEditor = (item: BookmarkItem) => {
+    setBookmarkEditItem(item);
+    setBookmarkManagerOpen(true);
   };
 
   const reorderBookmarks = async (items: Array<{ id: string; parentId: string | null; sortOrder: number; showInToolbar?: boolean }>) => {
@@ -1180,7 +1187,15 @@ export default function Dashboard() {
         {dashboard && (
           <BookmarkBar
             bookmarks={dashboard.bookmarks}
-            onOpenManager={() => setBookmarkManagerOpen(true)}
+            onOpenManager={() => {
+              setBookmarkEditItem(null);
+              setBookmarkManagerOpen(true);
+            }}
+            onEditItem={openBookmarkEditor}
+            onDeleteItem={async (item) => {
+              await deleteBookmarkItem(item.id);
+            }}
+            onReorder={reorderBookmarks}
           />
         )}
 
@@ -1362,13 +1377,17 @@ export default function Dashboard() {
         <BookmarkManagerDialog
           open={bookmarkManagerOpen}
           bookmarks={dashboard.bookmarks}
-          onClose={() => setBookmarkManagerOpen(false)}
+          onClose={() => {
+            setBookmarkManagerOpen(false);
+            setBookmarkEditItem(null);
+          }}
           onCreate={createBookmarkItem}
           onUpdate={updateBookmarkItem}
           onDelete={deleteBookmarkItem}
           onReorder={reorderBookmarks}
           onImport={importBookmarks}
           onExport={exportBookmarks}
+          initialEditItem={bookmarkEditItem}
         />
       )}
 

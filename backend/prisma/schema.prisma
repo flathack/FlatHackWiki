@@ -176,7 +176,7 @@ model Bookmark {
   url         String?  @db.VarChar(2048)
   description String?  @db.Text
   category    String?  @db.VarChar(100)
-  faviconUrl  String?  @map("favicon_url") @db.VarChar(2048)
+  faviconUrl  String?  @map("favicon_url") @db.Text
   isFavorite  Boolean  @default(false) @map("is_favorite")
   showInToolbar Boolean @default(true) @map("show_in_toolbar")
   sortOrder   Int      @default(0) @map("sort_order")

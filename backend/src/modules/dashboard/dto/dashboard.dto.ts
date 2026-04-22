@@ -5,6 +5,16 @@ const widgetTypeValues = Object.values(DashboardWidgetType) as [DashboardWidgetT
 const weekdayValues = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'] as const;
 
 const jsonRecordSchema = z.record(z.string(), z.any());
+const bookmarkUrlSchema = z.string().trim().min(1).max(2048);
+const faviconValueSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(500_000)
+  .refine((value) => {
+    if (value.startsWith('data:image/')) return true;
+    return z.string().url().safeParse(value).success;
+  }, 'Ungültige Favicon-URL');
 
 export const createWidgetSchema = z.object({
   body: z.object({
@@ -53,10 +63,10 @@ export const createBookmarkSchema = z.object({
     itemType: z.enum(['BOOKMARK', 'FOLDER']).default('BOOKMARK'),
     parentId: z.string().uuid().nullable().optional(),
     title: z.string().trim().min(1).max(255),
-    url: z.string().trim().url().max(2048).nullable().optional(),
+    url: bookmarkUrlSchema.nullable().optional(),
     description: z.string().trim().max(4000).nullable().optional(),
     category: z.string().trim().max(100).nullable().optional(),
-    faviconUrl: z.string().trim().url().max(2048).nullable().optional(),
+    faviconUrl: faviconValueSchema.nullable().optional(),
     isFavorite: z.boolean().optional(),
     showInToolbar: z.boolean().optional(),
   }),
@@ -67,10 +77,10 @@ export const updateBookmarkSchema = z.object({
     title: z.string().trim().min(1).max(255).optional(),
     parentId: z.string().uuid().nullable().optional(),
     itemType: z.enum(['BOOKMARK', 'FOLDER']).optional(),
-    url: z.string().trim().url().max(2048).nullable().optional(),
+    url: bookmarkUrlSchema.nullable().optional(),
     description: z.string().trim().max(4000).nullable().optional(),
     category: z.string().trim().max(100).nullable().optional(),
-    faviconUrl: z.string().trim().url().max(2048).nullable().optional(),
+    faviconUrl: faviconValueSchema.nullable().optional(),
     isFavorite: z.boolean().optional(),
     showInToolbar: z.boolean().optional(),
     sortOrder: z.number().int().min(0).max(999).optional(),

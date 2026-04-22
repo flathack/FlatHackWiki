@@ -175,11 +175,23 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-bar-shell {
-  @apply flex items-center gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm;
+  @apply relative z-20 flex items-center gap-3 overflow-visible rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm;
 }
 
 .bookmark-bar-track {
-  @apply flex flex-1 flex-wrap items-center gap-2 overflow-hidden;
+  @apply flex flex-1 flex-wrap items-center gap-2 overflow-visible;
+}
+
+.bookmark-drop-slot {
+  @apply h-10 w-2 shrink-0 rounded-full border border-dashed border-transparent bg-transparent transition;
+}
+
+.bookmark-drop-slot.active {
+  @apply border-sky-300 bg-sky-100;
+}
+
+.bookmark-drop-slot-compact {
+  @apply h-2 w-full;
 }
 
 .bookmark-bar-item {
@@ -188,6 +200,16 @@ html[data-theme='midnight'] .text-blue-600 {
 
 .bookmark-bar-item-nested {
   @apply w-full justify-start rounded-lg border-0 bg-transparent px-2 py-2;
+}
+
+.bookmark-bar-item.dragging,
+.bookmark-folder-entry.dragging {
+  @apply opacity-50;
+}
+
+.bookmark-bar-item.drop-target,
+.bookmark-folder-entry.drop-target {
+  @apply border-sky-300 bg-sky-50 text-sky-900;
 }
 
 .bookmark-item-title {
@@ -215,7 +237,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-folder-menu {
-  @apply absolute left-0 top-[calc(100%+0.4rem)] z-20 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-xl;
+  @apply absolute left-0 top-[calc(100%+0.4rem)] z-40 max-h-[min(28rem,70vh)] min-w-[240px] overflow-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-xl;
 }
 
 .bookmark-folder-empty {
@@ -226,16 +248,36 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply rounded-xl border border-gray-100 bg-gray-50 p-2;
 }
 
+.bookmark-folder-list {
+  @apply flex flex-col gap-1;
+}
+
+.bookmark-folder-entry {
+  @apply inline-flex w-full items-center gap-2 rounded-xl border border-transparent bg-transparent px-2 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-100 hover:text-sky-900;
+}
+
 .bookmark-folder-subtitle {
   @apply px-2 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500;
 }
 
 .bookmark-folder-icon {
-  @apply rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-800;
+  @apply inline-flex h-5 w-5 shrink-0 items-center justify-center text-slate-700;
+}
+
+.bookmark-folder-icon-svg {
+  @apply h-5 w-5;
 }
 
 .bookmark-bar-empty {
   @apply text-sm text-gray-500;
+}
+
+.bookmark-bar-empty-drop {
+  @apply flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-500 transition;
+}
+
+.bookmark-bar-empty-drop.active {
+  @apply border-sky-300 bg-sky-50 text-sky-900;
 }
 
 .bookmark-gear-button {
@@ -244,6 +286,18 @@ html[data-theme='midnight'] .text-blue-600 {
 
 .bookmark-gear-icon {
   @apply h-5 w-5;
+}
+
+.bookmark-context-menu {
+  @apply fixed z-[100] min-w-[220px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-1 shadow-2xl;
+}
+
+.bookmark-context-action {
+  @apply flex w-full items-center justify-start rounded-xl px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-100 hover:text-sky-900;
+}
+
+.bookmark-context-action.danger {
+  @apply text-red-600 hover:bg-red-50 hover:text-red-700;
 }
 
 .bookmark-manager-dialog {
@@ -642,16 +696,54 @@ html[data-theme='midnight'] .bookmark-tree-main span {
 
 html[data-theme='midnight'] .bookmark-bar-item,
 html[data-theme='midnight'] .bookmark-gear-button,
-html[data-theme='midnight'] .bookmark-folder-subgroup {
+html[data-theme='midnight'] .bookmark-folder-subgroup,
+html[data-theme='midnight'] .bookmark-context-menu,
+html[data-theme='midnight'] .bookmark-bar-empty-drop {
   background-color: #0f172a !important;
   border-color: #334155 !important;
   color: #e2e8f0 !important;
 }
 
+html[data-theme='midnight'] .bookmark-drop-slot.active {
+  background-color: rgba(14, 165, 233, 0.22) !important;
+  border-color: rgba(125, 211, 252, 0.55) !important;
+}
+
+html[data-theme='midnight'] .bookmark-context-action {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme='midnight'] .bookmark-context-action:hover {
+  background-color: #1e293b !important;
+  color: #bae6fd !important;
+}
+
+html[data-theme='midnight'] .bookmark-context-action.danger {
+  color: #fca5a5 !important;
+}
+
+html[data-theme='midnight'] .bookmark-context-action.danger:hover {
+  background-color: rgba(127, 29, 29, 0.45) !important;
+  color: #fecaca !important;
+}
+
 html[data-theme='midnight'] .bookmark-folder-icon,
 html[data-theme='midnight'] .bookmark-tree-type.folder {
-  background-color: #3a2b13 !important;
-  color: #fde68a !important;
+  background-color: transparent !important;
+  color: #0f172a !important;
+}
+
+html[data-theme='midnight'] .bookmark-folder-entry:hover,
+html[data-theme='midnight'] .bookmark-bar-item.drop-target,
+html[data-theme='midnight'] .bookmark-folder-entry.drop-target,
+html[data-theme='midnight'] .bookmark-bar-empty-drop.active {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+  color: #bae6fd !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
+html[data-theme='midnight'] .bookmark-folder-icon {
+  color: #0f172a !important;
 }
 
 html[data-theme='midnight'] .bookmark-favicon-fallback,

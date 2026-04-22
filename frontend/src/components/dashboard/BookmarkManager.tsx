@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { BookmarkItem, BookmarkState } from '../../api/client';
 
 type BookmarkPayload = {
@@ -14,11 +14,40 @@ type BookmarkPayload = {
 };
 
 type BookmarkUpdatePayload = Partial<BookmarkItem>;
-
 type ImportMode = 'append' | 'replace';
+type ContextMenuState = {
+  item: BookmarkItem;
+  x: number;
+  y: number;
+} | null;
+type ReorderPayloadItem = {
+  id: string;
+  parentId: string | null;
+  sortOrder: number;
+  showInToolbar?: boolean;
+};
+type DragState = {
+  itemId: string;
+} | null;
+type DropIndicator = {
+  parentId: string | null;
+  index: number;
+  mode: 'slot' | 'folder';
+} | null;
 
 function flattenBookmarks(nodes: BookmarkItem[]): BookmarkItem[] {
   return nodes.flatMap((node) => [node, ...flattenBookmarks(node.children)]);
+}
+
+function cloneBookmark(node: BookmarkItem): BookmarkItem {
+  return {
+    ...node,
+    children: node.children.map(cloneBookmark),
+  };
+}
+
+function cloneTree(nodes: BookmarkItem[]) {
+  return nodes.map(cloneBookmark);
 }
 
 function reorderPayloadForSiblingMove(siblings: BookmarkItem[], itemId: string, direction: -1 | 1) {
@@ -75,51 +104,504 @@ function downloadTextFile(fileName: string, content: string, contentType: string
   URL.revokeObjectURL(url);
 }
 
+function removeNode(nodes: BookmarkItem[], itemId: string): { next: BookmarkItem[]; removed: BookmarkItem | null } {
+  const next: BookmarkItem[] = [];
+
+  for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index];
+    if (node.id === itemId) {
+      return {
+        next: [...next, ...nodes.slice(index + 1)],
+        removed: cloneBookmark(node),
+      };
+    }
+
+    const childResult = removeNode(node.children, itemId);
+    if (childResult.removed) {
+      next.push({
+        ...node,
+        children: childResult.next,
+      });
+      next.push(...nodes.slice(index + 1));
+      return { next, removed: childResult.removed };
+    }
+
+    next.push(node);
+  }
+
+  return { next: nodes, removed: null };
+}
+
+function insertNode(
+  nodes: BookmarkItem[],
+  parentId: string | null,
+  index: number,
+  item: BookmarkItem
+): BookmarkItem[] {
+  if (!parentId) {
+    const next = [...nodes];
+    next.splice(Math.max(0, Math.min(index, next.length)), 0, item);
+    return next;
+  }
+
+  return nodes.map((node) => {
+    if (node.id === parentId) {
+      const nextChildren = [...node.children];
+      nextChildren.splice(Math.max(0, Math.min(index, nextChildren.length)), 0, item);
+      return {
+        ...node,
+        children: nextChildren,
+      };
+    }
+
+    return {
+      ...node,
+      children: insertNode(node.children, parentId, index, item),
+    };
+  });
+}
+
+function findNode(nodes: BookmarkItem[], itemId: string): BookmarkItem | null {
+  for (const node of nodes) {
+    if (node.id === itemId) {
+      return node;
+    }
+
+    const child = findNode(node.children, itemId);
+    if (child) {
+      return child;
+    }
+  }
+
+  return null;
+}
+
+function containsNode(node: BookmarkItem, targetId: string): boolean {
+  if (node.id === targetId) {
+    return true;
+  }
+
+  return node.children.some((child) => containsNode(child, targetId));
+}
+
+function buildReorderPayload(nodes: BookmarkItem[], parentId: string | null = null): ReorderPayloadItem[] {
+  return nodes.flatMap((node, sortOrder) => {
+    const current: ReorderPayloadItem = {
+      id: node.id,
+      parentId,
+      sortOrder,
+      showInToolbar: parentId === null ? Boolean(node.showInToolbar) : false,
+    };
+
+    return [current, ...buildReorderPayload(node.children, node.id)];
+  });
+}
+
+function moveBookmarkTree(
+  sourceTree: BookmarkItem[],
+  draggedId: string,
+  targetParentId: string | null,
+  targetIndex: number
+): BookmarkItem[] | null {
+  const tree = cloneTree(sourceTree);
+  const draggedNode = findNode(tree, draggedId);
+  if (!draggedNode) {
+    return null;
+  }
+
+  if (targetParentId === draggedId) {
+    return null;
+  }
+
+  if (draggedNode.itemType === 'FOLDER' && targetParentId) {
+    const targetParentNode = findNode(tree, targetParentId);
+    if (targetParentNode && containsNode(draggedNode, targetParentId)) {
+      return null;
+    }
+  }
+
+  const removal = removeNode(tree, draggedId);
+  if (!removal.removed) {
+    return null;
+  }
+
+  const movedNode: BookmarkItem = {
+    ...removal.removed,
+    parentId: targetParentId,
+    showInToolbar: targetParentId === null,
+  };
+
+  return insertNode(removal.next, targetParentId, targetIndex, movedNode);
+}
+
+function folderEntryCount(item: BookmarkItem) {
+  return item.children.length;
+}
+
+function getDropIndicatorKey(indicator: DropIndicator) {
+  if (!indicator) return '';
+  return `${indicator.parentId ?? 'root'}:${indicator.index}:${indicator.mode}`;
+}
+
+function BookmarkDropSlot({
+  parentId,
+  index,
+  active,
+  onDragOver,
+  onDrop,
+  compact = false,
+}: {
+  parentId: string | null;
+  index: number;
+  active: boolean;
+  onDragOver: (parentId: string | null, index: number, mode: 'slot') => void;
+  onDrop: (parentId: string | null, index: number) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`bookmark-drop-slot ${compact ? 'bookmark-drop-slot-compact' : ''} ${active ? 'active' : ''}`}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onDragOver(parentId, index, 'slot');
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onDrop(parentId, index);
+      }}
+    />
+  );
+}
+
+function BookmarkFolderContents({
+  items,
+  parentId,
+  dragState,
+  dropIndicator,
+  onDragStart,
+  onDragEnd,
+  onDragOverSlot,
+  onDropSlot,
+  onDropIntoFolder,
+  onContextMenu,
+}: {
+  items: BookmarkItem[];
+  parentId: string | null;
+  dragState: DragState;
+  dropIndicator: DropIndicator;
+  onDragStart: (item: BookmarkItem) => void;
+  onDragEnd: () => void;
+  onDragOverSlot: (parentId: string | null, index: number, mode: 'slot' | 'folder') => void;
+  onDropSlot: (parentId: string | null, index: number) => void;
+  onDropIntoFolder: (folder: BookmarkItem) => void;
+  onContextMenu: (event: React.MouseEvent, item: BookmarkItem) => void;
+}) {
+  return (
+    <div className="bookmark-folder-list">
+      <BookmarkDropSlot
+        parentId={parentId}
+        index={0}
+        compact
+        active={getDropIndicatorKey(dropIndicator) === getDropIndicatorKey({ parentId, index: 0, mode: 'slot' })}
+        onDragOver={onDragOverSlot}
+        onDrop={onDropSlot}
+      />
+      {items.map((child, index) => (
+        <React.Fragment key={child.id}>
+          {child.itemType === 'FOLDER' ? (
+            <div className="bookmark-folder-subgroup">
+              <button
+                type="button"
+                className={`bookmark-folder-entry ${dragState?.itemId === child.id ? 'dragging' : ''}`}
+                draggable
+                onDragStart={() => onDragStart(child)}
+                onDragEnd={onDragEnd}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onDragOverSlot(child.id, folderEntryCount(child), 'folder');
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onDropIntoFolder(child);
+                }}
+                onContextMenu={(event) => onContextMenu(event, child)}
+              >
+                <span className="bookmark-folder-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" className="bookmark-folder-icon-svg">
+                    <path
+                      d="M3.75 6.75A2.25 2.25 0 0 1 6 4.5h4.08c.6 0 1.16.24 1.58.66l1.18 1.18c.14.14.33.22.53.22H18A2.25 2.25 0 0 1 20.25 8.8v8.45A2.25 2.25 0 0 1 18 19.5H6a2.25 2.25 0 0 1-2.25-2.25V6.75Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </span>
+                <span className="bookmark-item-title">{child.title}</span>
+              </button>
+              <BookmarkFolderContents
+                items={child.children}
+                parentId={child.id}
+                dragState={dragState}
+                dropIndicator={dropIndicator}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                onDragOverSlot={onDragOverSlot}
+                onDropSlot={onDropSlot}
+                onDropIntoFolder={onDropIntoFolder}
+                onContextMenu={onContextMenu}
+              />
+            </div>
+          ) : (
+            <BookmarkBarLink
+              item={child}
+              nested
+              draggable
+              isDragging={dragState?.itemId === child.id}
+              onDragStart={() => onDragStart(child)}
+              onDragEnd={onDragEnd}
+              onContextMenu={onContextMenu}
+            />
+          )}
+          <BookmarkDropSlot
+            parentId={parentId}
+            index={index + 1}
+            compact
+            active={getDropIndicatorKey(dropIndicator) === getDropIndicatorKey({ parentId, index: index + 1, mode: 'slot' })}
+            onDragOver={onDragOverSlot}
+            onDrop={onDropSlot}
+          />
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
 export function BookmarkBar({
   bookmarks,
   onOpenManager,
+  onEditItem,
+  onDeleteItem,
+  onReorder,
 }: {
   bookmarks: BookmarkState;
   onOpenManager: () => void;
+  onEditItem: (item: BookmarkItem) => void;
+  onDeleteItem: (item: BookmarkItem) => Promise<void>;
+  onReorder: (items: ReorderPayloadItem[]) => Promise<void>;
 }) {
   const toolbarItems = bookmarks.toolbar ?? [];
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
+  const [openFolderId, setOpenFolderId] = useState<string | null>(null);
+  const [dragState, setDragState] = useState<DragState>(null);
+  const [dropIndicator, setDropIndicator] = useState<DropIndicator>(null);
+  const [moveBusy, setMoveBusy] = useState(false);
+  const barRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!contextMenu && !openFolderId) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (barRef.current?.contains(target)) {
+        return;
+      }
+
+      setContextMenu(null);
+      setOpenFolderId(null);
+    };
+
+    const handleScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && barRef.current?.contains(target)) {
+        return;
+      }
+
+      setContextMenu(null);
+      setOpenFolderId(null);
+    };
+
+    const closeFloatingUi = () => {
+      setContextMenu(null);
+      setOpenFolderId(null);
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', closeFloatingUi);
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', closeFloatingUi);
+    };
+  }, [contextMenu, openFolderId]);
+
+  const clearDragState = () => {
+    setDragState(null);
+    setDropIndicator(null);
+  };
+
+  const runMove = async (targetParentId: string | null, targetIndex: number) => {
+    if (!dragState?.itemId || moveBusy) {
+      return;
+    }
+
+    const nextTree = moveBookmarkTree(bookmarks.tree, dragState.itemId, targetParentId, targetIndex);
+    if (!nextTree) {
+      clearDragState();
+      return;
+    }
+
+    setMoveBusy(true);
+    try {
+      await onReorder(buildReorderPayload(nextTree));
+      setOpenFolderId(targetParentId);
+    } finally {
+      setMoveBusy(false);
+      clearDragState();
+    }
+  };
+
+  const openContextMenu = (event: React.MouseEvent, item: BookmarkItem) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu({
+      item,
+      x: Math.min(event.clientX, window.innerWidth - 220),
+      y: Math.min(event.clientY, window.innerHeight - 220),
+    });
+  };
+
+  const openBookmark = (item: BookmarkItem, mode: 'current' | 'new') => {
+    if (!item.url) return;
+    if (mode === 'current') {
+      window.location.href = item.url;
+      return;
+    }
+    window.open(item.url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
-    <section className="bookmark-bar-shell">
+    <section ref={barRef} className="bookmark-bar-shell">
       <div className="bookmark-bar-track">
         {toolbarItems.length === 0 ? (
-          <div className="bookmark-bar-empty">Noch keine Einträge in der Lesezeichenleiste.</div>
+          <div
+            className={`bookmark-bar-empty-drop ${dragState ? 'active' : ''}`}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDropIndicator({ parentId: null, index: 0, mode: 'slot' });
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              void runMove(null, 0);
+            }}
+          >
+            Noch keine Einträge in der Lesezeichenleiste.
+          </div>
         ) : (
-          toolbarItems.map((item) =>
-            item.itemType === 'FOLDER' ? (
-              <details key={item.id} className="bookmark-folder">
-                <summary className="bookmark-bar-item bookmark-folder-trigger">
-                  <span className="bookmark-folder-icon">Ordner</span>
-                  <span className="bookmark-item-title">{item.title}</span>
-                </summary>
-                <div className="bookmark-folder-menu">
-                  {item.children.length === 0 ? (
-                    <div className="bookmark-folder-empty">Ordner ist leer.</div>
-                  ) : (
-                    item.children.map((child) =>
-                      child.itemType === 'FOLDER' ? (
-                        <div key={child.id} className="bookmark-folder-subgroup">
-                          <div className="bookmark-folder-subtitle">{child.title}</div>
-                          {child.children.map((grandChild) => (
-                            <BookmarkBarLink key={grandChild.id} item={grandChild} nested />
-                          ))}
-                        </div>
-                      ) : (
-                        <BookmarkBarLink key={child.id} item={child} nested />
-                      )
-                    )
-                  )}
-                </div>
-              </details>
-            ) : (
-              <BookmarkBarLink key={item.id} item={item} />
-            )
-          )
+          <>
+            <BookmarkDropSlot
+              parentId={null}
+              index={0}
+              active={getDropIndicatorKey(dropIndicator) === getDropIndicatorKey({ parentId: null, index: 0, mode: 'slot' })}
+              onDragOver={(parentId, index) => setDropIndicator({ parentId, index, mode: 'slot' })}
+              onDrop={(parentId, index) => {
+                void runMove(parentId, index);
+              }}
+            />
+            {toolbarItems.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {item.itemType === 'FOLDER' ? (
+                  <div className="bookmark-folder" onContextMenu={(event) => openContextMenu(event, item)}>
+                    <button
+                      type="button"
+                      className={`bookmark-bar-item bookmark-folder-trigger ${dragState?.itemId === item.id ? 'dragging' : ''} ${
+                        getDropIndicatorKey(dropIndicator) === getDropIndicatorKey({ parentId: item.id, index: folderEntryCount(item), mode: 'folder' })
+                          ? 'drop-target'
+                          : ''
+                      }`}
+                      aria-expanded={openFolderId === item.id}
+                      draggable
+                      onDragStart={() => setDragState({ itemId: item.id })}
+                      onDragEnd={clearDragState}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setDropIndicator({ parentId: item.id, index: folderEntryCount(item), mode: 'folder' });
+                        setOpenFolderId(item.id);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        void runMove(item.id, folderEntryCount(item));
+                      }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setContextMenu(null);
+                        setOpenFolderId((current) => (current === item.id ? null : item.id));
+                      }}
+                    >
+                      <span className="bookmark-folder-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" className="bookmark-folder-icon-svg">
+                          <path
+                            d="M3.75 6.75A2.25 2.25 0 0 1 6 4.5h4.08c.6 0 1.16.24 1.58.66l1.18 1.18c.14.14.33.22.53.22H18A2.25 2.25 0 0 1 20.25 8.8v8.45A2.25 2.25 0 0 1 18 19.5H6a2.25 2.25 0 0 1-2.25-2.25V6.75Z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </span>
+                      <span className="bookmark-item-title">{item.title}</span>
+                    </button>
+                    {openFolderId === item.id && (
+                      <div className="bookmark-folder-menu">
+                        {item.children.length === 0 ? (
+                          <div className="bookmark-folder-empty">Ordner ist leer.</div>
+                        ) : (
+                          <BookmarkFolderContents
+                            items={item.children}
+                            parentId={item.id}
+                            dragState={dragState}
+                            dropIndicator={dropIndicator}
+                            onDragStart={(child) => setDragState({ itemId: child.id })}
+                            onDragEnd={clearDragState}
+                            onDragOverSlot={(parentId, slotIndex, mode) => {
+                              setDropIndicator({ parentId, index: slotIndex, mode });
+                            }}
+                            onDropSlot={(parentId, slotIndex) => {
+                              void runMove(parentId, slotIndex);
+                            }}
+                            onDropIntoFolder={(folder) => {
+                              void runMove(folder.id, folderEntryCount(folder));
+                            }}
+                            onContextMenu={openContextMenu}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <BookmarkBarLink
+                    item={item}
+                    draggable
+                    isDragging={dragState?.itemId === item.id}
+                    onDragStart={() => setDragState({ itemId: item.id })}
+                    onDragEnd={clearDragState}
+                    onContextMenu={openContextMenu}
+                  />
+                )}
+                <BookmarkDropSlot
+                  parentId={null}
+                  index={index + 1}
+                  active={getDropIndicatorKey(dropIndicator) === getDropIndicatorKey({ parentId: null, index: index + 1, mode: 'slot' })}
+                  onDragOver={(parentId, slotIndex) => setDropIndicator({ parentId, index: slotIndex, mode: 'slot' })}
+                  onDrop={(parentId, slotIndex) => {
+                    void runMove(parentId, slotIndex);
+                  }}
+                />
+              </React.Fragment>
+            ))}
+          </>
         )}
       </div>
       <button className="bookmark-gear-button" onClick={onOpenManager} aria-label="Lesezeichen verwalten">
@@ -130,19 +612,87 @@ export function BookmarkBar({
           />
         </svg>
       </button>
+      {contextMenu && (
+        <div className="bookmark-context-menu" style={{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }}>
+          {contextMenu.item.itemType === 'BOOKMARK' && contextMenu.item.url && (
+            <>
+              <button
+                className="bookmark-context-action"
+                onClick={() => {
+                  openBookmark(contextMenu.item, 'new');
+                  setContextMenu(null);
+                }}
+              >
+                Im neuen Tab öffnen
+              </button>
+              <button
+                className="bookmark-context-action"
+                onClick={() => {
+                  openBookmark(contextMenu.item, 'current');
+                  setContextMenu(null);
+                }}
+              >
+                Im aktuellen Tab öffnen
+              </button>
+            </>
+          )}
+          <button
+            className="bookmark-context-action"
+            onClick={() => {
+              onEditItem(contextMenu.item);
+              setContextMenu(null);
+            }}
+          >
+            Bearbeiten
+          </button>
+          <button
+            className="bookmark-context-action danger"
+            onClick={async () => {
+              await onDeleteItem(contextMenu.item);
+              setContextMenu(null);
+            }}
+          >
+            Löschen
+          </button>
+        </div>
+      )}
     </section>
   );
 }
 
-function BookmarkBarLink({ item, nested = false }: { item: BookmarkItem; nested?: boolean }) {
+function BookmarkBarLink({
+  item,
+  nested = false,
+  draggable = false,
+  isDragging = false,
+  onDragStart,
+  onDragEnd,
+  onContextMenu,
+}: {
+  item: BookmarkItem;
+  nested?: boolean;
+  draggable?: boolean;
+  isDragging?: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  onContextMenu: (event: React.MouseEvent, item: BookmarkItem) => void;
+}) {
   return (
     <a
       href={item.url || '#'}
       target="_blank"
       rel="noreferrer"
-      className={`bookmark-bar-item ${nested ? 'bookmark-bar-item-nested' : ''}`}
+      draggable={draggable}
+      className={`bookmark-bar-item ${nested ? 'bookmark-bar-item-nested' : ''} ${isDragging ? 'dragging' : ''}`}
+      onDragStart={() => onDragStart?.()}
+      onDragEnd={() => onDragEnd?.()}
+      onContextMenu={(event) => onContextMenu(event, item)}
     >
-      {item.faviconUrl ? <img src={item.faviconUrl} alt="" className="bookmark-favicon" /> : <span className="bookmark-favicon bookmark-favicon-fallback">Link</span>}
+      {item.faviconUrl ? (
+        <img src={item.faviconUrl} alt="" className="bookmark-favicon" />
+      ) : (
+        <span className="bookmark-favicon bookmark-favicon-fallback">Link</span>
+      )}
       <span className="bookmark-item-title">{item.title}</span>
     </a>
   );
@@ -158,6 +708,7 @@ export function BookmarkManagerDialog({
   onReorder,
   onImport,
   onExport,
+  initialEditItem,
 }: {
   open: boolean;
   bookmarks: BookmarkState;
@@ -165,16 +716,20 @@ export function BookmarkManagerDialog({
   onCreate: (payload: BookmarkPayload) => Promise<void>;
   onUpdate: (id: string, payload: BookmarkUpdatePayload) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onReorder: (items: Array<{ id: string; parentId: string | null; sortOrder: number; showInToolbar?: boolean }>) => Promise<void>;
+  onReorder: (items: ReorderPayloadItem[]) => Promise<void>;
   onImport: (html: string, mode: ImportMode) => Promise<void>;
   onExport: () => Promise<{ fileName: string; html: string }>;
+  initialEditItem?: BookmarkItem | null;
 }) {
-  const allItems = useMemo(() => flattenBookmarks(bookmarks.tree), [bookmarks.tree]);
   const folders = useMemo(() => folderOptions(bookmarks.tree), [bookmarks.tree]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [importError, setImportError] = useState('');
   const [importMode, setImportMode] = useState<ImportMode>('append');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importText, setImportText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState<BookmarkPayload>({
     itemType: 'BOOKMARK',
     parentId: null,
@@ -186,6 +741,22 @@ export function BookmarkManagerDialog({
     isFavorite: false,
     showInToolbar: true,
   });
+
+  useEffect(() => {
+    if (!initialEditItem) return;
+    setEditingId(initialEditItem.id);
+    setForm({
+      itemType: initialEditItem.itemType,
+      parentId: initialEditItem.parentId ?? null,
+      title: initialEditItem.title,
+      url: initialEditItem.url ?? 'https://',
+      description: initialEditItem.description ?? '',
+      category: initialEditItem.category ?? '',
+      faviconUrl: initialEditItem.faviconUrl ?? '',
+      isFavorite: initialEditItem.isFavorite,
+      showInToolbar: initialEditItem.showInToolbar,
+    });
+  }, [initialEditItem]);
 
   if (!open) {
     return null;
@@ -249,14 +820,34 @@ export function BookmarkManagerDialog({
     }
   };
 
-  const handleImportFile = async (file?: File | null) => {
-    if (!file) return;
-    setBusy('import');
+  const handleImportFile = (file?: File | null) => {
+    setImportError('');
     setFeedback('');
+    setImportFile(file ?? null);
+  };
+
+  const handleImportSubmit = async () => {
+    const htmlFromTextarea = importText.trim();
+    if (!importFile && !htmlFromTextarea) {
+      setImportError('Bitte wähle eine HTML-Datei aus oder füge den Lesezeichen-HTML-Inhalt ein.');
+      return;
+    }
+
+    setBusy('import');
+    setImportError('');
+    setFeedback('');
+
     try {
-      const html = await file.text();
+      const html = htmlFromTextarea || (await importFile!.text());
       await onImport(html, importMode);
+      setImportFile(null);
+      setImportText('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setFeedback('Import erfolgreich abgeschlossen.');
+    } catch (error: any) {
+      setImportError(error?.response?.data?.error?.message || error?.message || 'Import konnte nicht durchgeführt werden.');
     } finally {
       setBusy('');
     }
@@ -265,6 +856,7 @@ export function BookmarkManagerDialog({
   const handleExport = async () => {
     setBusy('export');
     setFeedback('');
+    setImportError('');
     try {
       const exported = await onExport();
       downloadTextFile(exported.fileName, exported.html, 'text/html;charset=utf-8');
@@ -332,10 +924,29 @@ export function BookmarkManagerDialog({
                 <option value="append">Import anhängen</option>
                 <option value="replace">Bestehende Struktur ersetzen</option>
               </select>
-              <label className="btn btn-secondary bookmark-upload-button">
-                HTML-Datei importieren
-                <input type="file" accept=".html,text/html" className="hidden" onChange={(e) => handleImportFile(e.target.files?.[0] || null)} />
-              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".html,text/html"
+                className="hidden"
+                onChange={(e) => handleImportFile(e.target.files?.[0] || null)}
+              />
+              <button className="btn btn-secondary" type="button" onClick={() => fileInputRef.current?.click()}>
+                HTML-Datei auswählen
+              </button>
+              <div className="widget-message">
+                {importFile ? `Ausgewählt: ${importFile.name}` : 'Noch keine HTML-Datei ausgewählt.'}
+              </div>
+              <textarea
+                className="input widget-notes"
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder="Optional: Browser-Lesezeichen-HTML hier direkt einfügen"
+              />
+              {importError && <div className="widget-message widget-message-error">{importError}</div>}
+              <button className="btn btn-primary" onClick={handleImportSubmit} disabled={busy === 'import'}>
+                {busy === 'import' ? 'Importiert ...' : 'Importieren'}
+              </button>
               <button className="btn btn-primary" onClick={handleExport} disabled={busy === 'export'}>
                 {busy === 'export' ? 'Exportiert ...' : 'HTML exportieren'}
               </button>
@@ -399,4 +1010,3 @@ function BookmarkTreeRow({
     </div>
   );
 }
-
