@@ -1,10 +1,10 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
-import { db } from '../../config/database.js'.js;
-import { config } from '../../config/index.js'.js;
-import { ConflictError, UnauthorizedError, NotFoundError } from '../../core/errors/app.errors.js'.js;
-import type { RegisterInput, LoginInput } from '../dto/auth.dto.js'.js;
+import { db } from '../../config/database.js';
+import { config } from '../../config/index.js';
+import { ConflictError, UnauthorizedError, NotFoundError } from '../../core/errors/app.errors.js';
+import type { RegisterInput, LoginInput } from './dto/auth.dto.js';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -99,7 +99,7 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
-    const session = await db.userSession.findUnique({
+    const session = await db.userSession.findFirst({
       where: { refreshToken },
       include: { user: true },
     });
@@ -157,10 +157,14 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, email: string) {
+    const signOptions: SignOptions = {
+      expiresIn: config.JWT_EXPIRES_IN as SignOptions['expiresIn'],
+    };
+
     const accessToken = jwt.sign(
       { sub: userId, email, type: 'access' },
       config.JWT_SECRET,
-      { expiresIn: config.JWT_EXPIRES_IN }
+      signOptions
     );
 
     const refreshToken = randomUUID();

@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { db } from '../config/database;
+import { db } from '../../config/database.js';
 import { Role, ScopeType } from '@prisma/client';
-import { ForbiddenError, UnauthorizedError } from '../errors/app.errors;
+import { ForbiddenError, UnauthorizedError } from '../errors/app.errors.js';
 
-type Permission = | '*';
+type Permission =
+  | '*'
   | 'space.view' | 'space.manage' | 'space.member.manage' | 'space.export'
   | 'page.read' | 'page.create' | 'page.update' | 'page.delete' | 'page.move' | 'page.export' | 'page.restrict'
   | 'attachment.upload' | 'attachment.delete' | 'attachment.view'

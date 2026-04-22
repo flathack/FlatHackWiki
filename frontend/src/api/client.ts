@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../context/auth.store';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -29,7 +29,7 @@ api.interceptors.response.use(
 export interface LoginRequest { email: string; password: string }
 export interface RegisterRequest { email: string; password: string; name: string }
 export interface Space { id: string; name: string; key: string; description?: string; visibility: string; owner: { id: string; name: string } }
-export interface Page { id: string; title: string; slug: string; content?: string; status: string; createdAt: string; updatedAt: string; creator?: { id: string; name: string } }
+export interface Page { id: string; title: string; slug: string; content?: string; status: string; parentId?: string | null; createdAt: string; updatedAt: string; creator?: { id: string; name: string } }
 
 export const authApi = {
   login: (data: LoginRequest) => api.post<{ accessToken: string; refreshToken: string; user: any }>('/auth/login', data),

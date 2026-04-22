@@ -59,13 +59,18 @@ class SpacesService {
   async updateMember(key: string, userId: string, role: string) {
     const space = await db.space.findUnique({ where: { key } });
     if (!space) throw new NotFoundError('Space', key);
-    return db.spaceMember.update({ where: { spaceId: space.id, userId }, data: { role: role as any } });
+    return db.spaceMember.update({
+      where: { spaceId_userId: { spaceId: space.id, userId } },
+      data: { role: role as any },
+    });
   }
 
   async removeMember(key: string, userId: string) {
     const space = await db.space.findUnique({ where: { key } });
     if (!space) throw new NotFoundError('Space', key);
-    await db.spaceMember.delete({ where: { spaceId: space.id, userId } });
+    await db.spaceMember.delete({
+      where: { spaceId_userId: { spaceId: space.id, userId } },
+    });
   }
 }
 

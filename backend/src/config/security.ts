@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { config } from './index;
+import { config } from './index.js';
 
 export const helmetMiddleware = helmet({
   contentSecurityPolicy: {

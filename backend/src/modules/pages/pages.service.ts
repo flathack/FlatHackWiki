@@ -15,7 +15,9 @@ class PagesService {
   async create(spaceKey: string, userId: string, data: { title: string; slug: string; content?: string; parentId?: string }) {
     const space = await db.space.findUnique({ where: { key: spaceKey } });
     if (!space) throw new NotFoundError('Space', spaceKey);
-    const existing = await db.page.findUnique({ where: { spaceId: space.id, slug: data.slug } });
+    const existing = await db.page.findUnique({
+      where: { spaceId_slug: { spaceId: space.id, slug: data.slug } },
+    });
     if (existing) throw new ConflictError(`Page with slug "${data.slug}" already exists`);
     const page = await db.page.create({
       data: { ...data, spaceId: space.id, createdById: userId },

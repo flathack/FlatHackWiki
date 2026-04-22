@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '../config/index;
-import { db } from '../config/database;
-import { UnauthorizedError } from '../errors/app.errors;
+import { config } from '../../config/index.js';
+import { db } from '../../config/database.js';
+import { UnauthorizedError } from '../errors/app.errors.js';
 
 export interface JWTPayload {
   sub: string;

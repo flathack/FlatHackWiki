@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../errors/app.errors;
-import { db } from '../config/database;
+import { AppError } from '../errors/app.errors.js';
+import { db } from '../../config/database.js';
 
 export const errorHandler = async (
   err: Error,
