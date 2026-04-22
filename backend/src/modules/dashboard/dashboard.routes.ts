@@ -12,6 +12,7 @@ import {
   projectIdParamsSchema,
   startTimerSchema,
   stopTimerSchema,
+  sendTelegramMessageSchema,
   updateBookmarkSchema,
   updateCommuteSchema,
   updateTimeEntrySchema,
@@ -39,6 +40,7 @@ router.delete('/bookmarks/:bookmarkId', validate(bookmarkIdParamsSchema), dashbo
 router.get('/commute', dashboardController.getCommute);
 router.get('/weather', dashboardController.getWeather);
 router.put('/commute', validate(updateCommuteSchema), dashboardController.upsertCommute);
+router.post('/telegram/messages', validate(sendTelegramMessageSchema), dashboardController.sendTelegramMessage);
 
 router.get('/time-tracking', dashboardController.getTimeTracking);
 router.post('/time-tracking/projects', validate(createTimeProjectSchema), dashboardController.createTimeProject);

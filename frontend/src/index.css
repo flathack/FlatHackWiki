@@ -91,7 +91,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-topbar {
-  @apply sticky top-0 z-40 flex flex-col gap-4 border-b border-gray-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between md:px-8;
+  @apply sticky top-0 z-40 flex flex-col gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between md:px-6;
 }
 
 .dashboard-brand {
@@ -107,11 +107,15 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-main-shell {
-  @apply mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8 md:py-8;
+  @apply mx-auto flex w-full max-w-[1500px] flex-col gap-4 px-4 py-4 md:px-6 md:py-5;
 }
 
 .dashboard-hero-card {
-  @apply flex flex-col gap-6 rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 px-6 py-8 text-white shadow-xl md:flex-row md:items-start md:justify-between md:px-8;
+  @apply rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 px-5 py-6 text-white shadow-xl md:px-6;
+}
+
+.dashboard-hero-content {
+  @apply grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(360px,0.9fr)] lg:items-start;
 }
 
 .dashboard-hero-label {
@@ -123,15 +127,47 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-hero-copy {
-  @apply mt-4 max-w-3xl text-base text-sky-100/90 sm:text-lg;
+  @apply mt-3 max-w-3xl text-sm text-sky-100/90 sm:text-base;
 }
 
 .dashboard-hero-hint {
   @apply mt-4 text-sm text-cyan-200;
 }
 
+.dashboard-hero-tools {
+  @apply grid gap-3 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)];
+}
+
+.dashboard-hero-clock {
+  @apply rounded-2xl border border-white/15 bg-white/10 px-4 py-4 backdrop-blur;
+}
+
+.dashboard-hero-clock-time {
+  @apply text-3xl font-bold leading-none;
+}
+
+.dashboard-hero-clock-date {
+  @apply mt-2 text-sm text-sky-100/85;
+}
+
+.dashboard-hero-search {
+  @apply rounded-2xl border border-white/15 bg-white/10 px-4 py-4 backdrop-blur;
+}
+
+.dashboard-hero-search-top {
+  @apply mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.dashboard-search-provider {
+  @apply rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200;
+}
+
 .dashboard-user-chip {
   @apply flex w-fit flex-col rounded-2xl bg-white/10 px-4 py-3 text-sm backdrop-blur;
+}
+
+.compact-chip {
+  @apply w-fit px-3 py-2 text-xs;
 }
 
 .dashboard-edit-hint {
@@ -151,7 +187,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-widget-toolbar {
-  @apply flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-3;
+  @apply flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-3 py-2;
 }
 
 .dashboard-widget-toolbar-actions {
@@ -163,7 +199,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-shell {
-  @apply flex h-full min-h-0 flex-1 flex-col gap-5 p-5;
+  @apply flex h-full min-h-0 flex-1 flex-col gap-4 p-4;
 }
 
 .widget-shell-header {
@@ -175,7 +211,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-shell-title {
-  @apply text-xl font-semibold text-gray-900;
+  @apply text-lg font-semibold text-gray-900;
 }
 
 .widget-shell-badge {
@@ -183,7 +219,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-shell-subtitle {
-  @apply mt-1 text-sm text-gray-500;
+  @apply mt-1 text-xs text-gray-500;
 }
 
 .widget-shell-actions {
@@ -191,7 +227,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-shell-body {
-  @apply flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden pr-1;
+  @apply flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden pr-1;
 }
 
 .widget-shell-body > * {
@@ -215,7 +251,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-subsection {
-  @apply flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4;
+  @apply flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-3;
 }
 
 .widget-subsection h4 {
@@ -239,7 +275,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-stat-box {
-  @apply rounded-2xl bg-gray-50 px-4 py-4;
+  @apply rounded-2xl bg-gray-50 px-3 py-3;
 }
 
 .widget-stat-box span {
@@ -251,7 +287,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-message {
-  @apply rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600;
+  @apply rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-600;
 }
 
 .widget-message-error {
@@ -277,7 +313,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .mini-card-link {
-  @apply flex flex-col gap-1 rounded-2xl border border-gray-200 bg-white px-4 py-4 text-left transition hover:border-sky-300 hover:shadow-sm;
+  @apply flex flex-col gap-1 rounded-2xl border border-gray-200 bg-white px-3 py-3 text-left transition hover:border-sky-300 hover:shadow-sm;
 }
 
 .mini-card-link strong {
@@ -313,7 +349,39 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .weather-widget-hero {
-  @apply rounded-[24px] bg-gradient-to-br from-sky-100 via-cyan-50 to-white px-5 py-5;
+  @apply rounded-[24px] bg-gradient-to-br from-sky-100 via-cyan-50 to-white px-4 py-4;
+}
+
+.telegram-chat-widget {
+  @apply flex min-h-0 flex-1 flex-col gap-3;
+}
+
+.telegram-chat-history {
+  @apply flex min-h-[220px] flex-1 flex-col gap-2 overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 p-3;
+}
+
+.telegram-chat-bubble {
+  @apply max-w-[92%] rounded-2xl px-3 py-2 text-sm shadow-sm;
+}
+
+.telegram-chat-bubble-user {
+  @apply ml-auto bg-sky-600 text-white;
+}
+
+.telegram-chat-bubble-bot {
+  @apply bg-white text-gray-800;
+}
+
+.telegram-chat-bubble-system {
+  @apply bg-amber-50 text-amber-900;
+}
+
+.telegram-chat-role {
+  @apply mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] opacity-75;
+}
+
+.telegram-chat-time {
+  @apply mt-1 text-[11px] opacity-70;
 }
 
 .weather-widget-temp {
@@ -448,6 +516,12 @@ html[data-theme='midnight'] .clock-widget-panel {
   background-image: linear-gradient(135deg, #0f172a 0%, #0b2239 55%, #12304b 100%) !important;
 }
 
+html[data-theme='midnight'] .dashboard-hero-clock,
+html[data-theme='midnight'] .dashboard-hero-search {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
 html[data-theme='midnight'] .clock-widget-time,
 html[data-theme='midnight'] .clock-widget-date,
 html[data-theme='midnight'] .weather-widget-temp,
@@ -457,6 +531,18 @@ html[data-theme='midnight'] .weather-widget-copy {
 
 html[data-theme='midnight'] .weather-widget-hero {
   background-image: linear-gradient(135deg, #0f172a 0%, #082f49 55%, #164e63 100%) !important;
+}
+
+html[data-theme='midnight'] .telegram-chat-history,
+html[data-theme='midnight'] .telegram-chat-bubble-bot {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .telegram-chat-bubble-system {
+  background-color: #3a2b13 !important;
+  color: #fde68a !important;
 }
 
 html[data-theme='midnight'] .widget-shell-badge,

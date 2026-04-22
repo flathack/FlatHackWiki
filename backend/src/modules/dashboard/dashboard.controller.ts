@@ -96,6 +96,14 @@ class DashboardController {
     }
   }
 
+  async sendTelegramMessage(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.status(201).json(await dashboardService.sendTelegramMessage(req.user!.id, req.body.content));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async upsertCommute(req: Request, res: Response, next: NextFunction) {
     try {
       res.json(await dashboardService.upsertCommute(req.user!.id, req.body));

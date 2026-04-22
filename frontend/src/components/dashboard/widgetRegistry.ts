@@ -8,9 +8,7 @@ export interface WidgetDefinition {
 }
 
 export const widgetDefinitions: WidgetDefinition[] = [
-  { type: 'CLOCK', label: 'Uhrzeit', description: 'Aktuelle Uhrzeit und Datum', singleton: true },
   { type: 'WIKI_SEARCH', label: 'Wiki-Suche', description: 'Schnellsuche im Wiki', singleton: true },
-  { type: 'WEB_SEARCH', label: 'Websuche', description: 'Externe Suche mit auswählbarem Anbieter', singleton: true },
   { type: 'WEATHER', label: 'Wetter', description: 'Wetter für einen konfigurierbaren Ort', singleton: true },
   { type: 'FAVORITE_SPACES', label: 'Favorisierte Bereiche', description: 'Wichtige Wiki-Bereiche im Blick', singleton: true },
   { type: 'NOTES', label: 'Notizen', description: 'Persönliche Schnellnotizen', singleton: true },
@@ -19,6 +17,7 @@ export const widgetDefinitions: WidgetDefinition[] = [
   { type: 'COMMUTE', label: 'Arbeitsweg', description: 'Route, Büro-Tage und Homeoffice', singleton: true },
   { type: 'TIME_TRACKER', label: 'Zeiterfassung', description: 'Projekte, Timer und manuelle Zeiten', singleton: true },
   { type: 'BOOKMARKS', label: 'Browser-Lesezeichen', description: 'Eigene Web-Links mit Kategorien und Favoriten', singleton: true },
+  { type: 'TELEGRAM_CHAT', label: 'Telegram-Chat', description: 'Chat mit sicherer Backend-Anbindung an deinen OpenClaw Bot', singleton: true },
 ];
 
 export const widgetDefinitionMap = Object.fromEntries(

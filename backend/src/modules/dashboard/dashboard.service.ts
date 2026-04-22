@@ -4,12 +4,25 @@
   TimeEntryType,
   type Bookmark,
   type CommuteProfile,
+  type TelegramChatMessage,
   type TimeEntry,
   type TimeTrackingProject,
   type UserDashboardWidget,
 } from '@prisma/client';
 import { db } from '../../config/database.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../core/errors/app.errors.js';
+
+const TELEGRAM_ROLES = {
+  USER: 'USER',
+  BOT: 'BOT',
+  SYSTEM: 'SYSTEM',
+} as const;
+
+const TELEGRAM_PROVIDERS = {
+  LOCAL_PREVIEW: 'LOCAL_PREVIEW',
+  TELEGRAM_PROXY: 'TELEGRAM_PROXY',
+  OPENCLAW_RELAY: 'OPENCLAW_RELAY',
+} as const;
 
 const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y: number; width: number; height: number; minWidth: number; minHeight: number; maxWidth?: number; maxHeight?: number; settings?: Prisma.JsonObject }> = {
   CLOCK: {
@@ -128,21 +141,36 @@ const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y:
       search: '',
     },
   },
+  TELEGRAM_CHAT: {
+    title: 'Telegram-Chat',
+    x: 0,
+    y: 17,
+    width: 6,
+    height: 6,
+    minWidth: 4,
+    minHeight: 5,
+    settings: {
+      chatId: '',
+      pollIntervalMs: 15000,
+      greetingText: 'Verbinde dieses Widget mit deinem OpenClaw Telegram Bot.',
+      botUsername: 'OpenClaw Bot',
+    },
+  },
 };
 
-const defaultWidgetOrder: DashboardWidgetType[] = [
-  DashboardWidgetType.CLOCK,
-  DashboardWidgetType.WIKI_SEARCH,
-  DashboardWidgetType.WEB_SEARCH,
-  DashboardWidgetType.WEATHER,
-  DashboardWidgetType.FAVORITE_SPACES,
-  DashboardWidgetType.NOTES,
-  DashboardWidgetType.STATS,
-  DashboardWidgetType.SPACES,
-  DashboardWidgetType.COMMUTE,
-  DashboardWidgetType.TIME_TRACKER,
-  DashboardWidgetType.BOOKMARKS,
-];
+const defaultWidgetOrder = [
+  'WEB_SEARCH',
+  'WIKI_SEARCH',
+  'WEATHER',
+  'FAVORITE_SPACES',
+  'NOTES',
+  'STATS',
+  'SPACES',
+  'COMMUTE',
+  'TIME_TRACKER',
+  'BOOKMARKS',
+  'TELEGRAM_CHAT',
+] satisfies DashboardWidgetType[];
 
 const weekdayMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const;
 
@@ -197,6 +225,18 @@ function getWeekdayKey(date = new Date()) {
 function normalizeNullableString(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function sanitizeTelegramMessage(message: TelegramChatMessage) {
+  return {
+    id: message.id,
+    senderRole: message.senderRole,
+    provider: message.provider,
+    content: message.content,
+    chatId: message.chatId,
+    metadata: (message.metadata ?? {}) as Record<string, unknown>,
+    createdAt: message.createdAt,
+  };
 }
 
 function getStartOfDay(date = new Date()) {
@@ -406,6 +446,57 @@ class DashboardService {
     });
 
     if (existing) {
+      const sortedWidgets = [...existing.widgets].sort((a, b) => a.mobileOrder - b.mobileOrder);
+      const knownTypes = new Set<DashboardWidgetType>();
+      const duplicateIds: string[] = [];
+
+      for (const widget of sortedWidgets) {
+        if (knownTypes.has(widget.type)) {
+          duplicateIds.push(widget.id);
+          continue;
+        }
+
+        knownTypes.add(widget.type);
+      }
+
+      const missingTypes = defaultWidgetOrder.filter((type) => !knownTypes.has(type));
+
+      if (duplicateIds.length > 0 || missingTypes.length > 0) {
+        const operations: Prisma.PrismaPromise<unknown>[] = [];
+
+        if (duplicateIds.length > 0) {
+          operations.push(
+            db.userDashboardWidget.deleteMany({
+              where: {
+                id: { in: duplicateIds },
+              },
+            })
+          );
+        }
+
+        if (missingTypes.length > 0) {
+          operations.push(
+            db.userDashboard.update({
+              where: { id: existing.id },
+              data: {
+                widgets: {
+                  create: missingTypes.map((type, index) =>
+                    createDefaultWidget(type, sortedWidgets.length + index)
+                  ),
+                },
+              },
+            })
+          );
+        }
+
+        await db.$transaction(operations);
+
+        return db.userDashboard.findUniqueOrThrow({
+          where: { userId },
+          include: { widgets: true },
+        });
+      }
+
       return existing;
     }
 
@@ -422,7 +513,7 @@ class DashboardService {
 
   async getDashboard(userId: string) {
     const dashboard = await this.ensureDashboard(userId);
-    const [bookmarks, commuteProfile, spaces, projects, recentEntries, runningEntry] = await Promise.all([
+    const [bookmarks, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages] = await Promise.all([
       db.bookmark.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
       db.commuteProfile.findUnique({ where: { userId } }),
       db.space.findMany({ orderBy: { updatedAt: 'desc' }, include: { owner: { select: { id: true, name: true } } } }),
@@ -438,6 +529,11 @@ class DashboardService {
         include: { project: true },
         orderBy: { startTime: 'desc' },
       }),
+      db.telegramChatMessage.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'asc' },
+        take: 40,
+      }),
     ]);
 
     const todayStart = getStartOfDay(new Date());
@@ -448,7 +544,7 @@ class DashboardService {
       db.timeEntry.findMany({ where: { userId, startTime: { gte: weekStart } } }),
     ]);
 
-    const favoriteWidget = dashboard.widgets.find((widget) => widget.type === DashboardWidgetType.FAVORITE_SPACES);
+    const favoriteWidget = dashboard.widgets.find((widget) => widget.type === 'FAVORITE_SPACES');
     const favoriteKeys = Array.isArray((favoriteWidget?.settings as Record<string, unknown> | null)?.spaceKeys)
       ? ((favoriteWidget?.settings as Record<string, unknown>).spaceKeys as string[])
       : [];
@@ -460,6 +556,8 @@ class DashboardService {
           ? 'homeOffice'
           : 'unspecified'
       : 'unset';
+    const telegramWidget = dashboard.widgets.find((widget) => widget.type === 'TELEGRAM_CHAT');
+    const telegramSettings = (telegramWidget?.settings ?? {}) as Record<string, unknown>;
 
     return {
       widgets: dashboard.widgets.sort((a, b) => a.mobileOrder - b.mobileOrder).map(sanitizeWidgetType),
@@ -484,6 +582,170 @@ class DashboardService {
         items: spaces,
         favorites: spaces.filter((space) => favoriteKeys.includes(space.key)),
       },
+      telegramChat: {
+        messages: telegramMessages.map(sanitizeTelegramMessage),
+        configured: Boolean(process.env.OPENCLAW_BOT_WEBHOOK_URL || process.env.TELEGRAM_BOT_TOKEN),
+        provider:
+          process.env.OPENCLAW_BOT_WEBHOOK_URL
+            ? 'openclaw-relay'
+            : process.env.TELEGRAM_BOT_TOKEN
+              ? 'telegram-proxy'
+              : 'local-preview',
+        settings: {
+          chatId: typeof telegramSettings.chatId === 'string' ? telegramSettings.chatId : '',
+          pollIntervalMs:
+            typeof telegramSettings.pollIntervalMs === 'number' ? telegramSettings.pollIntervalMs : 15000,
+          greetingText:
+            typeof telegramSettings.greetingText === 'string'
+              ? telegramSettings.greetingText
+              : 'Verbinde dieses Widget mit deinem OpenClaw Telegram Bot.',
+          botUsername:
+            typeof telegramSettings.botUsername === 'string' ? telegramSettings.botUsername : 'OpenClaw Bot',
+        },
+      },
+    };
+  }
+
+  async sendTelegramMessage(userId: string, content: string) {
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
+      throw new ValidationError('Bitte gib eine Nachricht ein');
+    }
+
+    const telegramWidget = await this.getTelegramWidgetForUser(userId);
+    const settings = (telegramWidget.settings ?? {}) as Record<string, unknown>;
+    const configuredChatId = typeof settings.chatId === 'string' ? settings.chatId.trim() : '';
+
+    const userMessage = await db.telegramChatMessage.create({
+      data: {
+        userId,
+        senderRole: TELEGRAM_ROLES.USER,
+        provider: TELEGRAM_PROVIDERS.LOCAL_PREVIEW,
+        content: trimmedContent,
+        chatId: configuredChatId || null,
+      },
+    });
+
+    const relayUrl = process.env.OPENCLAW_BOT_WEBHOOK_URL?.trim();
+    if (relayUrl) {
+      try {
+        const response = await fetch(relayUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            chatId: configuredChatId || null,
+            message: trimmedContent,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('OpenClaw-Relay nicht erreichbar');
+        }
+
+        const payload = (await response.json()) as { reply?: string };
+        const reply = payload.reply?.trim() || 'OpenClaw hat geantwortet, aber keinen Text geliefert.';
+        const botMessage = await db.telegramChatMessage.create({
+          data: {
+            userId,
+            senderRole: TELEGRAM_ROLES.BOT,
+            provider: TELEGRAM_PROVIDERS.OPENCLAW_RELAY,
+            content: reply,
+            chatId: configuredChatId || null,
+          },
+        });
+
+        return {
+          sent: sanitizeTelegramMessage(userMessage),
+          reply: sanitizeTelegramMessage(botMessage),
+        };
+      } catch (error: any) {
+        const systemMessage = await db.telegramChatMessage.create({
+          data: {
+            userId,
+            senderRole: TELEGRAM_ROLES.SYSTEM,
+            provider: TELEGRAM_PROVIDERS.OPENCLAW_RELAY,
+            content: error.message || 'OpenClaw-Relay konnte nicht erreicht werden.',
+            chatId: configuredChatId || null,
+          },
+        });
+
+        return {
+          sent: sanitizeTelegramMessage(userMessage),
+          reply: sanitizeTelegramMessage(systemMessage),
+        };
+      }
+    }
+
+    const telegramToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+    if (telegramToken && configuredChatId) {
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: configuredChatId,
+            text: trimmedContent,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Telegram-Nachricht konnte nicht gesendet werden');
+        }
+
+        const infoMessage = await db.telegramChatMessage.create({
+          data: {
+            userId,
+            senderRole: TELEGRAM_ROLES.SYSTEM,
+            provider: TELEGRAM_PROVIDERS.TELEGRAM_PROXY,
+            content:
+              'Nachricht an Telegram gesendet. Für direkte Bot-Antworten im Widget kann optional OPENCLAW_BOT_WEBHOOK_URL im Backend konfiguriert werden.',
+            chatId: configuredChatId,
+          },
+        });
+
+        return {
+          sent: sanitizeTelegramMessage(userMessage),
+          reply: sanitizeTelegramMessage(infoMessage),
+        };
+      } catch (error: any) {
+        const errorMessage = await db.telegramChatMessage.create({
+          data: {
+            userId,
+            senderRole: TELEGRAM_ROLES.SYSTEM,
+            provider: TELEGRAM_PROVIDERS.TELEGRAM_PROXY,
+            content: error.message || 'Telegram konnte nicht erreicht werden.',
+            chatId: configuredChatId,
+          },
+        });
+
+        return {
+          sent: sanitizeTelegramMessage(userMessage),
+          reply: sanitizeTelegramMessage(errorMessage),
+        };
+      }
+    }
+
+    const fallbackMessage = await db.telegramChatMessage.create({
+      data: {
+        userId,
+        senderRole: TELEGRAM_ROLES.SYSTEM,
+        provider: TELEGRAM_PROVIDERS.LOCAL_PREVIEW,
+        content:
+          'Telegram-Integration ist noch nicht vollständig verbunden. Hinterlege eine Chat-ID im Widget und konfiguriere im Backend TELEGRAM_BOT_TOKEN oder OPENCLAW_BOT_WEBHOOK_URL.',
+        chatId: configuredChatId || null,
+      },
+    });
+
+    return {
+      sent: sanitizeTelegramMessage(userMessage),
+      reply: sanitizeTelegramMessage(fallbackMessage),
     };
   }
 
@@ -855,6 +1117,17 @@ class DashboardService {
     return widget;
   }
 
+  private async getTelegramWidgetForUser(userId: string) {
+    const dashboard = await this.ensureDashboard(userId);
+    const widget = dashboard.widgets.find((item) => item.type === 'TELEGRAM_CHAT');
+
+    if (!widget) {
+      throw new NotFoundError('Telegram-Widget');
+    }
+
+    return widget;
+  }
+
   private async ensureProjectForUser(userId: string, projectId: string) {
     const project = await db.timeTrackingProject.findFirst({ where: { id: projectId, userId } });
     if (!project) {
@@ -892,3 +1165,4 @@ class DashboardService {
 }
 
 export const dashboardService = new DashboardService();
+

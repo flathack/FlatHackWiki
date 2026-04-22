@@ -41,6 +41,7 @@ model User {
   commuteProfile    CommuteProfile?
   timeProjects      TimeTrackingProject[]
   timeEntries       TimeEntry[]
+  telegramMessages  TelegramChatMessage[]
 
   @@map("users")
 }
@@ -135,6 +136,35 @@ enum DashboardWidgetType {
   COMMUTE
   TIME_TRACKER
   BOOKMARKS
+  TELEGRAM_CHAT
+}
+
+model TelegramChatMessage {
+  id          String                  @id @default(uuid())
+  userId      String                  @map("user_id")
+  senderRole  TelegramMessageRole     @map("sender_role")
+  provider    TelegramMessageProvider @default(LOCAL_PREVIEW)
+  content     String                  @db.Text
+  chatId      String?                 @map("chat_id") @db.VarChar(100)
+  metadata    Json?
+  createdAt   DateTime                @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("telegram_chat_messages")
+}
+
+enum TelegramMessageRole {
+  USER
+  BOT
+  SYSTEM
+}
+
+enum TelegramMessageProvider {
+  LOCAL_PREVIEW
+  TELEGRAM_PROXY
+  OPENCLAW_RELAY
 }
 
 model Bookmark {

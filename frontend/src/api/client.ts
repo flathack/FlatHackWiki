@@ -58,7 +58,8 @@ export type DashboardWidgetType =
   | 'SPACES'
   | 'COMMUTE'
   | 'TIME_TRACKER'
-  | 'BOOKMARKS';
+  | 'BOOKMARKS'
+  | 'TELEGRAM_CHAT';
 export interface DashboardWidget {
   id: string;
   type: DashboardWidgetType;
@@ -128,6 +129,15 @@ export interface TimeEntry {
   entryType: 'TIMER' | 'MANUAL';
   project: TimeTrackingProject;
 }
+export interface TelegramChatMessage {
+  id: string;
+  senderRole: 'USER' | 'BOT' | 'SYSTEM';
+  provider: 'LOCAL_PREVIEW' | 'TELEGRAM_PROXY' | 'OPENCLAW_RELAY';
+  content: string;
+  chatId?: string | null;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
 export interface DashboardResponse {
   widgets: DashboardWidget[];
   bookmarks: Bookmark[];
@@ -150,6 +160,17 @@ export interface DashboardResponse {
     publicCount: number;
     items: Space[];
     favorites: Space[];
+  };
+  telegramChat: {
+    messages: TelegramChatMessage[];
+    configured: boolean;
+    provider: 'local-preview' | 'telegram-proxy' | 'openclaw-relay';
+    settings: {
+      chatId: string;
+      pollIntervalMs: number;
+      greetingText: string;
+      botUsername: string;
+    };
   };
 }
 export interface WeatherResponse {
@@ -240,6 +261,10 @@ export const dashboardApi = {
   },
   weather: {
     get: (city: string) => api.get<WeatherResponse>('/dashboard/weather', { params: { city } }),
+  },
+  telegram: {
+    sendMessage: (content: string) =>
+      api.post<{ sent: TelegramChatMessage; reply: TelegramChatMessage }>('/dashboard/telegram/messages', { content }),
   },
   timeTracking: {
     get: () => api.get<DashboardResponse['timeTracking']>('/dashboard/time-tracking'),

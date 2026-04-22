@@ -165,3 +165,9 @@ export const entryIdParamsSchema = z.object({
     entryId: z.string().uuid(),
   }),
 });
+
+export const sendTelegramMessageSchema = z.object({
+  body: z.object({
+    content: z.string().trim().min(1).max(4000),
+  }),
+});

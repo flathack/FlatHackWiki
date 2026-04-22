@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Responsive,
@@ -111,6 +111,8 @@ export default function Dashboard() {
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [timerProjectId, setTimerProjectId] = useState('');
   const [busyAction, setBusyAction] = useState('');
+  const [telegramDraft, setTelegramDraft] = useState('');
+  const [telegramSending, setTelegramSending] = useState(false);
   const [weather, setWeather] = useState<{
     location: string;
     temperatureC: string;
@@ -120,6 +122,7 @@ export default function Dashboard() {
   } | null>(null);
   const [weatherError, setWeatherError] = useState('');
   const [weatherLoading, setWeatherLoading] = useState(false);
+  const webSearchInputRef = useRef<HTMLInputElement | null>(null);
   const isAdmin = user?.globalRole === 'SUPER_ADMIN' || user?.globalRole === 'SYSTEM_ADMIN';
 
   useEffect(() => {
@@ -194,7 +197,15 @@ export default function Dashboard() {
   }, [weatherCity]);
 
   const visibleWidgets = useMemo(
-    () => (dashboard?.widgets ?? []).filter((widget) => widget.isVisible).sort((a, b) => a.mobileOrder - b.mobileOrder),
+    () =>
+      (dashboard?.widgets ?? [])
+        .filter(
+          (widget) =>
+            widget.isVisible &&
+            widget.type !== 'CLOCK' &&
+            widget.type !== 'WEB_SEARCH'
+        )
+        .sort((a, b) => a.mobileOrder - b.mobileOrder),
     [dashboard?.widgets]
   );
 
@@ -246,6 +257,58 @@ export default function Dashboard() {
   const greeting = getGreeting(now, greetingName || undefined);
   const subtitleText = user?.dashboardSubtitle || defaultSubtitle;
   const shouldShowSubtitle = user?.showDashboardSubtitle ?? true;
+  const webSearchWidget = dashboard?.widgets.find((widget) => widget.type === 'WEB_SEARCH');
+  const webSearchProvider =
+    typeof webSearchWidget?.settings?.provider === 'string' &&
+    webSearchWidget.settings.provider in searchProviders
+      ? (webSearchWidget.settings.provider as keyof typeof searchProviders)
+      : 'duckduckgo';
+  const telegramPollInterval = useMemo(() => {
+    const chatSettings = dashboard?.telegramChat?.settings;
+    if (!chatSettings) return 15000;
+    return typeof chatSettings.pollIntervalMs === 'number' && chatSettings.pollIntervalMs >= 5000
+      ? chatSettings.pollIntervalMs
+      : 15000;
+  }, [dashboard?.telegramChat?.settings]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      webSearchInputRef.current?.focus();
+      webSearchInputRef.current?.select();
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [dashboard?.widgets]);
+
+  useEffect(() => {
+    const telegramWidgetVisible = dashboard?.widgets.some(
+      (widget) => widget.type === 'TELEGRAM_CHAT' && widget.isVisible
+    );
+
+    if (!telegramWidgetVisible) {
+      return;
+    }
+
+    const timer = window.setInterval(async () => {
+      try {
+        const { data } = await dashboardApi.get();
+        setDashboard((current) => {
+          if (!current) {
+            return data;
+          }
+
+          return {
+            ...current,
+            telegramChat: data.telegramChat,
+          };
+        });
+      } catch (pollError) {
+        console.error(pollError);
+      }
+    }, telegramPollInterval);
+
+    return () => window.clearInterval(timer);
+  }, [dashboard?.widgets, telegramPollInterval]);
 
   const setDashboardWidgets = (updater: (widgets: DashboardWidget[]) => DashboardWidget[]) => {
     setDashboard((current) => (current ? { ...current, widgets: updater(current.widgets) } : current));
@@ -424,6 +487,36 @@ export default function Dashboard() {
       await loadDashboard();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Zeiteintrag konnte nicht gespeichert werden');
+    }
+  };
+
+  const runHeroWebSearch = () => {
+    const query = webSearchQuery.trim();
+    if (!query) return;
+
+    const providerUrl = {
+      duckduckgo: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+      google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+      brave: `https://search.brave.com/search?q=${encodeURIComponent(query)}`,
+      bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+    }[webSearchProvider];
+
+    window.open(providerUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const sendTelegramMessage = async () => {
+    const content = telegramDraft.trim();
+    if (!content) return;
+
+    try {
+      setTelegramSending(true);
+      await dashboardApi.telegram.sendMessage(content);
+      setTelegramDraft('');
+      await loadDashboard();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Telegram-Nachricht konnte nicht gesendet werden');
+    } finally {
+      setTelegramSending(false);
     }
   };
 
@@ -882,6 +975,73 @@ export default function Dashboard() {
           </WidgetShell>
         );
       }
+      case 'TELEGRAM_CHAT': {
+        const telegram = dashboard?.telegramChat;
+        const greetingText =
+          typeof settings.greetingText === 'string'
+            ? settings.greetingText
+            : telegram?.settings.greetingText || 'Verbinde dieses Widget mit deinem OpenClaw Telegram Bot.';
+        const botUsername =
+          typeof settings.botUsername === 'string'
+            ? settings.botUsername
+            : telegram?.settings.botUsername || 'OpenClaw Bot';
+
+        return (
+          <WidgetShell
+            title={widget.title}
+            subtitle="Direkter Bot-Chat im Dashboard"
+            badge={telegram?.configured ? botUsername : 'Setup'}
+          >
+            <div className="telegram-chat-widget">
+              <div className="widget-message">
+                {greetingText}
+                {!telegram?.configured &&
+                  ' Hinterlege im Widget eine Chat-ID und konfiguriere im Backend TELEGRAM_BOT_TOKEN oder OPENCLAW_BOT_WEBHOOK_URL.'}
+              </div>
+              <div className="telegram-chat-history">
+                {(telegram?.messages.length ?? 0) === 0 ? (
+                  <div className="widget-message">Noch kein Verlauf vorhanden. Schreibe deine erste Nachricht.</div>
+                ) : (
+                  telegram?.messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`telegram-chat-bubble ${
+                        message.senderRole === 'USER'
+                          ? 'telegram-chat-bubble-user'
+                          : message.senderRole === 'BOT'
+                            ? 'telegram-chat-bubble-bot'
+                            : 'telegram-chat-bubble-system'
+                      }`}
+                    >
+                      <div className="telegram-chat-role">
+                        {message.senderRole === 'USER'
+                          ? 'Ich'
+                          : message.senderRole === 'BOT'
+                            ? botUsername
+                            : 'System'}
+                      </div>
+                      <div>{message.content}</div>
+                      <div className="telegram-chat-time">{formatDateLabel(message.createdAt)}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="widget-inline-form stretch-mobile">
+                <input
+                  className="input"
+                  value={telegramDraft}
+                  onChange={(e) => setTelegramDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendTelegramMessage())}
+                  placeholder="Nachricht an OpenClaw Bot schreiben ..."
+                />
+                <button className="btn btn-primary" onClick={sendTelegramMessage} disabled={telegramSending}>
+                  {telegramSending ? 'Sendet ...' : 'Senden'}
+                </button>
+              </div>
+            </div>
+          </WidgetShell>
+        );
+      }
     }
 
     return (
@@ -939,19 +1099,57 @@ export default function Dashboard() {
 
       <main className="dashboard-main-shell">
         <section className="dashboard-hero-card">
-          <div>
-            <div className="dashboard-hero-label">Persönliche Startseite</div>
-            <h1 className="dashboard-hero-title">{greeting}</h1>
-            {shouldShowSubtitle && subtitleText && <p className="dashboard-hero-copy">{subtitleText}</p>}
-            {!greetingName && (
-              <p className="dashboard-hero-hint">
-                Hinterlege deinen Namen im Profil, damit die Begrüßung persönlicher wird.
-              </p>
-            )}
-          </div>
-          <div className="dashboard-user-chip">
-            <span>{user?.displayName || user?.name}</span>
-            <strong>{user?.globalRole}</strong>
+          <div className="dashboard-hero-content">
+            <div>
+              <div className="dashboard-hero-label">Persönliche Startseite</div>
+              <h1 className="dashboard-hero-title">{greeting}</h1>
+              {shouldShowSubtitle && subtitleText && <p className="dashboard-hero-copy">{subtitleText}</p>}
+              {!greetingName && (
+                <p className="dashboard-hero-hint">
+                  Hinterlege deinen Namen im Profil, damit die Begrüßung persönlicher wird.
+                </p>
+              )}
+            </div>
+
+            <div className="dashboard-hero-tools">
+              <div className="dashboard-hero-clock">
+                <div className="dashboard-hero-clock-time">
+                  {now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div className="dashboard-hero-clock-date">
+                  {now.toLocaleDateString('de-DE', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+                </div>
+              </div>
+
+              <div className="dashboard-hero-search">
+                <div className="dashboard-hero-search-top">
+                  <span className="dashboard-search-provider">
+                    {searchProviders[webSearchProvider]}
+                  </span>
+                  <span className="dashboard-user-chip compact-chip">
+                    <span>{user?.displayName || user?.name}</span>
+                    <strong>{user?.globalRole}</strong>
+                  </span>
+                </div>
+                <div className="widget-inline-form stretch-mobile">
+                  <input
+                    ref={webSearchInputRef}
+                    className="input"
+                    value={webSearchQuery}
+                    onChange={(e) => setWebSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && runHeroWebSearch()}
+                    placeholder="Direkt im Web suchen ..."
+                  />
+                  <button className="btn btn-primary" onClick={runHeroWebSearch}>
+                    Suchen
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -999,8 +1197,8 @@ export default function Dashboard() {
                 layouts={gridLayouts}
                 breakpoints={{ lg: 1200, md: 900, sm: 0 }}
                 cols={{ lg: 12, md: 8, sm: 1 }}
-                rowHeight={36}
-                margin={[20, 20]}
+                rowHeight={32}
+                margin={[14, 14]}
                 containerPadding={[0, 0]}
                 dragConfig={{ enabled: editMode, handle: '.widget-drag-handle' }}
                 resizeConfig={{ enabled: editMode, handles: ['se'] }}
@@ -1233,7 +1431,8 @@ function WidgetSettingsDialog({
           widget.type === 'WEB_SEARCH' ||
           widget.type === 'FAVORITE_SPACES' ||
           widget.type === 'NOTES' ||
-          widget.type === 'BOOKMARKS') && (
+          widget.type === 'BOOKMARKS' ||
+          widget.type === 'TELEGRAM_CHAT') && (
           <div className="widget-stack">
             {widget.type === 'WEATHER' && (
               <div className="widget-subsection">
@@ -1295,6 +1494,49 @@ function WidgetSettingsDialog({
                 </label>
                 <label className="form-label">Suchbegriff</label>
                 <input className="input" value={String(settings.search || '')} onChange={(e) => setSettings((current) => ({ ...current, search: e.target.value }))} placeholder="Optionales Filterwort" />
+              </div>
+            )}
+            {widget.type === 'TELEGRAM_CHAT' && (
+              <div className="widget-subsection">
+                <label className="form-label">Chat-ID</label>
+                <input
+                  className="input"
+                  value={String(settings.chatId || '')}
+                  onChange={(e) => setSettings((current) => ({ ...current, chatId: e.target.value }))}
+                  placeholder="z. B. 123456789"
+                />
+                <label className="form-label">Bot-Name</label>
+                <input
+                  className="input"
+                  value={String(settings.botUsername || 'OpenClaw Bot')}
+                  onChange={(e) => setSettings((current) => ({ ...current, botUsername: e.target.value }))}
+                  placeholder="OpenClaw Bot"
+                />
+                <label className="form-label">Begrüßungstext</label>
+                <textarea
+                  className="input widget-notes"
+                  value={String(settings.greetingText || '')}
+                  onChange={(e) => setSettings((current) => ({ ...current, greetingText: e.target.value }))}
+                  placeholder="Optionaler Begrüßungstext im Chat-Widget"
+                />
+                <label className="form-label">Polling in Millisekunden</label>
+                <input
+                  className="input"
+                  type="number"
+                  min={5000}
+                  step={1000}
+                  value={String(settings.pollIntervalMs || 15000)}
+                  onChange={(e) =>
+                    setSettings((current) => ({
+                      ...current,
+                      pollIntervalMs: Number(e.target.value) || 15000,
+                    }))
+                  }
+                />
+                <div className="widget-message">
+                  Das Secret für Telegram bleibt im Backend. Hinterlege dort
+                  `TELEGRAM_BOT_TOKEN` oder `OPENCLAW_BOT_WEBHOOK_URL`.
+                </div>
               </div>
             )}
           </div>
