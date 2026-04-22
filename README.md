@@ -1,4 +1,4 @@
-# OpenClaw Wiki
+# FlatHackWiki
 
 Enterprise Wiki System - Confluence Alternative
 
