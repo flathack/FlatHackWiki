@@ -5,10 +5,156 @@
 :root {
   --sidebar-width: 260px;
   --header-height: 56px;
+  color-scheme: light;
 }
 
 body {
   @apply bg-gray-50 text-gray-900;
+}
+
+html[data-theme='sepia'] body {
+  background-color: #f4ecd8 !important;
+  color: #4d3c2d !important;
+}
+
+html[data-theme='sepia'] .bg-gray-50,
+html[data-theme='sepia'] .bg-gray-100,
+html[data-theme='sepia'] .bg-white {
+  background-color: #f7efe1 !important;
+}
+
+html[data-theme='sepia'] .text-gray-900,
+html[data-theme='sepia'] .text-gray-700,
+html[data-theme='sepia'] .text-gray-600,
+html[data-theme='sepia'] .text-gray-500 {
+  color: #5c4632 !important;
+}
+
+html[data-theme='midnight'] body {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] {
+  color-scheme: dark;
+}
+
+html[data-theme='midnight'] .bg-gray-50,
+html[data-theme='midnight'] .bg-gray-100,
+html[data-theme='midnight'] .bg-white,
+html[data-theme='midnight'] .bg-white\/90,
+html[data-theme='midnight'] .bg-slate-100 {
+  background-color: #111827 !important;
+}
+
+html[data-theme='midnight'] .text-gray-900,
+html[data-theme='midnight'] .text-gray-700,
+html[data-theme='midnight'] .text-gray-600,
+html[data-theme='midnight'] .text-gray-500,
+html[data-theme='midnight'] .text-slate-900,
+html[data-theme='midnight'] .text-slate-700,
+html[data-theme='midnight'] .text-slate-600 {
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .border-gray-200,
+html[data-theme='midnight'] .border-gray-300,
+html[data-theme='midnight'] .border-slate-200 {
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .shadow-sm,
+html[data-theme='midnight'] .shadow-md,
+html[data-theme='midnight'] .shadow-lg,
+html[data-theme='midnight'] .shadow-xl,
+html[data-theme='midnight'] .shadow-2xl {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme='midnight'] .bg-blue-100 {
+  background-color: #1e3a8a !important;
+}
+
+html[data-theme='midnight'] .text-blue-800,
+html[data-theme='midnight'] .text-blue-600 {
+  color: #bfdbfe !important;
+}
+
+html[data-theme='midnight'] .bg-red-50 {
+  background-color: #3f1d24 !important;
+}
+
+html[data-theme='midnight'] .border-red-300 {
+  border-color: #7f1d1d !important;
+}
+
+html[data-theme='midnight'] .text-red-700,
+html[data-theme='midnight'] .text-red-600,
+html[data-theme='midnight'] .text-red-800 {
+  color: #fca5a5 !important;
+}
+
+html[data-theme='midnight'] .bg-green-50 {
+  background-color: #0f2f24 !important;
+}
+
+html[data-theme='midnight'] .border-green-300 {
+  border-color: #166534 !important;
+}
+
+html[data-theme='midnight'] .text-green-700 {
+  color: #86efac !important;
+}
+
+html[data-theme='midnight'] .bg-amber-50,
+html[data-theme='midnight'] .bg-amber-100 {
+  background-color: #3a2b13 !important;
+}
+
+html[data-theme='midnight'] .border-amber-200,
+html[data-theme='midnight'] .border-amber-400 {
+  border-color: #a16207 !important;
+}
+
+html[data-theme='midnight'] .border-sky-200 {
+  border-color: #2563eb !important;
+}
+
+html[data-theme='midnight'] .text-amber-700,
+html[data-theme='midnight'] .text-amber-800 {
+  color: #fde68a !important;
+}
+
+html[data-theme='midnight'] .text-sky-700,
+html[data-theme='midnight'] .text-sky-600,
+html[data-theme='midnight'] .text-cyan-300,
+html[data-theme='midnight'] .text-sky-100\/90 {
+  color: #bae6fd !important;
+}
+
+html[data-theme='midnight'] .from-sky-100,
+html[data-theme='midnight'] .via-cyan-50,
+html[data-theme='midnight'] .to-white {
+  --tw-gradient-from: #13253f var(--tw-gradient-from-position) !important;
+  --tw-gradient-via: #10243d var(--tw-gradient-via-position) !important;
+  --tw-gradient-to: #0f172a var(--tw-gradient-to-position) !important;
+}
+
+html[data-theme='midnight'] .via-white {
+  --tw-gradient-via: #10243d var(--tw-gradient-via-position) !important;
+}
+
+html[data-theme='midnight'] .to-cyan-50 {
+  --tw-gradient-to: #0f172a var(--tw-gradient-to-position) !important;
+}
+
+html[data-theme='midnight'] .bg-gradient-to-br.from-sky-100.via-white.to-cyan-50,
+html[data-theme='midnight'] .bg-gradient-to-br.from-sky-100.via-cyan-50.to-white {
+  background-image: linear-gradient(to bottom right, #13253f, #10243d, #0f172a) !important;
+}
+
+html[data-theme='midnight'] a {
+  color: inherit;
 }
 
 .btn {
@@ -23,6 +169,106 @@ body {
   @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
 }
 
+html[data-theme='midnight'] .btn-secondary {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .btn-secondary:hover {
+  background-color: #374151 !important;
+}
+
 .input {
   @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none;
+}
+
+html[data-theme='midnight'] .input,
+html[data-theme='midnight'] input,
+html[data-theme='midnight'] textarea,
+html[data-theme='midnight'] select {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] input::placeholder,
+html[data-theme='midnight'] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.markdown-content {
+  @apply text-gray-800 leading-7;
+}
+
+.markdown-content h1 {
+  @apply mb-4 mt-8 text-3xl font-bold;
+}
+
+.markdown-content h2 {
+  @apply mb-3 mt-6 text-2xl font-semibold;
+}
+
+.markdown-content h3 {
+  @apply mb-2 mt-5 text-xl font-semibold;
+}
+
+.markdown-content p {
+  @apply mb-4;
+}
+
+.markdown-content ul {
+  @apply mb-4 list-disc pl-6;
+}
+
+.markdown-content ol {
+  @apply mb-4 list-decimal pl-6;
+}
+
+.markdown-content blockquote {
+  @apply mb-4 border-l-4 border-blue-300 pl-4 italic text-gray-600;
+}
+
+.markdown-content code {
+  @apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm;
+}
+
+.markdown-content pre {
+  @apply mb-4 overflow-x-auto rounded-lg bg-gray-900 p-4 text-gray-100;
+}
+
+.markdown-content pre code {
+  @apply bg-transparent p-0 text-inherit;
+}
+
+.markdown-content a {
+  @apply text-blue-600 underline;
+}
+
+html[data-theme='midnight'] .markdown-content,
+html[data-theme='midnight'] .markdown-content p,
+html[data-theme='midnight'] .markdown-content li,
+html[data-theme='midnight'] .markdown-content h1,
+html[data-theme='midnight'] .markdown-content h2,
+html[data-theme='midnight'] .markdown-content h3,
+html[data-theme='midnight'] .markdown-content strong {
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .markdown-content code {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+html[data-theme='midnight'] .markdown-content pre {
+  background-color: #020617 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .markdown-content blockquote {
+  border-color: #60a5fa !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .markdown-content a {
+  color: #93c5fd !important;
 }

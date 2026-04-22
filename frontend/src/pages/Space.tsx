@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { spacesApi, pagesApi, Space, Page } from '../api/client';
 
@@ -25,7 +25,7 @@ export default function SpacePage() {
       setSpace(spaceRes.data);
       setPages(buildTree(pagesRes.data));
     } catch (err) {
-      console.error('Failed to load space:', err);
+      console.error('Bereich konnte nicht geladen werden:', err);
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function SpacePage() {
             to={`/spaces/${key}/pages/${node.slug}`}
             className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-2"
           >
-            <span className="text-gray-400">{depth === 0 ? '📄' : '📄'}</span>
+            <span className="text-gray-400">•</span>
             {node.title}
           </Link>
           {node.children.length > 0 && renderTree(node.children, depth + 1)}
@@ -69,15 +69,14 @@ export default function SpacePage() {
   );
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Wird geladen...</div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="flex items-center px-6 py-4">
-          <Link to="/" className="text-gray-500 hover:text-gray-700 mr-4">← Dashboard</Link>
+          <Link to="/" className="text-gray-500 hover:text-gray-700 mr-4">← Startseite</Link>
           <div>
             <h1 className="text-xl font-bold">{space?.name}</h1>
             <p className="text-sm text-gray-500">{space?.description}</p>
@@ -86,35 +85,33 @@ export default function SpacePage() {
       </header>
 
       <div className="flex">
-        {/* Sidebar - Page Tree */}
         <aside className="w-64 bg-white border-r border-gray-200 min-h-screen p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-700">Pages</h3>
+            <h3 className="font-semibold text-gray-700">Seiten</h3>
             <Link
               to={`/spaces/${key}/pages/new`}
               className="text-sm bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
             >
-              + New
+              + Neu
             </Link>
           </div>
           <div className="text-sm">
             {pages.length === 0 ? (
-              <p className="text-gray-500">No pages yet</p>
+              <p className="text-gray-500">Noch keine Seiten vorhanden</p>
             ) : (
               renderTree(pages)
             )}
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 p-8">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <h2 className="text-2xl font-bold text-gray-700 mb-4">Welcome to {space?.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-700 mb-4">Willkommen in {space?.name}</h2>
               <p className="text-gray-500 mb-6">{space?.description}</p>
               <div className="text-sm text-gray-400">
-                <p>Owner: {space?.owner?.name}</p>
-                <p>Visibility: {space?.visibility}</p>
+                <p>Besitzer: {space?.owner?.name}</p>
+                <p>Sichtbarkeit: {space?.visibility}</p>
               </div>
             </div>
           </div>

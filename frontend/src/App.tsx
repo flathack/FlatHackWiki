@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './context/auth.store';
 import { ToastProvider } from './context/toast.context';
+import ThemeSelector from './components/ThemeSelector';
+import { useThemeStore } from './context/theme.store';
 import LoginPage from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import SpacePage from './pages/Space';
@@ -16,8 +19,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const theme = useThemeStore((state) => state.theme);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
   return (
     <ToastProvider>
+      <ThemeSelector />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/search" element={<Search />} />

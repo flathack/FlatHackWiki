@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { db } from '../../config/database.js';
 import { config } from '../../config/index.js';
 import { ConflictError, UnauthorizedError, NotFoundError } from '../../core/errors/app.errors.js';
-import type { RegisterInput, LoginInput } from './dto/auth.dto.js';
+import type { RegisterInput, LoginInput, UpdateMeInput } from './dto/auth.dto.js';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -28,6 +28,9 @@ export class AuthService {
         profile: {
           create: {
             displayName: input.name,
+            dashboardSubtitle:
+              'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
+            showDashboardSubtitle: true,
           },
         },
       },
@@ -46,6 +49,11 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        displayName: user.name,
+        dashboardSubtitle:
+          'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
+        showDashboardSubtitle: true,
+        globalRole: 'USER',
       },
       ...tokens,
     };
@@ -71,6 +79,7 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
+    const globalRole = await this.getGlobalRole(user.id);
 
     await db.userSession.create({
       data: {
@@ -87,6 +96,8 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        displayName: user.name,
+        globalRole,
       },
       ...tokens,
     };
@@ -138,9 +149,70 @@ export class AuthService {
     const globalRole = await this.getGlobalRole(userId);
 
     return {
-      ...user,
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      status: user.status,
+      createdAt: user.createdAt,
+      profile: user.profile,
+      displayName: user.profile?.displayName || user.name,
+      dashboardSubtitle:
+        user.profile?.dashboardSubtitle ||
+        'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
+      showDashboardSubtitle: user.profile?.showDashboardSubtitle ?? true,
       globalRole,
     };
+  }
+
+  async updateMe(userId: string, input: UpdateMeInput) {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        profile: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+
+    const displayName = input.displayName?.trim();
+    const dashboardSubtitle =
+      input.dashboardSubtitle === undefined
+        ? undefined
+        : input.dashboardSubtitle === null
+          ? null
+          : input.dashboardSubtitle.trim();
+
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        ...(displayName ? { name: displayName } : {}),
+        profile: {
+          upsert: {
+            create: {
+              displayName: displayName || user.name,
+              dashboardSubtitle:
+                dashboardSubtitle === undefined
+                  ? 'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.'
+                  : dashboardSubtitle,
+              showDashboardSubtitle: input.showDashboardSubtitle ?? true,
+            },
+            update: {
+              ...(displayName ? { displayName } : {}),
+              ...(dashboardSubtitle !== undefined ? { dashboardSubtitle } : {}),
+              ...(input.showDashboardSubtitle !== undefined
+                ? { showDashboardSubtitle: input.showDashboardSubtitle }
+                : {}),
+            },
+          },
+        },
+      },
+    });
+
+    return this.getMe(userId);
   }
 
   async requestPasswordReset(email: string) {

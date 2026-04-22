@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 
 interface Comment {
@@ -19,14 +19,16 @@ export default function Comments({ pageId, currentUserId }: CommentsProps) {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadComments(); }, [pageId]);
+  useEffect(() => {
+    loadComments();
+  }, [pageId]);
 
   const loadComments = async () => {
     try {
       const { data } = await api.get(`/pages/${pageId}/comments`);
       setComments(data);
     } catch (err) {
-      console.error('Failed to load comments:', err);
+      console.error('Kommentare konnten nicht geladen werden:', err);
     } finally {
       setLoading(false);
     }
@@ -40,42 +42,42 @@ export default function Comments({ pageId, currentUserId }: CommentsProps) {
       setComments([...comments, data]);
       setNewComment('');
     } catch (err) {
-      console.error('Failed to add comment:', err);
+      console.error('Kommentar konnte nicht hinzugefügt werden:', err);
     }
   };
 
   const handleDelete = async (commentId: string) => {
-    if (!confirm('Delete this comment?')) return;
+    if (!confirm('Diesen Kommentar wirklich löschen?')) return;
     try {
       await api.delete(`/pages/${pageId}/comments/${commentId}`);
       setComments(comments.filter((c) => c.id !== commentId));
     } catch (err) {
-      console.error('Failed to delete comment:', err);
+      console.error('Kommentar konnte nicht gelöscht werden:', err);
     }
   };
 
-  if (loading) return <div className="text-gray-500">Loading comments...</div>;
+  if (loading) return <div className="text-gray-500">Kommentare werden geladen...</div>;
 
   return (
     <div className="mt-8 border-t border-gray-200 pt-8">
-      <h3 className="text-lg font-semibold mb-4">Comments ({comments.length})</h3>
+      <h3 className="text-lg font-semibold mb-4">Kommentare ({comments.length})</h3>
       <form onSubmit={handleSubmit} className="mb-6">
-        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} className="input mb-2" rows={3} placeholder="Write a comment..." />
-        <button type="submit" className="btn btn-primary text-sm">Add Comment</button>
+        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} className="input mb-2" rows={3} placeholder="Kommentar schreiben..." />
+        <button type="submit" className="btn btn-primary text-sm">Kommentar hinzufügen</button>
       </form>
       <div className="space-y-4">
         {comments.length === 0 ? (
-          <p className="text-gray-500 text-sm">No comments yet.</p>
+          <p className="text-gray-500 text-sm">Noch keine Kommentare vorhanden.</p>
         ) : (
           comments.map((comment) => (
             <div key={comment.id} className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="font-medium text-sm">{comment.user?.name || 'Unknown'}</span>
-                  <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                  <span className="font-medium text-sm">{comment.user?.name || 'Unbekannt'}</span>
+                  <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString('de-DE')}</span>
                 </div>
                 {comment.user.id === currentUserId && (
-                  <button onClick={() => handleDelete(comment.id)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                  <button onClick={() => handleDelete(comment.id)} className="text-red-600 hover:text-red-800 text-sm">Löschen</button>
                 )}
               </div>
               <p className="mt-2 text-gray-700">{comment.content}</p>

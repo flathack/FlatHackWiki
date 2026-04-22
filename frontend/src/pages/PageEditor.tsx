@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { pagesApi } from '../api/client';
 import RichTextEditor from '../components/editor/RichTextEditor';
@@ -31,7 +31,7 @@ export default function PageEditor() {
       setTitle(data.title);
       setContent(data.content || '');
     } catch (err) {
-      console.error('Failed to load page:', err);
+      console.error('Seite konnte nicht geladen werden:', err);
     } finally {
       setLoading(false);
     }
@@ -39,13 +39,13 @@ export default function PageEditor() {
 
   const handleSave = async () => {
     if (!title.trim()) {
-      setError('Title is required');
+      setError('Ein Titel ist erforderlich');
       return;
     }
     setError('');
     setSaving(true);
 
-    const pageSlug = isNew 
+    const pageSlug = isNew
       ? title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
       : slug!;
 
@@ -57,7 +57,7 @@ export default function PageEditor() {
       }
       navigate(`/spaces/${key}/pages/${pageSlug}`);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to save page');
+      setError(err.response?.data?.error?.message || 'Seite konnte nicht gespeichert werden');
     } finally {
       setSaving(false);
     }
@@ -66,7 +66,7 @@ export default function PageEditor() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">Wird geladen...</div>
       </div>
     );
   }
@@ -80,14 +80,14 @@ export default function PageEditor() {
               ← {key}
             </Link>
             <span className="text-gray-300">/</span>
-            <span className="font-medium">{isNew ? 'New Page' : `Edit: ${slug}`}</span>
+            <span className="font-medium">{isNew ? 'Neue Seite' : `Bearbeiten: ${slug}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => navigate(`/spaces/${key}`)} className="btn btn-secondary">
-              Cancel
+              Abbrechen
             </button>
             <button onClick={handleSave} disabled={saving} className="btn btn-primary">
-              {saving ? 'Saving...' : 'Save'}
+              {saving ? 'Speichert...' : 'Speichern'}
             </button>
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function PageEditor() {
 
           {isNew && templateId === undefined && (
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="font-medium mb-3">Choose a template (optional)</h3>
+              <h3 className="font-medium mb-3">Vorlage wählen (optional)</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {PAGE_TEMPLATES.map((t) => (
                   <button
@@ -121,27 +121,28 @@ export default function PageEditor() {
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Titel</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="input text-xl font-bold"
-              placeholder="Page title"
+              placeholder="Seitentitel"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Inhalt (.md)</label>
             <RichTextEditor
               value={content}
               onChange={setContent}
-              placeholder="Start writing..."
+              placeholder="Beginne mit dem Schreiben in Markdown (.md)..."
             />
           </div>
 
           <div className="flex gap-4 text-sm text-gray-500">
-            <span>Markdown supported: **bold**, *italic*, # headers</span>
+            <span>Gespeichertes Format: Markdown (.md)</span>
+            <span>Unterstützt: **fett**, *kursiv*, # Überschriften, Listen, Codeblöcke, Links</span>
           </div>
         </div>
       </main>

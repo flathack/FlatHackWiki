@@ -75,6 +75,18 @@ class AuthController {
       next(error);
     }
   }
+
+  async updateMe(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.updateMe(req.user!.id, req.body);
+      res.json({
+        message: 'Profile updated successfully',
+        ...result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const authController = new AuthController();

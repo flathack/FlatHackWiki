@@ -1,6 +1,6 @@
-# FlatHackWiki
+# FlatHacksWiki
 
-Enterprise Wiki System - Confluence Alternative
+Enterprise Wiki System - FlatHacksWiki
 
 ## Features
 
@@ -35,8 +35,8 @@ open http://localhost
 
 After creating a GitHub repository, push this project to the `main` branch. The workflow in `.github/workflows/docker-publish.yml` will then publish:
 
-- `ghcr.io/<your-github-user-or-org>/openclaw-wiki-backend:latest`
-- `ghcr.io/<your-github-user-or-org>/openclaw-wiki-frontend:latest`
+- `ghcr.io/<your-github-user-or-org>/flathackswiki-backend:latest`
+- `ghcr.io/<your-github-user-or-org>/flathackswiki-frontend:latest`
 
 You can also trigger the workflow manually via GitHub Actions.
 
@@ -72,11 +72,11 @@ All accounts use password: `Password123`
 
 | Email | Role |
 |-------|------|
-| admin@openclaw.wiki | SUPER_ADMIN |
-| sarah.chen@openclaw.wiki | SYSTEM_ADMIN |
-| marcus.johnson@openclaw.wiki | EDITOR |
-| elena.rodriguez@openclaw.wiki | AUTHOR |
-| alex.thompson@openclaw.wiki | VIEWER |
+| admin@flathacks.wiki | SUPER_ADMIN |
+| sarah.chen@flathacks.wiki | SYSTEM_ADMIN |
+| marcus.johnson@flathacks.wiki | EDITOR |
+| elena.rodriguez@flathacks.wiki | AUTHOR |
+| alex.thompson@flathacks.wiki | VIEWER |
 
 ## Tech Stack
 

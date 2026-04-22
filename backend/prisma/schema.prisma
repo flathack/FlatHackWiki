@@ -47,11 +47,13 @@ enum UserStatus {
 }
 
 model UserProfile {
-  userId      String  @id @map("user_id")
-  displayName String? @map("display_name") @db.VarChar(255)
-  avatarUrl   String? @map("avatar_url") @db.VarChar(500)
-  timezone    String  @default("UTC") @db.VarChar(50)
-  locale      String  @default("en") @db.VarChar(10)
+  userId                 String  @id @map("user_id")
+  displayName            String? @map("display_name") @db.VarChar(255)
+  avatarUrl              String? @map("avatar_url") @db.VarChar(500)
+  timezone               String  @default("UTC") @db.VarChar(50)
+  locale                 String  @default("en") @db.VarChar(10)
+  dashboardSubtitle      String? @map("dashboard_subtitle") @db.Text
+  showDashboardSubtitle  Boolean @default(true) @map("show_dashboard_subtitle")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

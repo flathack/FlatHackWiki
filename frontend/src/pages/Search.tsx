@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+﻿import { useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { searchApi } from '../api/client';
@@ -32,7 +32,7 @@ export default function Search() {
       const { data } = await searchApi.search({ q: query });
       setResults(data.results || []);
     } catch (err) {
-      console.error('Search failed:', err);
+      console.error('Suche fehlgeschlagen:', err);
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export default function Search() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-6 py-4">
-          <h1 className="text-xl font-bold mb-4">Search</h1>
+          <h1 className="text-xl font-bold mb-4">Suche</h1>
           <div className="flex gap-2">
             <input
               type="text"
@@ -50,13 +50,13 @@ export default function Search() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && window.location.assign(`/search?q=${encodeURIComponent(searchQuery)}`)}
               className="input flex-1"
-              placeholder="Search pages, content, spaces..."
+              placeholder="Seiten, Inhalte und Bereiche durchsuchen..."
             />
             <button
               onClick={() => window.location.assign(`/search?q=${encodeURIComponent(searchQuery)}`)}
               className="btn btn-primary"
             >
-              Search
+              Suchen
             </button>
           </div>
         </div>
@@ -64,14 +64,14 @@ export default function Search() {
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Searching...</div>
+          <div className="text-center py-12 text-gray-500">Suche läuft...</div>
         ) : results.length === 0 && query ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No results found for "{query}"</p>
+            <p className="text-gray-500">Keine Ergebnisse für "{query}" gefunden</p>
           </div>
         ) : results.length > 0 ? (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500 mb-4">{results.length} results found</p>
+            <p className="text-sm text-gray-500 mb-4">{results.length} Ergebnisse gefunden</p>
             {results.map((result) => (
               <Link
                 key={`${result.type}-${result.id}`}
@@ -87,14 +87,14 @@ export default function Search() {
                   <span className="text-sm text-gray-400">{Math.round(result.score * 100)}%</span>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
-                  {result.space.name} • {result.author?.name || 'Unknown'} • {new Date(result.updatedAt).toLocaleDateString()}
+                  {result.space.name} • {result.author?.name || 'Unbekannt'} • {new Date(result.updatedAt).toLocaleDateString('de-DE')}
                 </div>
               </Link>
             ))}
           </div>
         ) : (
           <div className="text-center py-12 text-gray-500">
-            <p>Enter a search query to find pages, spaces, and more.</p>
+            <p>Gib einen Suchbegriff ein, um Seiten, Bereiche und mehr zu finden.</p>
           </div>
         )}
       </main>

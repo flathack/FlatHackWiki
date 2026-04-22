@@ -4,21 +4,21 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-wikiuser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wikipass}
-      POSTGRES_DB: ${POSTGRES_DB:-openclaw_wiki}
+      POSTGRES_DB: ${POSTGRES_DB:-flathacks_wiki}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wikiuser} -d ${POSTGRES_DB:-openclaw_wiki}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wikiuser} -d ${POSTGRES_DB:-flathacks_wiki}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   api:
-    image: ${BACKEND_IMAGE:-ghcr.io/owner/openclaw-wiki-backend:latest}
+    image: ${BACKEND_IMAGE:-ghcr.io/owner/flathackswiki-backend:latest}
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://wikiuser:wikipass@postgres:5432/openclaw_wiki?schema=public}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://wikiuser:wikipass@postgres:5432/flathacks_wiki?schema=public}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
@@ -37,7 +37,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/owner/openclaw-wiki-frontend:latest}
+    image: ${FRONTEND_IMAGE:-ghcr.io/owner/flathackswiki-frontend:latest}
     ports:
       - "${FRONTEND_PORT:-80}:80"
     depends_on:

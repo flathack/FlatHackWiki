@@ -8,6 +8,7 @@ import {
   loginSchema,
   refreshSchema,
   passwordResetSchema,
+  updateMeSchema,
 } from './dto/auth.dto.js';
 
 const router = Router();
@@ -19,5 +20,6 @@ router.post('/refresh', validate(refreshSchema), authController.refresh);
 router.post('/password-reset', authRateLimiter, validate(passwordResetSchema), authController.requestPasswordReset);
 
 router.get('/me', authenticate, authController.me);
+router.patch('/me', authenticate, validate(updateMeSchema), authController.updateMe);
 
 export default router;

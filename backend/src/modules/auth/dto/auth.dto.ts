@@ -41,8 +41,17 @@ export const refreshSchema = z.object({
   }),
 });
 
+export const updateMeSchema = z.object({
+  body: z.object({
+    displayName: z.string().trim().min(1, 'Display name is required').max(255).optional(),
+    dashboardSubtitle: z.string().trim().max(500).nullable().optional(),
+    showDashboardSubtitle: z.boolean().optional(),
+  }),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>['body'];
 export type LoginInput = z.infer<typeof loginSchema>['body'];
 export type PasswordResetInput = z.infer<typeof passwordResetSchema>['body'];
 export type PasswordSetInput = z.infer<typeof passwordSetSchema>['body'];
 export type RefreshInput = z.infer<typeof refreshSchema>['body'];
+export type UpdateMeInput = z.infer<typeof updateMeSchema>['body'];

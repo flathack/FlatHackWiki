@@ -1,17 +1,17 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: openclaw-wiki-db
+    container_name: flathackswiki-db
     environment:
       POSTGRES_USER: wikiuser
       POSTGRES_PASSWORD: wikipass
-      POSTGRES_DB: openclaw_wiki
+      POSTGRES_DB: flathacks_wiki
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wikiuser -d openclaw_wiki"]
+      test: ["CMD-SHELL", "pg_isready -U wikiuser -d flathacks_wiki"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,9 +21,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: builder
-    container_name: openclaw-wiki-api
+    container_name: flathackswiki-api
     environment:
-      DATABASE_URL: postgresql://wikiuser:wikipass@postgres:5432/openclaw_wiki?schema=public
+      DATABASE_URL: postgresql://wikiuser:wikipass@postgres:5432/flathacks_wiki?schema=public
       JWT_SECRET: change-this-super-secret-jwt-key-in-production-minimum-32-chars
       JWT_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
@@ -48,7 +48,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: openclaw-wiki-ui
+    container_name: flathackswiki-ui
     ports:
       - "80:80"
     depends_on:

@@ -1,109 +1,109 @@
-export const PAGE_TEMPLATES = [
+﻿export const PAGE_TEMPLATES = [
   {
     id: 'blank',
-    name: 'Blank Page',
-    description: 'Start with a blank page',
+    name: 'Leere Seite',
+    description: 'Mit einer leeren Seite beginnen',
     icon: '📄',
     content: '',
   },
   {
     id: 'documentation',
-    name: 'Documentation',
-    description: 'Technical documentation page',
+    name: 'Dokumentation',
+    description: 'Technische Dokumentationsseite',
     icon: '📝',
-    content: `# Page Title
+    content: `# Seitentitel
 
-## Overview
-Brief description of this topic.
+## Überblick
+Kurze Beschreibung dieses Themas.
 
 ## Details
-Add your detailed content here.
+Füge hier deine ausführlichen Inhalte ein.
 
-## Related
+## Verwandt
 - [Link 1](#)
 - [Link 2](#)
 
-## See Also
-- [Related Page](#)
+## Siehe auch
+- [Verwandte Seite](#)
 `,
   },
   {
     id: 'meeting-notes',
-    name: 'Meeting Notes',
-    description: 'Record meeting discussions',
+    name: 'Besprechungsnotizen',
+    description: 'Besprechungen und Ergebnisse festhalten',
     icon: '📋',
-    content: `# Meeting Notes - [Date]
+    content: `# Besprechungsnotizen - [Datum]
 
-## Attendees
+## Teilnehmer
 - Person 1
 - Person 2
 
-## Agenda
-1. Topic 1
-2. Topic 2
+## Tagesordnung
+1. Thema 1
+2. Thema 2
 
-## Discussion
-### Topic 1
-Notes...
+## Besprechung
+### Thema 1
+Notizen...
 
-### Topic 2
-Notes...
+### Thema 2
+Notizen...
 
-## Action Items
-- [ ] Task 1 - @person
-- [ ] Task 2 - @person
+## Aufgaben
+- [ ] Aufgabe 1 - @person
+- [ ] Aufgabe 2 - @person
 `,
   },
   {
     id: 'how-to',
-    name: 'How-To Guide',
-    description: 'Step-by-step instructions',
+    name: 'Anleitung',
+    description: 'Schritt-für-Schritt-Anleitung',
     icon: '🔧',
-    content: `# How To: [Task Name]
+    content: `# Anleitung: [Aufgabenname]
 
-## Introduction
-Brief intro to what this guide covers.
+## Einleitung
+Kurze Einführung in den Inhalt dieser Anleitung.
 
-## Prerequisites
-- Item 1
-- Item 2
+## Voraussetzungen
+- Punkt 1
+- Punkt 2
 
-## Steps
-### Step 1: [Title]
-Description...
+## Schritte
+### Schritt 1: [Titel]
+Beschreibung...
 
-### Step 2: [Title]
-Description...
+### Schritt 2: [Titel]
+Beschreibung...
 
-## Troubleshooting
-| Problem | Solution |
-|---------|-----------|
-| Issue 1 | Fix 1 |
+## Fehlerbehebung
+| Problem | Lösung |
+|---------|--------|
+| Problem 1 | Lösung 1 |
 `,
   },
   {
     id: 'decision',
-    name: 'Decision Record',
-    description: 'Document decisions',
+    name: 'Entscheidungsprotokoll',
+    description: 'Entscheidungen dokumentieren',
     icon: '✅',
-    content: `# Decision Record: [Title]
+    content: `# Entscheidungsprotokoll: [Titel]
 
 ## Status
-Proposed | Accepted
+Vorgeschlagen | Akzeptiert
 
-## Context
-What is the issue?
+## Kontext
+Worum geht es?
 
-## Decision
-What is the decision?
+## Entscheidung
+Wie lautet die Entscheidung?
 
-## Rationale
-Why is this appropriate?
+## Begründung
+Warum ist das sinnvoll?
 
-## Consequences
-What becomes easier or more difficult?
+## Folgen
+Was wird einfacher oder schwieriger?
 `,
   },
 ];
 
-export const getTemplate = (id: string) => PAGE_TEMPLATES.find(t => t.id === id);
+export const getTemplate = (id: string) => PAGE_TEMPLATES.find((t) => t.id === id);

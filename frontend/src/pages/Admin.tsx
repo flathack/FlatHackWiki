@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../context/auth.store';
 
@@ -42,9 +42,9 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Access Denied</h2>
-          <p className="text-gray-500">You need admin privileges to access this page.</p>
-          <Link to="/" className="text-blue-600 mt-4 block">← Back to Dashboard</Link>
+          <h2 className="text-xl font-bold text-red-600 mb-2">Zugriff verweigert</h2>
+          <p className="text-gray-500">Du benötigst Administratorrechte, um diese Seite aufzurufen.</p>
+          <Link to="/" className="text-blue-600 mt-4 block">← Zurück zur Startseite</Link>
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export default function AdminPage() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Link to="/" className="text-gray-500 hover:text-gray-700">← Dashboard</Link>
+            <Link to="/" className="text-gray-500 hover:text-gray-700">← Startseite</Link>
             <span className="text-gray-300">/</span>
             <span className="font-medium">Admin</span>
           </div>
@@ -65,7 +65,6 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold mb-6">Administration</h1>
 
-        {/* Tabs */}
         <div className="flex gap-4 border-b border-gray-200 mb-6">
           <button
             onClick={() => setActiveTab('users')}
@@ -75,7 +74,7 @@ export default function AdminPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Users
+            Benutzer
           </button>
           <button
             onClick={() => setActiveTab('audit')}
@@ -85,21 +84,22 @@ export default function AdminPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Audit Log
+            Audit-Protokoll
           </button>
         </div>
 
-        {/* Content */}
-        {activeTab === 'users' ? (
+        {loading ? (
+          <div className="text-gray-500">Wird geladen...</div>
+        ) : activeTab === 'users' ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">E-Mail</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rolle</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktionen</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -120,15 +120,15 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
-                      <button className="text-red-600 hover:text-red-800">Delete</button>
+                      <button className="text-blue-600 hover:text-blue-800 mr-3">Bearbeiten</button>
+                      <button className="text-red-600 hover:text-red-800">Löschen</button>
                     </td>
                   </tr>
                 ))}
                 {users.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                      No users found
+                      Keine Benutzer gefunden
                     </td>
                   </tr>
                 )}
@@ -140,10 +140,10 @@ export default function AdminPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">When</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Resource</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zeitpunkt</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Benutzer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktion</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ressource</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
                 </tr>
               </thead>
@@ -151,7 +151,7 @@ export default function AdminPage() {
                 {auditLogs.map((log) => (
                   <tr key={log.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(log.createdAt).toLocaleString()}
+                      {new Date(log.createdAt).toLocaleString('de-DE')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{log.user?.name || 'System'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{log.action}</td>
@@ -164,7 +164,7 @@ export default function AdminPage() {
                 {auditLogs.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                      No audit logs yet
+                      Noch keine Audit-Einträge vorhanden
                     </td>
                   </tr>
                 )}

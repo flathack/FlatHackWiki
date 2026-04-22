@@ -29,7 +29,7 @@ async function main() {
 
   const superAdmin = await prisma.user.create({
     data: {
-      email: 'admin@openclaw.wiki',
+      email: 'admin@flathacks.wiki',
       passwordHash,
       name: 'System Administrator',
       status: 'ACTIVE',
@@ -46,7 +46,7 @@ async function main() {
 
   const spaceAdmin = await prisma.user.create({
     data: {
-      email: 'sarah.chen@openclaw.wiki',
+      email: 'sarah.chen@flathacks.wiki',
       passwordHash,
       name: 'Sarah Chen',
       status: 'ACTIVE',
@@ -63,7 +63,7 @@ async function main() {
 
   const editor = await prisma.user.create({
     data: {
-      email: 'marcus.johnson@openclaw.wiki',
+      email: 'marcus.johnson@flathacks.wiki',
       passwordHash,
       name: 'Marcus Johnson',
       status: 'ACTIVE',
@@ -80,7 +80,7 @@ async function main() {
 
   const author = await prisma.user.create({
     data: {
-      email: 'elena.rodriguez@openclaw.wiki',
+      email: 'elena.rodriguez@flathacks.wiki',
       passwordHash,
       name: 'Elena Rodriguez',
       status: 'ACTIVE',
@@ -97,7 +97,7 @@ async function main() {
 
   const viewer = await prisma.user.create({
     data: {
-      email: 'alex.thompson@openclaw.wiki',
+      email: 'alex.thompson@flathacks.wiki',
       passwordHash,
       name: 'Alex Thompson',
       status: 'ACTIVE',
@@ -203,7 +203,7 @@ Welcome to the Engineering Wiki! This guide will help you set up your developmen
 
 \`\`\`bash
 # Clone the repository
-git clone https://github.com/openclaw/wiki.git
+git clone https://github.com/flathack/FlatHackWiki.git
 
 # Install dependencies
 npm install
@@ -232,7 +232,7 @@ npm run dev
 
 ## System Design
 
-The OpenClaw Wiki is built with a modern, scalable architecture.
+FlatHacksWiki is built with a modern, scalable architecture.
 
 ### Frontend
 - React 18 with TypeScript
@@ -424,11 +424,11 @@ npm run db:seed
 
   console.log('\n✅ Database seeded successfully!\n');
   console.log('Demo accounts (all use password: Password123):');
-  console.log('  admin@openclaw.wiki        - SUPER_ADMIN');
-  console.log('  sarah.chen@openclaw.wiki   - SYSTEM_ADMIN');
-  console.log('  marcus.johnson@openclaw.wiki - EDITOR');
-  console.log('  elena.rodriguez@openclaw.wiki - AUTHOR');
-  console.log('  alex.thompson@openclaw.wiki - VIEWER\n');
+  console.log('  admin@flathacks.wiki          - SUPER_ADMIN');
+  console.log('  sarah.chen@flathacks.wiki     - SYSTEM_ADMIN');
+  console.log('  marcus.johnson@flathacks.wiki - EDITOR');
+  console.log('  elena.rodriguez@flathacks.wiki - AUTHOR');
+  console.log('  alex.thompson@flathacks.wiki  - VIEWER\n');
 }
 
 main()

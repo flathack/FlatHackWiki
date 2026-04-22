@@ -10,7 +10,7 @@ async function main() {
     console.log('[DB] Connected to PostgreSQL');
 
     app.listen(PORT, () => {
-      console.log(`[SERVER] OpenClaw Wiki API running on port ${PORT}`);
+      console.log(`[SERVER] FlatHacksWiki API running on port ${PORT}`);
       console.log(`[SERVER] Environment: ${config.APP_ENV}`);
     });
   } catch (error) {

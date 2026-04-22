@@ -28,6 +28,23 @@ api.interceptors.response.use(
 
 export interface LoginRequest { email: string; password: string }
 export interface RegisterRequest { email: string; password: string; name: string }
+export interface MeResponse {
+  id: string;
+  email: string;
+  name: string;
+  displayName: string;
+  globalRole: string;
+  dashboardSubtitle: string | null;
+  showDashboardSubtitle: boolean;
+  profile?: {
+    displayName?: string | null;
+    dashboardSubtitle?: string | null;
+    showDashboardSubtitle?: boolean;
+    avatarUrl?: string | null;
+    timezone?: string;
+    locale?: string;
+  } | null;
+}
 export interface Space { id: string; name: string; key: string; description?: string; visibility: string; owner: { id: string; name: string } }
 export interface Page { id: string; title: string; slug: string; content?: string; status: string; parentId?: string | null; createdAt: string; updatedAt: string; creator?: { id: string; name: string } }
 
@@ -35,7 +52,12 @@ export const authApi = {
   login: (data: LoginRequest) => api.post<{ accessToken: string; refreshToken: string; user: any }>('/auth/login', data),
   register: (data: RegisterRequest) => api.post('/auth/register', data),
   logout: (refreshToken: string) => api.post('/auth/logout', { refreshToken }),
-  me: () => api.get('/auth/me'),
+  me: () => api.get<MeResponse>('/auth/me'),
+  updateMe: (data: {
+    displayName?: string;
+    dashboardSubtitle?: string | null;
+    showDashboardSubtitle?: boolean;
+  }) => api.patch<MeResponse & { message: string }>('/auth/me', data),
 };
 
 export const spacesApi = {

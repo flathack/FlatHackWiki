@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/client';
 import { useAuthStore } from '../context/auth.store';
@@ -22,27 +22,29 @@ export default function LoginPage() {
       if (isRegister) {
         const { data } = await authApi.register({ email, password, name });
         setAuth({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
+        const me = await authApi.me();
+        setAuth({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: me.data });
       } else {
         const { data } = await authApi.login({ email, password });
         setAuth({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
+        const me = await authApi.me();
+        setAuth({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: me.data });
       }
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'An error occurred');
+      setError(err.response?.data?.error?.message || 'Ein Fehler ist aufgetreten');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          OpenClaw Wiki
-        </h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">FlatHacksWiki</h1>
 
         <h2 className="text-xl font-semibold mb-4">
-          {isRegister ? 'Create Account' : 'Sign In'}
+          {isRegister ? 'Konto erstellen' : 'Anmelden'}
         </h2>
 
         {error && (
@@ -60,26 +62,26 @@ export default function LoginPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="input"
-                placeholder="Your name"
+                placeholder="Dein Name"
                 required={isRegister}
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">E-Mail</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
-              placeholder="you@example.com"
+              placeholder="du@example.com"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
             <input
               type="password"
               value={password}
@@ -91,7 +93,7 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-            {loading ? 'Please wait...' : isRegister ? 'Register' : 'Sign In'}
+            {loading ? 'Bitte warten...' : isRegister ? 'Registrieren' : 'Anmelden'}
           </button>
         </form>
 
@@ -100,7 +102,7 @@ export default function LoginPage() {
             onClick={() => setIsRegister(!isRegister)}
             className="text-blue-600 hover:text-blue-800 text-sm"
           >
-            {isRegister ? 'Already have an account? Sign in' : "Don't have an account? Register"}
+            {isRegister ? 'Du hast bereits ein Konto? Jetzt anmelden' : 'Noch kein Konto? Jetzt registrieren'}
           </button>
         </div>
       </div>

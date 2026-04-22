@@ -5,6 +5,9 @@ interface User {
   id: string;
   email: string;
   name: string;
+  displayName?: string;
+  dashboardSubtitle?: string | null;
+  showDashboardSubtitle?: boolean;
   globalRole: string;
 }
 
