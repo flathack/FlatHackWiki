@@ -27,15 +27,15 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/dist ./dist
+COPY docker-start.sh ./docker-start.sh
 
 RUN mkdir -p uploads
+RUN chmod +x ./docker-start.sh
 
 EXPOSE 3001
 
-CMD ["npm", "start"]
+CMD ["./docker-start.sh"]

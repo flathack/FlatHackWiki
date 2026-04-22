@@ -35,8 +35,8 @@ open http://localhost
 
 After creating a GitHub repository, push this project to the `main` branch. The workflow in `.github/workflows/docker-publish.yml` will then publish:
 
-- `ghcr.io/<your-github-user-or-org>/flathackswiki-backend:latest`
-- `ghcr.io/<your-github-user-or-org>/flathackswiki-frontend:latest`
+- `ghcr.io/<your-github-user-or-org>/openclaw-wiki-backend:latest`
+- `ghcr.io/<your-github-user-or-org>/openclaw-wiki-frontend:latest`
 
 You can also trigger the workflow manually via GitHub Actions.
 
@@ -65,6 +65,29 @@ npm run dev
 - `docker-compose.ghcr.yml` is prepared for running the published images from GHCR.
 
 For a GHCR deployment, set at minimum `JWT_SECRET` and optionally override `BACKEND_IMAGE` / `FRONTEND_IMAGE`.
+
+### Portainer / GHCR Deployment
+
+For Portainer, use `docker-compose.ghcr.yml` as your stack file.
+
+Important environment variables:
+
+- `BACKEND_IMAGE=ghcr.io/<your-user-or-org>/openclaw-wiki-backend:latest`
+- `FRONTEND_IMAGE=ghcr.io/<your-user-or-org>/openclaw-wiki-frontend:latest`
+- `JWT_SECRET=<long-random-secret>`
+- `ADMIN_EMAIL=<your-admin-email>`
+- `ADMIN_PASSWORD=<strong-password>`
+- `ADMIN_NAME=<display-name>`
+
+On container start, the backend now:
+
+1. applies the Prisma schema with `prisma db push`
+2. creates the configured admin user if it does not already exist
+3. ensures that this user has the `SUPER_ADMIN` role
+
+If the admin already exists, it will not be duplicated. To force a password reset during startup, set:
+
+- `ADMIN_RESET_PASSWORD=true`
 
 ## Demo Accounts
 
