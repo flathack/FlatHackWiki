@@ -9,7 +9,9 @@ import {
   createTimeProjectSchema,
   createWidgetSchema,
   entryIdParamsSchema,
+  importBookmarksSchema,
   projectIdParamsSchema,
+  reorderBookmarksSchema,
   startTimerSchema,
   stopTimerSchema,
   sendTelegramMessageSchema,
@@ -34,6 +36,9 @@ router.delete('/widgets/:widgetId', validate(widgetIdParamsSchema), dashboardCon
 
 router.get('/bookmarks', dashboardController.listBookmarks);
 router.post('/bookmarks', validate(createBookmarkSchema), dashboardController.createBookmark);
+router.post('/bookmarks/import', validate(importBookmarksSchema), dashboardController.importBookmarks);
+router.get('/bookmarks/export', dashboardController.exportBookmarks);
+router.patch('/bookmarks/reorder', validate(reorderBookmarksSchema), dashboardController.reorderBookmarks);
 router.patch('/bookmarks/:bookmarkId', validate(updateBookmarkSchema), dashboardController.updateBookmark);
 router.delete('/bookmarks/:bookmarkId', validate(bookmarkIdParamsSchema), dashboardController.deleteBookmark);
 

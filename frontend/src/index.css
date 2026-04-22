@@ -174,6 +174,134 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply flex flex-col gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900;
 }
 
+.bookmark-bar-shell {
+  @apply flex items-center gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm;
+}
+
+.bookmark-bar-track {
+  @apply flex flex-1 flex-wrap items-center gap-2 overflow-hidden;
+}
+
+.bookmark-bar-item {
+  @apply inline-flex max-w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
+}
+
+.bookmark-bar-item-nested {
+  @apply w-full justify-start rounded-lg border-0 bg-transparent px-2 py-2;
+}
+
+.bookmark-item-title {
+  @apply truncate;
+}
+
+.bookmark-favicon {
+  @apply h-4 w-4 shrink-0 rounded-sm;
+}
+
+.bookmark-favicon-fallback {
+  @apply inline-flex items-center justify-center rounded-md bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700;
+}
+
+.bookmark-folder {
+  @apply relative;
+}
+
+.bookmark-folder-trigger {
+  @apply cursor-pointer list-none;
+}
+
+.bookmark-folder summary::-webkit-details-marker {
+  display: none;
+}
+
+.bookmark-folder-menu {
+  @apply absolute left-0 top-[calc(100%+0.4rem)] z-20 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-2 shadow-xl;
+}
+
+.bookmark-folder-empty {
+  @apply px-2 py-2 text-sm text-gray-500;
+}
+
+.bookmark-folder-subgroup {
+  @apply rounded-xl border border-gray-100 bg-gray-50 p-2;
+}
+
+.bookmark-folder-subtitle {
+  @apply px-2 pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500;
+}
+
+.bookmark-folder-icon {
+  @apply rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-800;
+}
+
+.bookmark-bar-empty {
+  @apply text-sm text-gray-500;
+}
+
+.bookmark-gear-button {
+  @apply inline-flex shrink-0 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
+}
+
+.bookmark-gear-icon {
+  @apply h-5 w-5;
+}
+
+.bookmark-manager-dialog {
+  @apply sm:max-w-6xl;
+}
+
+.bookmark-manager-summary {
+  @apply mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.bookmark-manager-grid {
+  @apply mt-6;
+}
+
+.bookmark-upload-button {
+  @apply relative cursor-pointer items-center justify-center;
+}
+
+.bookmark-tree-list {
+  @apply flex flex-col gap-2;
+}
+
+.bookmark-tree-node {
+  @apply flex flex-col gap-2;
+}
+
+.bookmark-tree-row {
+  @apply flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3 lg:flex-row lg:items-center lg:justify-between;
+}
+
+.bookmark-tree-main {
+  @apply flex min-w-0 flex-col gap-1;
+}
+
+.bookmark-tree-main strong {
+  @apply text-sm text-gray-900;
+}
+
+.bookmark-tree-main span {
+  @apply truncate text-xs text-gray-500;
+}
+
+.bookmark-tree-type {
+  @apply w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em];
+}
+
+.bookmark-tree-type.folder {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.bookmark-tree-type.link {
+  @apply bg-sky-100 text-sky-800;
+}
+
+.bookmark-tree-children {
+  @apply flex flex-col gap-2;
+}
+
 .dashboard-mobile-stack {
   @apply flex flex-col gap-4;
 }
@@ -478,7 +606,10 @@ html[data-theme='midnight'] .widget-message,
 html[data-theme='midnight'] .widget-stat-box,
 html[data-theme='midnight'] .checkbox-row,
 html[data-theme='midnight'] .checkbox-card,
-html[data-theme='midnight'] .widget-drag-handle {
+html[data-theme='midnight'] .widget-drag-handle,
+html[data-theme='midnight'] .bookmark-bar-shell,
+html[data-theme='midnight'] .bookmark-folder-menu,
+html[data-theme='midnight'] .bookmark-tree-row {
   background-color: #111827 !important;
   border-color: #374151 !important;
 }
@@ -490,7 +621,8 @@ html[data-theme='midnight'] .dialog-card h3,
 html[data-theme='midnight'] .widget-stat-box strong,
 html[data-theme='midnight'] .form-label,
 html[data-theme='midnight'] .dashboard-brand-copy,
-html[data-theme='midnight'] .widget-subsection h4 {
+html[data-theme='midnight'] .widget-subsection h4,
+html[data-theme='midnight'] .bookmark-tree-main strong {
   color: #f3f4f6 !important;
 }
 
@@ -502,8 +634,30 @@ html[data-theme='midnight'] .dashboard-edit-hint span,
 html[data-theme='midnight'] .checkbox-row,
 html[data-theme='midnight'] .checkbox-card,
 html[data-theme='midnight'] .text-button,
-html[data-theme='midnight'] .widget-message {
+html[data-theme='midnight'] .widget-message,
+html[data-theme='midnight'] .bookmark-bar-empty,
+html[data-theme='midnight'] .bookmark-tree-main span {
   color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .bookmark-bar-item,
+html[data-theme='midnight'] .bookmark-gear-button,
+html[data-theme='midnight'] .bookmark-folder-subgroup {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-theme='midnight'] .bookmark-folder-icon,
+html[data-theme='midnight'] .bookmark-tree-type.folder {
+  background-color: #3a2b13 !important;
+  color: #fde68a !important;
+}
+
+html[data-theme='midnight'] .bookmark-favicon-fallback,
+html[data-theme='midnight'] .bookmark-tree-type.link {
+  background-color: rgba(14, 165, 233, 0.18) !important;
+  color: #bae6fd !important;
 }
 
 html[data-theme='midnight'] .dashboard-edit-hint {
@@ -576,6 +730,14 @@ html[data-theme='midnight'] .react-grid-item.react-grid-placeholder {
 
   .compact-list {
     @apply grid-cols-1;
+  }
+
+  .bookmark-bar-shell {
+    @apply flex-col items-stretch;
+  }
+
+  .bookmark-folder-menu {
+    @apply static mt-2 min-w-0;
   }
 }
 

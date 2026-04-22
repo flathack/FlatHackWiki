@@ -16,6 +16,7 @@ import {
   type WeatherResponse,
 } from '../api/client';
 import ThemeSelector from '../components/ThemeSelector';
+import { BookmarkBar, BookmarkManagerDialog } from '../components/dashboard/BookmarkManager';
 import { WidgetShell } from '../components/dashboard/WidgetShell';
 import { widgetDefinitionMap, widgetDefinitions } from '../components/dashboard/widgetRegistry';
 import { useAuthStore } from '../context/auth.store';
@@ -104,8 +105,7 @@ export default function Dashboard() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
   const [profileError, setProfileError] = useState('');
-  const [bookmarkForm, setBookmarkForm] = useState({ title: '', url: 'https://', description: '', category: '' });
-  const [bookmarkEditId, setBookmarkEditId] = useState<string | null>(null);
+  const [bookmarkManagerOpen, setBookmarkManagerOpen] = useState(false);
   const [projectForm, setProjectForm] = useState({ name: '', client: '', category: '', color: '#0f766e' });
   const [manualEntryForm, setManualEntryForm] = useState({ projectId: '', startTime: '', endTime: '', note: '' });
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -405,25 +405,82 @@ export default function Dashboard() {
     }
   };
 
-  const saveBookmark = async () => {
-    if (!bookmarkForm.title.trim() || !bookmarkForm.url.trim()) return;
-
+  const refreshBookmarks = async () => {
     try {
-      if (bookmarkEditId) {
-        const { data } = await dashboardApi.bookmarks.update(bookmarkEditId, bookmarkForm);
-        setDashboard((current) =>
-          current
-            ? { ...current, bookmarks: current.bookmarks.map((bookmark) => (bookmark.id === bookmarkEditId ? data : bookmark)) }
-            : current
-        );
-      } else {
-        const { data } = await dashboardApi.bookmarks.create(bookmarkForm);
-        setDashboard((current) => (current ? { ...current, bookmarks: [...current.bookmarks, data] } : current));
-      }
-      setBookmarkForm({ title: '', url: 'https://', description: '', category: '' });
-      setBookmarkEditId(null);
+      const { data } = await dashboardApi.bookmarks.list();
+      setDashboard((current) => (current ? { ...current, bookmarks: data } : current));
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht gespeichert werden');
+      setError(err.response?.data?.error?.message || 'Lesezeichen konnten nicht aktualisiert werden');
+    }
+  };
+
+  const createBookmarkItem = async (payload: {
+    itemType?: 'BOOKMARK' | 'FOLDER';
+    parentId?: string | null;
+    title: string;
+    url?: string | null;
+    description?: string | null;
+    category?: string | null;
+    faviconUrl?: string | null;
+    isFavorite?: boolean;
+    showInToolbar?: boolean;
+  }) => {
+    try {
+      await dashboardApi.bookmarks.create(payload);
+      await refreshBookmarks();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht erstellt werden');
+      throw err;
+    }
+  };
+
+  const updateBookmarkItem = async (bookmarkId: string, payload: Record<string, unknown>) => {
+    try {
+      await dashboardApi.bookmarks.update(bookmarkId, payload);
+      await refreshBookmarks();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht aktualisiert werden');
+      throw err;
+    }
+  };
+
+  const deleteBookmarkItem = async (bookmarkId: string) => {
+    try {
+      await dashboardApi.bookmarks.delete(bookmarkId);
+      await refreshBookmarks();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht gelöscht werden');
+      throw err;
+    }
+  };
+
+  const reorderBookmarks = async (items: Array<{ id: string; parentId: string | null; sortOrder: number; showInToolbar?: boolean }>) => {
+    try {
+      const { data } = await dashboardApi.bookmarks.reorder(items);
+      setDashboard((current) => (current ? { ...current, bookmarks: data } : current));
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Lesezeichen konnten nicht sortiert werden');
+      throw err;
+    }
+  };
+
+  const importBookmarks = async (html: string, mode: 'append' | 'replace') => {
+    try {
+      const { data } = await dashboardApi.bookmarks.importHtml(html, mode);
+      setDashboard((current) => (current ? { ...current, bookmarks: data.bookmarks } : current));
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Import konnte nicht verarbeitet werden');
+      throw err;
+    }
+  };
+
+  const exportBookmarks = async () => {
+    try {
+      const { data } = await dashboardApi.bookmarks.exportHtml();
+      return data;
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Export konnte nicht erzeugt werden');
+      throw err;
     }
   };
 
@@ -693,7 +750,7 @@ export default function Dashboard() {
               </div>
               <div className="widget-stat-box">
                 <span>Lesezeichen</span>
-                <strong>{dashboard?.bookmarks.length ?? 0}</strong>
+                <strong>{dashboard?.bookmarks.bookmarkCount ?? 0}</strong>
               </div>
               <div className="widget-stat-box">
                 <span>Heute erfasst</span>
@@ -890,86 +947,53 @@ export default function Dashboard() {
         );
       }
       case 'BOOKMARKS': {
-        const showFavoritesOnly = Boolean(settings.showFavoritesOnly);
-        const search = typeof settings.search === 'string' ? settings.search.toLowerCase() : '';
-        const bookmarks = (dashboard?.bookmarks ?? []).filter((bookmark) => {
-          if (showFavoritesOnly && !bookmark.isFavorite) return false;
-          if (!search) return true;
-          return [bookmark.title, bookmark.url, bookmark.category || '', bookmark.description || '']
-            .join(' ')
-            .toLowerCase()
-            .includes(search);
-        });
+        const bookmarkSummary = dashboard?.bookmarks;
+        const rootItems = bookmarkSummary?.toolbar ?? [];
 
         return (
-          <WidgetShell title={widget.title} subtitle="Wichtige Web-Links für den Alltag">
+          <WidgetShell
+            title={widget.title}
+            subtitle="Zentrale Verwaltung für Browser-Leiste, Ordner und Import/Export"
+            actions={
+              <button className="btn btn-primary" onClick={() => setBookmarkManagerOpen(true)}>
+                Verwalten
+              </button>
+            }
+          >
             <div className="widget-stack">
-              <div className="widget-inline-form stretch-mobile">
-                <input className="input" value={bookmarkForm.title} onChange={(e) => setBookmarkForm((current) => ({ ...current, title: e.target.value }))} placeholder="Titel" />
-                <input className="input" value={bookmarkForm.url} onChange={(e) => setBookmarkForm((current) => ({ ...current, url: e.target.value }))} placeholder="https://..." />
-              </div>
-              <div className="widget-inline-form stretch-mobile">
-                <input className="input" value={bookmarkForm.category} onChange={(e) => setBookmarkForm((current) => ({ ...current, category: e.target.value }))} placeholder="Kategorie" />
-                <button className="btn btn-secondary" onClick={saveBookmark}>
-                  {bookmarkEditId ? 'Lesezeichen aktualisieren' : 'Lesezeichen hinzufügen'}
-                </button>
+              <div className="widget-stat-grid">
+                <div className="widget-stat-box">
+                  <span>Einträge gesamt</span>
+                  <strong>{bookmarkSummary?.totalCount ?? 0}</strong>
+                </div>
+                <div className="widget-stat-box">
+                  <span>Ordner</span>
+                  <strong>{bookmarkSummary?.folderCount ?? 0}</strong>
+                </div>
+                <div className="widget-stat-box">
+                  <span>Favoriten</span>
+                  <strong>{bookmarkSummary?.favoriteCount ?? 0}</strong>
+                </div>
+                <div className="widget-stat-box">
+                  <span>Leisten-Einträge</span>
+                  <strong>{rootItems.length}</strong>
+                </div>
               </div>
               <div className="card-list compact-list">
-                {bookmarks.map((bookmark) => (
-                  <div key={bookmark.id} className="mini-card-link static-card">
-                    <strong>{bookmark.title}</strong>
-                    <span>
-                      {bookmark.category ? `${bookmark.category} • ` : ''}
-                      {bookmark.url}
-                    </span>
-                    <div className="widget-inline-actions">
-                      <a href={bookmark.url} target="_blank" rel="noreferrer" className="text-button">
-                        Öffnen
-                      </a>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          setBookmarkEditId(bookmark.id);
-                          setBookmarkForm({
-                            title: bookmark.title,
-                            url: bookmark.url,
-                            description: bookmark.description || '',
-                            category: bookmark.category || '',
-                          });
-                        }}
-                      >
-                        Bearbeiten
-                      </button>
-                      <button
-                        className="text-button"
-                        onClick={async () => {
-                          const { data } = await dashboardApi.bookmarks.update(bookmark.id, {
-                            isFavorite: !bookmark.isFavorite,
-                          });
-                          setDashboard((current) =>
-                            current
-                              ? {
-                                  ...current,
-                                  bookmarks: current.bookmarks.map((item) => (item.id === bookmark.id ? data : item)),
-                                }
-                              : current
-                          );
-                        }}
-                      >
-                        {bookmark.isFavorite ? 'Favorit lösen' : 'Favorisieren'}
-                      </button>
-                      <button
-                        className="text-button danger"
-                        onClick={async () => {
-                          await dashboardApi.bookmarks.delete(bookmark.id);
-                          await loadDashboard();
-                        }}
-                      >
-                        Löschen
-                      </button>
+                {rootItems.length === 0 ? (
+                  <div className="widget-message">Lege oben über das Zahnrad deine persönliche Lesezeichenleiste an.</div>
+                ) : (
+                  rootItems.map((item) => (
+                    <div key={item.id} className="mini-card-link static-card">
+                      <strong>{item.title}</strong>
+                      <span>
+                        {item.itemType === 'FOLDER'
+                          ? item.children.length + ' Einträge im Ordner'
+                          : item.url || 'Kein Link hinterlegt'}
+                      </span>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </WidgetShell>
@@ -1153,6 +1177,13 @@ export default function Dashboard() {
           </div>
         </section>
 
+        {dashboard && (
+          <BookmarkBar
+            bookmarks={dashboard.bookmarks}
+            onOpenManager={() => setBookmarkManagerOpen(true)}
+          />
+        )}
+
         {error && <div className="widget-message widget-message-error">{error}</div>}
 
         {editMode && (
@@ -1327,6 +1358,20 @@ export default function Dashboard() {
         </div>
       )}
 
+      {dashboard && (
+        <BookmarkManagerDialog
+          open={bookmarkManagerOpen}
+          bookmarks={dashboard.bookmarks}
+          onClose={() => setBookmarkManagerOpen(false)}
+          onCreate={createBookmarkItem}
+          onUpdate={updateBookmarkItem}
+          onDelete={deleteBookmarkItem}
+          onReorder={reorderBookmarks}
+          onImport={importBookmarks}
+          onExport={exportBookmarks}
+        />
+      )}
+
       {activeWidget && dashboard && (
         <WidgetSettingsDialog
           widget={activeWidget}
@@ -1488,12 +1533,10 @@ function WidgetSettingsDialog({
             )}
             {widget.type === 'BOOKMARKS' && (
               <div className="widget-subsection">
-                <label className="checkbox-row">
-                  <input type="checkbox" checked={Boolean(settings.showFavoritesOnly)} onChange={(e) => setSettings((current) => ({ ...current, showFavoritesOnly: e.target.checked }))} />
-                  <span>Nur Favoriten anzeigen</span>
-                </label>
-                <label className="form-label">Suchbegriff</label>
-                <input className="input" value={String(settings.search || '')} onChange={(e) => setSettings((current) => ({ ...current, search: e.target.value }))} placeholder="Optionales Filterwort" />
+                <div className="widget-message">
+                  Die eigentliche Verwaltung der Lesezeichen läuft über die Leiste unter dem Begrüßungsbereich
+                  und das Zahnrad rechts daneben.
+                </div>
               </div>
             )}
             {widget.type === 'TELEGRAM_CHAT' && (

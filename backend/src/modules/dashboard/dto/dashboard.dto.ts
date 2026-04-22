@@ -50,27 +50,55 @@ export const widgetIdParamsSchema = z.object({
 
 export const createBookmarkSchema = z.object({
   body: z.object({
+    itemType: z.enum(['BOOKMARK', 'FOLDER']).default('BOOKMARK'),
+    parentId: z.string().uuid().nullable().optional(),
     title: z.string().trim().min(1).max(255),
-    url: z.string().trim().url().max(2048),
+    url: z.string().trim().url().max(2048).nullable().optional(),
     description: z.string().trim().max(4000).nullable().optional(),
     category: z.string().trim().max(100).nullable().optional(),
     faviconUrl: z.string().trim().url().max(2048).nullable().optional(),
     isFavorite: z.boolean().optional(),
+    showInToolbar: z.boolean().optional(),
   }),
 });
 
 export const updateBookmarkSchema = z.object({
   body: z.object({
     title: z.string().trim().min(1).max(255).optional(),
-    url: z.string().trim().url().max(2048).optional(),
+    parentId: z.string().uuid().nullable().optional(),
+    itemType: z.enum(['BOOKMARK', 'FOLDER']).optional(),
+    url: z.string().trim().url().max(2048).nullable().optional(),
     description: z.string().trim().max(4000).nullable().optional(),
     category: z.string().trim().max(100).nullable().optional(),
     faviconUrl: z.string().trim().url().max(2048).nullable().optional(),
     isFavorite: z.boolean().optional(),
+    showInToolbar: z.boolean().optional(),
     sortOrder: z.number().int().min(0).max(999).optional(),
   }),
   params: z.object({
     bookmarkId: z.string().uuid(),
+  }),
+});
+
+export const reorderBookmarksSchema = z.object({
+  body: z.object({
+    items: z
+      .array(
+        z.object({
+          id: z.string().uuid(),
+          parentId: z.string().uuid().nullable(),
+          sortOrder: z.number().int().min(0).max(9999),
+          showInToolbar: z.boolean().optional(),
+        })
+      )
+      .min(1),
+  }),
+});
+
+export const importBookmarksSchema = z.object({
+  body: z.object({
+    html: z.string().trim().min(1).max(2_000_000),
+    mode: z.enum(['append', 'replace']).default('append').optional(),
   }),
 });
 

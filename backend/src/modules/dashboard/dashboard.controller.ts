@@ -71,6 +71,30 @@ class DashboardController {
     }
   }
 
+  async reorderBookmarks(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(await dashboardService.reorderBookmarks(req.user!.id, req.body.items));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async importBookmarks(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.status(201).json(await dashboardService.importBookmarks(req.user!.id, req.body));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async exportBookmarks(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(await dashboardService.exportBookmarks(req.user!.id));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async deleteBookmark(req: Request, res: Response, next: NextFunction) {
     try {
       res.json(await dashboardService.deleteBookmark(req.user!.id, req.params.bookmarkId));

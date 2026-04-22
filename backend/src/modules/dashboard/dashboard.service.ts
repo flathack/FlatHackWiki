@@ -2,7 +2,6 @@
   DashboardWidgetType,
   Prisma,
   TimeEntryType,
-  type Bookmark,
   type CommuteProfile,
   type TelegramChatMessage,
   type TimeEntry,
@@ -23,6 +22,30 @@ const TELEGRAM_PROVIDERS = {
   TELEGRAM_PROXY: 'TELEGRAM_PROXY',
   OPENCLAW_RELAY: 'OPENCLAW_RELAY',
 } as const;
+
+const bookmarkDb: any = (db as any).bookmark;
+
+const BOOKMARK_ITEM_TYPES = {
+  BOOKMARK: 'BOOKMARK',
+  FOLDER: 'FOLDER',
+} as const;
+
+type BookmarkTreeItem = {
+  id: string;
+  parentId: string | null;
+  itemType: 'BOOKMARK' | 'FOLDER';
+  title: string;
+  url: string | null;
+  description: string | null;
+  category: string | null;
+  faviconUrl: string | null;
+  isFavorite: boolean;
+  showInToolbar: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+  children: BookmarkTreeItem[];
+};
 
 const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y: number; width: number; height: number; minWidth: number; minHeight: number; maxWidth?: number; maxHeight?: number; settings?: Prisma.JsonObject }> = {
   CLOCK: {
@@ -237,6 +260,253 @@ function sanitizeTelegramMessage(message: TelegramChatMessage) {
     metadata: (message.metadata ?? {}) as Record<string, unknown>,
     createdAt: message.createdAt,
   };
+}
+
+function buildBookmarkTree(items: any[]): BookmarkTreeItem[] {
+  const nodeMap = new Map<string, BookmarkTreeItem>();
+
+  for (const item of items) {
+    nodeMap.set(item.id, {
+      id: item.id,
+      parentId: item.parentId ?? null,
+      itemType: item.itemType as 'BOOKMARK' | 'FOLDER',
+      title: item.title,
+      url: item.url ?? null,
+      description: item.description ?? null,
+      category: item.category ?? null,
+      faviconUrl: item.faviconUrl ?? null,
+      isFavorite: item.isFavorite,
+      showInToolbar: item.showInToolbar,
+      sortOrder: item.sortOrder,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      children: [],
+    });
+  }
+
+  const roots: BookmarkTreeItem[] = [];
+
+  for (const item of items) {
+    const node = nodeMap.get(item.id)!;
+    if (item.parentId) {
+      const parent = nodeMap.get(item.parentId);
+      if (parent) {
+        parent.children.push(node);
+        continue;
+      }
+    }
+
+    roots.push(node);
+  }
+
+  const sortNodes = (nodes: BookmarkTreeItem[]) => {
+    nodes.sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title, 'de'));
+    nodes.forEach((node) => sortNodes(node.children));
+  };
+
+  sortNodes(roots);
+  return roots;
+}
+
+function flattenBookmarkTree(nodes: BookmarkTreeItem[]): BookmarkTreeItem[] {
+  return nodes.flatMap((node) => [node, ...flattenBookmarkTree(node.children)]);
+}
+
+function sanitizeBookmarkNode(node: BookmarkTreeItem): BookmarkTreeItem {
+  return {
+    ...node,
+    children: node.children.map(sanitizeBookmarkNode),
+  };
+}
+
+function getBookmarkStats(nodes: BookmarkTreeItem[]) {
+  const flattened = flattenBookmarkTree(nodes);
+  return {
+    totalCount: flattened.length,
+    bookmarkCount: flattened.filter((item) => item.itemType === BOOKMARK_ITEM_TYPES.BOOKMARK).length,
+    folderCount: flattened.filter((item) => item.itemType === BOOKMARK_ITEM_TYPES.FOLDER).length,
+    favoriteCount: flattened.filter((item) => item.isFavorite).length,
+  };
+}
+
+function escapeBookmarkHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function deriveFaviconUrl(url?: string | null) {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+async function downloadFaviconDataUrl(url?: string | null) {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    const candidates = [
+      `https://www.google.com/s2/favicons?domain=${encodeURIComponent(parsed.hostname)}&sz=64`,
+      `${parsed.origin}/favicon.ico`,
+    ];
+
+    for (const candidate of candidates) {
+      try {
+        const response = await fetch(candidate, {
+          headers: {
+            'User-Agent': 'FlatHacksWiki/1.0 (bookmark favicon fetcher)',
+            Accept: 'image/*,*/*;q=0.8',
+          },
+        });
+
+        if (!response.ok) {
+          continue;
+        }
+
+        const contentType = response.headers.get('content-type') || 'image/png';
+        if (!contentType.startsWith('image/')) {
+          continue;
+        }
+
+        const bytes = Buffer.from(await response.arrayBuffer());
+        if (bytes.length === 0 || bytes.length > 150_000) {
+          continue;
+        }
+
+        return `data:${contentType};base64,${bytes.toString('base64')}`;
+      } catch {
+        continue;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+async function hydrateBookmarkFavicons(items: any[]) {
+  const missingItems = items.filter(
+    (item) =>
+      item.itemType === BOOKMARK_ITEM_TYPES.BOOKMARK &&
+      item.url &&
+      !item.faviconUrl
+  );
+
+  if (missingItems.length === 0) {
+    return items;
+  }
+
+  const updates = await Promise.all(
+    missingItems.slice(0, 12).map(async (item) => {
+      const faviconDataUrl = await downloadFaviconDataUrl(item.url);
+      if (!faviconDataUrl) {
+        return null;
+      }
+
+      await bookmarkDb.update({
+        where: { id: item.id },
+        data: { faviconUrl: faviconDataUrl },
+      });
+
+      return {
+        id: item.id,
+        faviconUrl: faviconDataUrl,
+      };
+    })
+  );
+
+  const successfulUpdates = updates.filter(
+    (item): item is { id: string; faviconUrl: string } => item !== null
+  );
+  const updateMap = new Map(
+    successfulUpdates.map((item) => [item.id, item.faviconUrl])
+  );
+
+  return items.map((item) =>
+    updateMap.has(item.id)
+      ? { ...item, faviconUrl: updateMap.get(item.id) }
+      : item
+  );
+}
+
+function renderBookmarksAsHtml(nodes: BookmarkTreeItem[], indent = 1): string {
+  const pad = '    '.repeat(indent);
+  const lines: string[] = [];
+
+  for (const node of nodes) {
+    if (node.itemType === BOOKMARK_ITEM_TYPES.FOLDER) {
+      lines.push(`${pad}<DT><H3>${escapeBookmarkHtml(node.title)}</H3>`);
+      lines.push(`${pad}<DL><p>`);
+      lines.push(renderBookmarksAsHtml(node.children, indent + 1));
+      lines.push(`${pad}</DL><p>`);
+      continue;
+    }
+
+    lines.push(
+      `${pad}<DT><A HREF="${escapeBookmarkHtml(node.url ?? '#')}"${node.faviconUrl ? ` ICON="${escapeBookmarkHtml(node.faviconUrl)}"` : ''}>${escapeBookmarkHtml(node.title)}</A>`
+    );
+  }
+
+  return lines.filter(Boolean).join('\n');
+}
+
+function parseBookmarkImport(html: string) {
+  const normalized = html.replace(/\r\n/g, '\n');
+  const tokens = normalized
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const root: Array<Record<string, unknown>> = [];
+  const stack: Array<Array<Record<string, unknown>>> = [root];
+  let pendingFolder: Record<string, unknown> | null = null;
+
+  for (const token of tokens) {
+    const folderMatch = token.match(/<H3[^>]*>(.*?)<\/H3>/i);
+    if (folderMatch) {
+      pendingFolder = { itemType: BOOKMARK_ITEM_TYPES.FOLDER, title: folderMatch[1].replace(/<[^>]+>/g, '').trim(), children: [] };
+      continue;
+    }
+
+    if (/^<DL/i.test(token)) {
+      if (pendingFolder) {
+        const folderChildren = pendingFolder.children as Array<Record<string, unknown>>;
+        stack[stack.length - 1].push(pendingFolder);
+        stack.push(folderChildren);
+        pendingFolder = null;
+      }
+      continue;
+    }
+
+    if (/^<\/DL/i.test(token)) {
+      if (stack.length > 1) {
+        stack.pop();
+      }
+      continue;
+    }
+
+    const linkMatch = token.match(/<A[^>]*HREF="([^"]+)"[^>]*>(.*?)<\/A>/i);
+    if (linkMatch) {
+      const iconMatch = token.match(/ICON="([^"]+)"/i);
+      stack[stack.length - 1].push({
+        itemType: BOOKMARK_ITEM_TYPES.BOOKMARK,
+        title: linkMatch[2].replace(/<[^>]+>/g, '').trim(),
+        url: linkMatch[1].trim(),
+        faviconUrl: iconMatch?.[1]?.trim() || null,
+      });
+    }
+  }
+
+  return root;
 }
 
 function getStartOfDay(date = new Date()) {
@@ -513,8 +783,8 @@ class DashboardService {
 
   async getDashboard(userId: string) {
     const dashboard = await this.ensureDashboard(userId);
-    const [bookmarks, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages] = await Promise.all([
-      db.bookmark.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
+    const [bookmarksRaw, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages] = await Promise.all([
+      bookmarkDb.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
       db.commuteProfile.findUnique({ where: { userId } }),
       db.space.findMany({ orderBy: { updatedAt: 'desc' }, include: { owner: { select: { id: true, name: true } } } }),
       db.timeTrackingProject.findMany({ where: { userId }, orderBy: [{ isArchived: 'asc' }, { name: 'asc' }] }),
@@ -544,10 +814,13 @@ class DashboardService {
       db.timeEntry.findMany({ where: { userId, startTime: { gte: weekStart } } }),
     ]);
 
+    const bookmarks = await hydrateBookmarkFavicons(bookmarksRaw);
     const favoriteWidget = dashboard.widgets.find((widget) => widget.type === 'FAVORITE_SPACES');
     const favoriteKeys = Array.isArray((favoriteWidget?.settings as Record<string, unknown> | null)?.spaceKeys)
       ? ((favoriteWidget?.settings as Record<string, unknown>).spaceKeys as string[])
       : [];
+    const bookmarkTree = buildBookmarkTree(bookmarks);
+    const bookmarkStats = getBookmarkStats(bookmarkTree);
 
     const todayMode = commuteProfile
       ? commuteProfile.officeDays.includes(getWeekdayKey())
@@ -561,7 +834,11 @@ class DashboardService {
 
     return {
       widgets: dashboard.widgets.sort((a, b) => a.mobileOrder - b.mobileOrder).map(sanitizeWidgetType),
-      bookmarks,
+      bookmarks: {
+        tree: bookmarkTree.map(sanitizeBookmarkNode),
+        toolbar: bookmarkTree.filter((item) => item.showInToolbar).map(sanitizeBookmarkNode),
+        ...bookmarkStats,
+      },
       commute: {
         profile: commuteProfile,
         todayMode,
@@ -826,54 +1103,223 @@ class DashboardService {
   }
 
   async listBookmarks(userId: string) {
-    return db.bookmark.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] });
+    const itemsRaw = await bookmarkDb.findMany({
+      where: { userId },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+    const items = await hydrateBookmarkFavicons(itemsRaw);
+    const tree = buildBookmarkTree(items);
+    return {
+      tree: tree.map(sanitizeBookmarkNode),
+      toolbar: tree.filter((item) => item.showInToolbar).map(sanitizeBookmarkNode),
+      ...getBookmarkStats(tree),
+    };
   }
 
-  async createBookmark(userId: string, data: { title: string; url: string; description?: string | null; category?: string | null; faviconUrl?: string | null; isFavorite?: boolean }) {
-    const currentCount = await db.bookmark.count({ where: { userId } });
+  async createBookmark(userId: string, data: { itemType?: 'BOOKMARK' | 'FOLDER'; parentId?: string | null; title: string; url?: string | null; description?: string | null; category?: string | null; faviconUrl?: string | null; isFavorite?: boolean; showInToolbar?: boolean }) {
+    const itemType = data.itemType ?? BOOKMARK_ITEM_TYPES.BOOKMARK;
+    const parentId = data.parentId ?? null;
 
-    return db.bookmark.create({
+    if (parentId) {
+      const parent = await this.getBookmarkForUser(userId, parentId);
+      if (parent.itemType !== BOOKMARK_ITEM_TYPES.FOLDER) {
+        throw new ValidationError('Neue Lesezeichen können nur in Ordner gelegt werden');
+      }
+    }
+
+    if (itemType === BOOKMARK_ITEM_TYPES.BOOKMARK && !normalizeNullableString(data.url)) {
+      throw new ValidationError('Für ein Lesezeichen wird eine URL benötigt');
+    }
+
+    const currentCount = await bookmarkDb.count({ where: { userId, parentId } });
+
+    const faviconUrl =
+      itemType === BOOKMARK_ITEM_TYPES.FOLDER
+        ? null
+        : normalizeNullableString(data.faviconUrl) ??
+          (await downloadFaviconDataUrl(data.url)) ??
+          deriveFaviconUrl(data.url);
+
+    return bookmarkDb.create({
       data: {
         userId,
+        parentId,
+        itemType,
         title: data.title.trim(),
-        url: data.url.trim(),
+        url: itemType === BOOKMARK_ITEM_TYPES.FOLDER ? null : data.url?.trim() ?? null,
         description: normalizeNullableString(data.description),
         category: normalizeNullableString(data.category),
-        faviconUrl: normalizeNullableString(data.faviconUrl),
+        faviconUrl,
         isFavorite: data.isFavorite ?? false,
+        showInToolbar: data.showInToolbar ?? parentId === null,
         sortOrder: currentCount,
       },
     });
   }
 
-  async updateBookmark(userId: string, bookmarkId: string, data: Partial<Bookmark>) {
-    const bookmark = await db.bookmark.findFirst({ where: { id: bookmarkId, userId } });
-    if (!bookmark) {
-      throw new NotFoundError('Bookmark', bookmarkId);
+  async updateBookmark(userId: string, bookmarkId: string, data: Record<string, any>) {
+    const bookmark = await this.getBookmarkForUser(userId, bookmarkId);
+    const nextParentId = data.parentId === undefined ? bookmark.parentId : data.parentId;
+
+    if (nextParentId === bookmark.id) {
+      throw new ValidationError('Ein Eintrag kann nicht sein eigener Ordner sein');
     }
 
-    return db.bookmark.update({
+    if (nextParentId) {
+      const parent = await this.getBookmarkForUser(userId, nextParentId);
+      if (parent.itemType !== BOOKMARK_ITEM_TYPES.FOLDER) {
+        throw new ValidationError('Lesezeichen können nur in Ordner verschoben werden');
+      }
+    }
+
+    const nextItemType = data.itemType ?? bookmark.itemType;
+    const nextUrl =
+      nextItemType === BOOKMARK_ITEM_TYPES.FOLDER
+        ? null
+        : data.url === undefined
+          ? bookmark.url
+          : normalizeNullableString(data.url);
+
+    if (nextItemType === BOOKMARK_ITEM_TYPES.BOOKMARK && !nextUrl) {
+      throw new ValidationError('Für ein Lesezeichen wird eine URL benötigt');
+    }
+
+    const nextFaviconUrl =
+      data.faviconUrl === undefined
+        ? undefined
+        : nextItemType === BOOKMARK_ITEM_TYPES.FOLDER
+          ? null
+          : normalizeNullableString(data.faviconUrl) ??
+            (await downloadFaviconDataUrl(nextUrl)) ??
+            deriveFaviconUrl(nextUrl);
+
+    return bookmarkDb.update({
       where: { id: bookmarkId },
       data: {
         title: data.title?.trim(),
-        url: data.url?.trim(),
+        parentId: data.parentId,
+        itemType: data.itemType,
+        url: nextUrl,
         description: data.description === undefined ? undefined : normalizeNullableString(data.description),
         category: data.category === undefined ? undefined : normalizeNullableString(data.category),
-        faviconUrl: data.faviconUrl === undefined ? undefined : normalizeNullableString(data.faviconUrl),
+        faviconUrl: nextFaviconUrl,
         isFavorite: data.isFavorite,
+        showInToolbar: data.showInToolbar,
         sortOrder: data.sortOrder,
       },
     });
   }
 
   async deleteBookmark(userId: string, bookmarkId: string) {
-    const bookmark = await db.bookmark.findFirst({ where: { id: bookmarkId, userId } });
-    if (!bookmark) {
-      throw new NotFoundError('Bookmark', bookmarkId);
+    const bookmark = await this.getBookmarkForUser(userId, bookmarkId);
+    await bookmarkDb.delete({ where: { id: bookmarkId } });
+    return { message: 'Lesezeichen gelöscht' };
+  }
+
+  async reorderBookmarks(userId: string, items: Array<{ id: string; parentId: string | null; sortOrder: number; showInToolbar?: boolean }>) {
+    const known = await bookmarkDb.findMany({ where: { userId }, select: { id: true } });
+    const knownIds = new Set(known.map((item: { id: string }) => item.id));
+
+    for (const item of items) {
+      if (!knownIds.has(item.id)) {
+        throw new NotFoundError('Bookmark', item.id);
+      }
+      if (item.parentId && !knownIds.has(item.parentId)) {
+        throw new NotFoundError('Bookmark', item.parentId);
+      }
     }
 
-    await db.bookmark.delete({ where: { id: bookmarkId } });
-    return { message: 'Lesezeichen gelöscht' };
+    await db.$transaction(
+      items.map((item) =>
+        bookmarkDb.update({
+          where: { id: item.id },
+          data: {
+            parentId: item.parentId,
+            sortOrder: item.sortOrder,
+            showInToolbar: item.showInToolbar,
+          },
+        })
+      )
+    );
+
+    return this.listBookmarks(userId);
+  }
+
+  async importBookmarks(userId: string, data: { html: string; mode?: 'append' | 'replace' }) {
+    const parsed = parseBookmarkImport(data.html);
+    if (parsed.length === 0) {
+      throw new ValidationError('Die Importdatei enthält keine lesbaren Lesezeichen');
+    }
+
+    const createNodes = async (
+      nodes: Array<Record<string, unknown>>,
+      parentId: string | null
+    ) => {
+      for (let index = 0; index < nodes.length; index += 1) {
+        const node = nodes[index];
+        const itemType =
+          node.itemType === BOOKMARK_ITEM_TYPES.FOLDER ? BOOKMARK_ITEM_TYPES.FOLDER : BOOKMARK_ITEM_TYPES.BOOKMARK;
+
+        const resolvedFaviconUrl =
+          itemType === BOOKMARK_ITEM_TYPES.BOOKMARK
+            ? normalizeNullableString(typeof node.faviconUrl === 'string' ? node.faviconUrl : null) ??
+              (await downloadFaviconDataUrl(typeof node.url === 'string' ? node.url : null)) ??
+              deriveFaviconUrl(typeof node.url === 'string' ? node.url : null)
+            : null;
+
+        const created = await bookmarkDb.create({
+          data: {
+            userId,
+            parentId,
+            itemType,
+            title: String(node.title || (itemType === BOOKMARK_ITEM_TYPES.FOLDER ? 'Ordner' : 'Lesezeichen')),
+            url: itemType === BOOKMARK_ITEM_TYPES.BOOKMARK ? normalizeNullableString(String(node.url || '')) : null,
+            faviconUrl: resolvedFaviconUrl,
+            isFavorite: false,
+            showInToolbar: parentId === null,
+            sortOrder: typeof node.sortOrder === 'number' ? node.sortOrder : index,
+          },
+        });
+
+        if (itemType === BOOKMARK_ITEM_TYPES.FOLDER) {
+          await createNodes((node.children as Array<Record<string, unknown>> | undefined) ?? [], created.id);
+        }
+      }
+    };
+
+    if (data.mode === 'replace') {
+      await bookmarkDb.deleteMany({ where: { userId } });
+    }
+
+    const rootCount = await bookmarkDb.count({ where: { userId, parentId: null } });
+    const shiftedParsed = parsed.map((node, index) => ({
+      ...node,
+      sortOrder: rootCount + index,
+    }));
+
+    await createNodes(shiftedParsed, null);
+
+    return {
+      message: `${flattenBookmarkTree(buildBookmarkTree(await bookmarkDb.findMany({ where: { userId } }))).length} Einträge stehen jetzt zur Verfügung.`,
+      bookmarks: await this.listBookmarks(userId),
+    };
+  }
+
+  async exportBookmarks(userId: string) {
+    const tree = (await this.listBookmarks(userId)).tree;
+    const html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file. -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>FlatHacksWiki Lesezeichen</H1>
+<DL><p>
+${renderBookmarksAsHtml(tree)}
+</DL><p>`;
+
+    return {
+      fileName: `flathackswiki-bookmarks-${new Date().toISOString().slice(0, 10)}.html`,
+      html,
+    };
   }
 
   async getCommute(userId: string) {
@@ -1117,6 +1563,18 @@ class DashboardService {
     return widget;
   }
 
+  private async getBookmarkForUser(userId: string, bookmarkId: string) {
+    const bookmark = await bookmarkDb.findFirst({
+      where: { id: bookmarkId, userId },
+    });
+
+    if (!bookmark) {
+      throw new NotFoundError('Bookmark', bookmarkId);
+    }
+
+    return bookmark;
+  }
+
   private async getTelegramWidgetForUser(userId: string) {
     const dashboard = await this.ensureDashboard(userId);
     const widget = dashboard.widgets.find((item) => item.type === 'TELEGRAM_CHAT');
@@ -1165,4 +1623,5 @@ class DashboardService {
 }
 
 export const dashboardService = new DashboardService();
+
 

@@ -170,20 +170,30 @@ enum TelegramMessageProvider {
 model Bookmark {
   id          String   @id @default(uuid())
   userId      String   @map("user_id")
+  parentId    String?  @map("parent_id")
+  itemType    BookmarkItemType @default(BOOKMARK) @map("item_type")
   title       String   @db.VarChar(255)
-  url         String   @db.VarChar(2048)
+  url         String?  @db.VarChar(2048)
   description String?  @db.Text
   category    String?  @db.VarChar(100)
   faviconUrl  String?  @map("favicon_url") @db.VarChar(2048)
   isFavorite  Boolean  @default(false) @map("is_favorite")
+  showInToolbar Boolean @default(true) @map("show_in_toolbar")
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent Bookmark? @relation("BookmarkHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children Bookmark[] @relation("BookmarkHierarchy")
 
-  @@index([userId, sortOrder])
+  @@index([userId, parentId, sortOrder])
   @@map("bookmarks")
+}
+
+enum BookmarkItemType {
+  BOOKMARK
+  FOLDER
 }
 
 model CommuteProfile {

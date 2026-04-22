@@ -77,17 +77,29 @@ export interface DashboardWidget {
   mobileOrder: number;
   settings: Record<string, unknown>;
 }
-export interface Bookmark {
+export interface BookmarkItem {
   id: string;
+  parentId?: string | null;
+  itemType: 'BOOKMARK' | 'FOLDER';
   title: string;
-  url: string;
+  url?: string | null;
   description?: string | null;
   category?: string | null;
   faviconUrl?: string | null;
   isFavorite: boolean;
+  showInToolbar: boolean;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  children: BookmarkItem[];
+}
+export interface BookmarkState {
+  tree: BookmarkItem[];
+  toolbar: BookmarkItem[];
+  totalCount: number;
+  bookmarkCount: number;
+  folderCount: number;
+  favoriteCount: number;
 }
 export interface CommuteProfile {
   id: string;
@@ -140,7 +152,7 @@ export interface TelegramChatMessage {
 }
 export interface DashboardResponse {
   widgets: DashboardWidget[];
-  bookmarks: Bookmark[];
+  bookmarks: BookmarkState;
   commute: {
     profile: CommuteProfile | null;
     todayMode: 'office' | 'homeOffice' | 'unspecified' | 'unset';
@@ -234,16 +246,25 @@ export const dashboardApi = {
     api.patch<DashboardWidget[]>('/dashboard/widgets/layout', { widgets }),
   deleteWidget: (widgetId: string) => api.delete(`/dashboard/widgets/${widgetId}`),
   bookmarks: {
-    list: () => api.get<Bookmark[]>('/dashboard/bookmarks'),
+    list: () => api.get<BookmarkState>('/dashboard/bookmarks'),
     create: (data: {
+      itemType?: 'BOOKMARK' | 'FOLDER';
+      parentId?: string | null;
       title: string;
-      url: string;
+      url?: string | null;
       description?: string | null;
       category?: string | null;
       faviconUrl?: string | null;
       isFavorite?: boolean;
-    }) => api.post<Bookmark>('/dashboard/bookmarks', data),
-    update: (bookmarkId: string, data: Partial<Bookmark>) => api.patch<Bookmark>(`/dashboard/bookmarks/${bookmarkId}`, data),
+      showInToolbar?: boolean;
+    }) => api.post<BookmarkItem>('/dashboard/bookmarks', data),
+    update: (bookmarkId: string, data: Partial<BookmarkItem>) => api.patch<BookmarkItem>(`/dashboard/bookmarks/${bookmarkId}`, data),
+    reorder: (items: Array<{ id: string; parentId: string | null; sortOrder: number; showInToolbar?: boolean }>) =>
+      api.patch<BookmarkState>('/dashboard/bookmarks/reorder', { items }),
+    importHtml: (html: string, mode: 'append' | 'replace' = 'append') =>
+      api.post<{ message: string; bookmarks: BookmarkState }>('/dashboard/bookmarks/import', { html, mode }),
+    exportHtml: () =>
+      api.get<{ fileName: string; html: string }>('/dashboard/bookmarks/export'),
     delete: (bookmarkId: string) => api.delete(`/dashboard/bookmarks/${bookmarkId}`),
   },
   commute: {
