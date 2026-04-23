@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { BookmarkItem, BookmarkState } from '../../api/client';
 
 type BookmarkPayload = {
@@ -89,6 +89,22 @@ function folderOptions(tree: BookmarkItem[], depth = 0): Array<{ id: string; lab
       { id: item.id, label: `${'  '.repeat(depth)}${item.title}` },
       ...folderOptions(item.children, depth + 1),
     ];
+  });
+}
+
+function filterBookmarkTree(nodes: BookmarkItem[], query: string): BookmarkItem[] {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return nodes;
+  }
+
+  return nodes.flatMap((node) => {
+    const children = filterBookmarkTree(node.children, normalized);
+    const haystack = [node.title, node.url, node.description, node.category].join(' ').toLowerCase();
+    if (haystack.includes(normalized) || children.length > 0) {
+      return [{ ...node, children }];
+    }
+    return [];
   });
 }
 
@@ -729,6 +745,7 @@ export function BookmarkManagerDialog({
   const [importMode, setImportMode] = useState<ImportMode>('append');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importText, setImportText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState<BookmarkPayload>({
     itemType: 'BOOKMARK',
@@ -761,6 +778,8 @@ export function BookmarkManagerDialog({
   if (!open) {
     return null;
   }
+
+  const filteredTree = filterBookmarkTree(bookmarks.tree, searchQuery);
 
   const resetForm = () => {
     setEditingId(null);
@@ -885,8 +904,19 @@ export function BookmarkManagerDialog({
         </div>
 
         <div className="dialog-grid bookmark-manager-grid">
-          <section className="dialog-card span-2">
-            <h3>{editingId ? 'Eintrag bearbeiten' : 'Eintrag anlegen'}</h3>
+          <section className="dialog-card span-2 bookmark-manager-panel">
+            <div className="bookmark-manager-toolbar">
+              <div>
+                <h3>{editingId ? 'Eintrag bearbeiten' : 'Eintrag anlegen'}</h3>
+                <p className="widget-shell-subtitle">Leiste, Ordner und Favoriten an einer Stelle verwalten.</p>
+              </div>
+              <input
+                className="input bookmark-manager-search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Lesezeichen und Ordner durchsuchen"
+              />
+            </div>
             <div className="widget-form-grid">
               <select className="input" value={form.itemType || 'BOOKMARK'} onChange={(e) => setForm((current) => ({ ...current, itemType: e.target.value as 'BOOKMARK' | 'FOLDER' }))}>
                 <option value="BOOKMARK">Lesezeichen</option>
@@ -917,7 +947,7 @@ export function BookmarkManagerDialog({
             </div>
           </section>
 
-          <section className="dialog-card">
+          <section className="dialog-card bookmark-manager-panel bookmark-manager-panel-sticky">
             <h3>Import / Export</h3>
             <div className="widget-stack">
               <select className="input" value={importMode} onChange={(e) => setImportMode(e.target.value as ImportMode)}>
@@ -953,10 +983,15 @@ export function BookmarkManagerDialog({
             </div>
           </section>
 
-          <section className="dialog-card span-2">
-            <h3>Struktur</h3>
+          <section className="dialog-card span-2 bookmark-manager-panel">
+            <div className="bookmark-manager-toolbar">
+              <div>
+                <h3>Struktur</h3>
+                <p className="widget-shell-subtitle">Per Suche filtern, per Buttons fein sortieren, per Leiste schnell öffnen.</p>
+              </div>
+            </div>
             <div className="bookmark-tree-list">
-              {bookmarks.tree.length === 0 ? <div className="widget-message">Noch keine Lesezeichen vorhanden.</div> : bookmarks.tree.map((item) => (
+              {filteredTree.length === 0 ? <div className="widget-message">Keine passenden Lesezeichen gefunden.</div> : filteredTree.map((item) => (
                 <BookmarkTreeRow key={item.id} item={item} depth={0} busy={busy} onEdit={startEdit} onDelete={onDelete} onMove={moveItem} />
               ))}
             </div>
@@ -1010,3 +1045,4 @@ function BookmarkTreeRow({
     </div>
   );
 }
+

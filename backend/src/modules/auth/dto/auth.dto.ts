@@ -46,6 +46,7 @@ export const updateMeSchema = z.object({
     displayName: z.string().trim().min(1, 'Display name is required').max(255).optional(),
     dashboardSubtitle: z.string().trim().max(500).nullable().optional(),
     showDashboardSubtitle: z.boolean().optional(),
+    uiRadius: z.number().int().min(8).max(40).optional(),
   }),
 });
 

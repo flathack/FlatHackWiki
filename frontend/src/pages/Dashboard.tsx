@@ -39,6 +39,12 @@ const searchProviders = {
   brave: 'Brave',
   bing: 'Bing',
 } as const;
+const radiusPresets = [
+  { value: 12, label: 'Kompakt' },
+  { value: 20, label: 'Weich' },
+  { value: 28, label: 'Standard' },
+  { value: 36, label: 'Rund' },
+] as const;
 
 function getGreeting(now: Date, name?: string) {
   const hour = now.getHours();
@@ -89,7 +95,7 @@ export default function Dashboard() {
   const { user, logout, updateUser } = useAuthStore();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1280 });
+  const { width, containerRef, mounted } = useContainerWidth({ initialWidth: 1800 });
   const [dashboard, setDashboard] = useState<DashboardState>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -126,6 +132,7 @@ export default function Dashboard() {
   const [weatherLoading, setWeatherLoading] = useState(false);
   const webSearchInputRef = useRef<HTMLInputElement | null>(null);
   const isAdmin = user?.globalRole === 'SUPER_ADMIN' || user?.globalRole === 'SYSTEM_ADMIN';
+  const currentUiRadius = user?.uiRadius ?? 28;
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30000);
@@ -364,18 +371,29 @@ export default function Dashboard() {
         displayName: profileName.trim(),
         dashboardSubtitle: profileSubtitle.trim() || null,
         showDashboardSubtitle: showProfileSubtitle,
+        uiRadius: currentUiRadius,
       });
       updateUser({
         name: data.name,
         displayName: data.displayName,
         dashboardSubtitle: data.dashboardSubtitle,
         showDashboardSubtitle: data.showDashboardSubtitle,
+        uiRadius: data.uiRadius,
       });
       setProfileMessage('Profil gespeichert. Die Begrüßung wurde aktualisiert.');
     } catch (err: any) {
       setProfileError(err.response?.data?.error?.message || 'Profil konnte nicht gespeichert werden');
     } finally {
       setProfileSaving(false);
+    }
+  };
+
+  const saveUiRadius = async (uiRadius: number) => {
+    try {
+      const { data } = await authApi.updateMe({ uiRadius });
+      updateUser({ uiRadius: data.uiRadius });
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Design-Rundung konnte nicht gespeichert werden');
     }
   };
 
@@ -1208,6 +1226,21 @@ export default function Dashboard() {
               Widgets lassen sich jetzt mit der Maus verschieben und in der Größe anpassen. Auf Smartphones
               bleibt das Layout stabil und stapelt sich untereinander.
             </span>
+            <div className="dashboard-radius-toolbar">
+              <span className="dashboard-radius-label">Globale Rundung</span>
+              <div className="dashboard-radius-options">
+                {radiusPresets.map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    className={`chip-button ${currentUiRadius === preset.value ? 'active' : ''}`}
+                    onClick={() => void saveUiRadius(preset.value)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </section>
         )}
 

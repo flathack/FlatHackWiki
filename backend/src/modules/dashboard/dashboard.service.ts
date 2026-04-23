@@ -729,9 +729,7 @@ class DashboardService {
         knownTypes.add(widget.type);
       }
 
-      const missingTypes = defaultWidgetOrder.filter((type) => !knownTypes.has(type));
-
-      if (duplicateIds.length > 0 || missingTypes.length > 0) {
+      if (duplicateIds.length > 0) {
         const operations: Prisma.PrismaPromise<unknown>[] = [];
 
         if (duplicateIds.length > 0) {
@@ -739,21 +737,6 @@ class DashboardService {
             db.userDashboardWidget.deleteMany({
               where: {
                 id: { in: duplicateIds },
-              },
-            })
-          );
-        }
-
-        if (missingTypes.length > 0) {
-          operations.push(
-            db.userDashboard.update({
-              where: { id: existing.id },
-              data: {
-                widgets: {
-                  create: missingTypes.map((type, index) =>
-                    createDefaultWidget(type, sortedWidgets.length + index)
-                  ),
-                },
               },
             })
           );

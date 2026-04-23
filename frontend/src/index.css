@@ -7,6 +7,9 @@
 :root {
   --sidebar-width: 260px;
   --header-height: 56px;
+  --ui-radius: 28px;
+  --ui-radius-sm: 18px;
+  --ui-radius-xs: 12px;
   color-scheme: light;
 }
 
@@ -107,7 +110,19 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-main-shell {
-  @apply mx-auto flex w-full max-w-[1500px] flex-col gap-4 px-4 py-4 md:px-6 md:py-5;
+  @apply flex w-full flex-col gap-4 px-3 py-4 md:px-5 md:py-5;
+}
+
+.theme-selector-inline {
+  @apply inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 shadow-sm;
+}
+
+.theme-selector-label {
+  @apply text-xs font-semibold uppercase tracking-wide text-gray-500;
+}
+
+.theme-selector-input {
+  @apply min-w-28 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm outline-none;
 }
 
 .dashboard-hero-card {
@@ -174,12 +189,24 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply flex flex-col gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-900;
 }
 
+.dashboard-radius-toolbar {
+  @apply flex flex-col gap-2 pt-1 md:flex-row md:items-center md:justify-between;
+}
+
+.dashboard-radius-label {
+  @apply text-xs font-semibold uppercase tracking-[0.2em] text-sky-800;
+}
+
+.dashboard-radius-options {
+  @apply flex flex-wrap gap-2;
+}
+
 .bookmark-bar-shell {
-  @apply relative z-20 flex items-center gap-3 overflow-visible rounded-2xl border border-gray-200 bg-white px-3 py-2 shadow-sm;
+  @apply relative z-20 flex items-center gap-2 overflow-visible border border-gray-200 bg-white px-2 py-2 shadow-sm;
 }
 
 .bookmark-bar-track {
-  @apply flex flex-1 flex-wrap items-center gap-2 overflow-visible;
+  @apply flex flex-1 flex-wrap items-center gap-1.5 overflow-visible;
 }
 
 .bookmark-drop-slot {
@@ -195,7 +222,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-bar-item {
-  @apply inline-flex max-w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
+  @apply inline-flex max-w-full items-center gap-1.5 border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
 }
 
 .bookmark-bar-item-nested {
@@ -301,15 +328,31 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-manager-dialog {
-  @apply sm:max-w-6xl;
+  @apply sm:max-w-[94vw];
 }
 
 .bookmark-manager-summary {
-  @apply mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4;
+  @apply mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4;
 }
 
 .bookmark-manager-grid {
-  @apply mt-6;
+  @apply mt-5 items-start;
+}
+
+.bookmark-manager-panel {
+  @apply flex flex-col gap-4;
+}
+
+.bookmark-manager-panel-sticky {
+  @apply lg:sticky lg:top-0;
+}
+
+.bookmark-manager-toolbar {
+  @apply flex flex-col gap-3 md:flex-row md:items-center md:justify-between;
+}
+
+.bookmark-manager-search {
+  @apply max-w-md;
 }
 
 .bookmark-upload-button {
@@ -361,7 +404,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-widget-frame {
-  @apply flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm;
+  @apply flex h-full min-h-0 flex-col overflow-hidden border border-gray-200 bg-white shadow-sm;
 }
 
 .mobile-frame {
@@ -730,7 +773,7 @@ html[data-theme='midnight'] .bookmark-context-action.danger:hover {
 html[data-theme='midnight'] .bookmark-folder-icon,
 html[data-theme='midnight'] .bookmark-tree-type.folder {
   background-color: transparent !important;
-  color: #0f172a !important;
+  color: #e2e8f0 !important;
 }
 
 html[data-theme='midnight'] .bookmark-folder-entry:hover,
@@ -743,7 +786,22 @@ html[data-theme='midnight'] .bookmark-bar-empty-drop.active {
 }
 
 html[data-theme='midnight'] .bookmark-folder-icon {
-  color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+html[data-theme='midnight'] .theme-selector-inline {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .theme-selector-label {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .theme-selector-input {
+  background-color: #0f172a !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
 }
 
 html[data-theme='midnight'] .bookmark-favicon-fallback,
@@ -800,7 +858,7 @@ html[data-theme='midnight'] .chip-button.active {
 
 html[data-theme='midnight'] .react-grid-item.react-grid-placeholder {
   background: rgba(56, 189, 248, 0.18) !important;
-  border-radius: 24px;
+  border-radius: var(--ui-radius);
 }
 
 @media (max-width: 767px) {
@@ -933,6 +991,42 @@ html[data-theme='midnight'] .btn-secondary:hover {
 
 .input {
   @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none;
+}
+
+.dashboard-hero-card,
+.dashboard-widget-frame,
+.dialog-panel,
+.dialog-card,
+.widget-subsection,
+.widget-message,
+.widget-stat-box,
+.mini-card-link,
+.bookmark-bar-shell,
+.bookmark-folder-menu,
+.bookmark-bar-item,
+.bookmark-folder-entry,
+.bookmark-context-menu,
+.bookmark-bar-empty-drop,
+.dashboard-edit-hint,
+.dashboard-hero-clock,
+.dashboard-hero-search,
+.telegram-chat-history,
+.telegram-chat-bubble,
+.theme-selector-inline,
+.checkbox-row,
+.checkbox-card,
+.widget-drag-handle {
+  border-radius: var(--ui-radius) !important;
+}
+
+.bookmark-favicon,
+.bookmark-favicon-fallback,
+.bookmark-drop-slot,
+.theme-selector-input,
+.btn,
+.input,
+.chip-button {
+  border-radius: var(--ui-radius-sm) !important;
 }
 
 html[data-theme='midnight'] .input,

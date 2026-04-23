@@ -17,11 +17,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      const { logout } = useAuthStore.getState();
-      logout();
-      window.location.href = '/login';
-    }
     return Promise.reject(error);
   }
 );
@@ -36,10 +31,12 @@ export interface MeResponse {
   globalRole: string;
   dashboardSubtitle: string | null;
   showDashboardSubtitle: boolean;
+  uiRadius?: number;
   profile?: {
     displayName?: string | null;
     dashboardSubtitle?: string | null;
     showDashboardSubtitle?: boolean;
+    uiRadius?: number;
     avatarUrl?: string | null;
     timezone?: string;
     locale?: string;
@@ -202,6 +199,7 @@ export const authApi = {
     displayName?: string;
     dashboardSubtitle?: string | null;
     showDashboardSubtitle?: boolean;
+    uiRadius?: number;
   }) => api.patch<MeResponse & { message: string }>('/auth/me', data),
 };
 

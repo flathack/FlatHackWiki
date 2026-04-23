@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './context/auth.store';
 import { ToastProvider } from './context/toast.context';
-import ThemeSelector from './components/ThemeSelector';
 import { useThemeStore } from './context/theme.store';
 import LoginPage from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -20,14 +19,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const theme = useThemeStore((state) => state.theme);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  useEffect(() => {
+    const radius = Math.min(40, Math.max(8, user?.uiRadius ?? 28));
+    document.documentElement.style.setProperty('--ui-radius', `${radius}px`);
+    document.documentElement.style.setProperty('--ui-radius-sm', `${Math.max(8, radius - 10)}px`);
+    document.documentElement.style.setProperty('--ui-radius-xs', `${Math.max(6, radius - 16)}px`);
+  }, [user?.uiRadius]);
+
   return (
     <ToastProvider>
-      <ThemeSelector />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/search" element={<Search />} />

@@ -60,6 +60,7 @@ model UserProfile {
   locale                 String  @default("en") @db.VarChar(10)
   dashboardSubtitle      String? @map("dashboard_subtitle") @db.Text
   showDashboardSubtitle  Boolean @default(true) @map("show_dashboard_subtitle")
+  uiRadius               Int     @default(28) @map("ui_radius")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

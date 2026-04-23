@@ -31,6 +31,7 @@ export class AuthService {
             dashboardSubtitle:
               'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
             showDashboardSubtitle: true,
+            uiRadius: 28,
           },
         },
       },
@@ -53,6 +54,7 @@ export class AuthService {
         dashboardSubtitle:
           'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
         showDashboardSubtitle: true,
+        uiRadius: 28,
         globalRole: 'USER',
       },
       ...tokens,
@@ -160,6 +162,7 @@ export class AuthService {
         user.profile?.dashboardSubtitle ||
         'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
       showDashboardSubtitle: user.profile?.showDashboardSubtitle ?? true,
+      uiRadius: user.profile?.uiRadius ?? 28,
       globalRole,
     };
   }
@@ -185,6 +188,7 @@ export class AuthService {
         : input.dashboardSubtitle === null
           ? null
           : input.dashboardSubtitle.trim();
+    const uiRadius = input.uiRadius;
 
     await db.user.update({
       where: { id: userId },
@@ -199,6 +203,7 @@ export class AuthService {
                   ? 'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.'
                   : dashboardSubtitle,
               showDashboardSubtitle: input.showDashboardSubtitle ?? true,
+              uiRadius: uiRadius ?? 28,
             },
             update: {
               ...(displayName ? { displayName } : {}),
@@ -206,6 +211,7 @@ export class AuthService {
               ...(input.showDashboardSubtitle !== undefined
                 ? { showDashboardSubtitle: input.showDashboardSubtitle }
                 : {}),
+              ...(uiRadius !== undefined ? { uiRadius } : {}),
             },
           },
         },

@@ -8,6 +8,7 @@ interface User {
   displayName?: string;
   dashboardSubtitle?: string | null;
   showDashboardSubtitle?: boolean;
+  uiRadius?: number;
   globalRole: string;
 }
 
