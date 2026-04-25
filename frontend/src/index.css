@@ -126,11 +126,11 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-hero-card {
-  @apply rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 px-5 py-6 text-white shadow-xl md:px-6;
+  @apply overflow-visible rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 px-5 py-6 text-white shadow-xl md:px-6;
 }
 
 .dashboard-hero-content {
-  @apply grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(360px,0.9fr)] lg:items-start;
+  @apply grid gap-5 overflow-visible lg:grid-cols-[minmax(0,1.3fr)_minmax(360px,0.9fr)] lg:items-start;
 }
 
 .dashboard-hero-label {
@@ -150,7 +150,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-hero-tools {
-  @apply grid gap-3 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)];
+  @apply grid gap-3 overflow-visible md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)];
 }
 
 .dashboard-hero-clock {
@@ -166,7 +166,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-hero-search {
-  @apply rounded-2xl border border-white/15 bg-white/10 px-4 py-4 backdrop-blur;
+  @apply relative z-30 overflow-visible rounded-2xl border border-white/15 bg-white/10 px-4 py-4 backdrop-blur;
 }
 
 .dashboard-hero-search-top {
@@ -175,6 +175,40 @@ html[data-theme='midnight'] .text-blue-600 {
 
 .dashboard-search-provider {
   @apply rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200;
+}
+
+.web-search-box {
+  @apply relative;
+}
+
+.web-bookmark-suggestions {
+  @apply absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[70] overflow-hidden border border-white/20 bg-white text-gray-900 shadow-xl;
+  border-radius: var(--ui-radius-sm);
+}
+
+.web-bookmark-suggestions.compact {
+  @apply relative top-auto mt-2 border-gray-200 shadow-sm;
+}
+
+.web-bookmark-suggestion {
+  @apply flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition;
+}
+
+.web-bookmark-suggestion:hover,
+.web-bookmark-suggestion.active {
+  @apply bg-sky-50 text-sky-950;
+}
+
+.web-bookmark-suggestion-copy {
+  @apply flex min-w-0 flex-1 flex-col;
+}
+
+.web-bookmark-suggestion-copy strong {
+  @apply truncate font-semibold;
+}
+
+.web-bookmark-suggestion-copy span {
+  @apply truncate text-xs text-gray-500;
 }
 
 .dashboard-user-chip {
@@ -653,6 +687,115 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply text-lg font-semibold text-gray-900;
 }
 
+.legacy-profile-grid {
+  @apply hidden;
+}
+
+.profile-hero-card {
+  @apply mt-6 flex flex-col gap-4 rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-5 sm:flex-row sm:items-center;
+}
+
+.profile-avatar {
+  @apply flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-sky-600 text-2xl font-bold text-white shadow-lg;
+}
+
+.profile-hero-copy {
+  @apply flex min-w-0 flex-1 flex-col;
+}
+
+.profile-hero-copy span,
+.profile-section-header span {
+  @apply text-xs font-semibold uppercase tracking-[0.2em] text-sky-600;
+}
+
+.profile-hero-copy strong {
+  @apply truncate text-2xl font-bold text-gray-900;
+}
+
+.profile-hero-copy small {
+  @apply truncate text-sm text-gray-500;
+}
+
+.profile-role-pill {
+  @apply w-fit rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-800 shadow-sm;
+}
+
+.profile-layout-grid {
+  @apply mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px];
+}
+
+.profile-main-card {
+  @apply flex flex-col gap-4;
+}
+
+.profile-side-stack {
+  @apply flex flex-col gap-6;
+}
+
+.profile-section-header {
+  @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+}
+
+.profile-form-grid {
+  @apply grid gap-4 md:grid-cols-2;
+}
+
+.profile-field {
+  @apply flex flex-col gap-2 text-sm font-medium text-gray-700;
+}
+
+.profile-field .input:disabled {
+  @apply cursor-not-allowed bg-gray-100 text-gray-500;
+}
+
+.profile-toggle-row {
+  @apply min-h-[46px] md:mt-7;
+}
+
+.profile-detail-list {
+  @apply flex flex-col divide-y divide-gray-100;
+}
+
+.profile-detail-list div {
+  @apply flex flex-col gap-1 py-3;
+}
+
+.profile-detail-list span {
+  @apply text-xs font-semibold uppercase tracking-[0.18em] text-gray-500;
+}
+
+.profile-detail-list strong {
+  @apply break-words text-sm font-semibold text-gray-900;
+}
+
+.profile-radius-options {
+  @apply mt-4;
+}
+
+.profile-widget-list {
+  @apply mt-4 grid gap-3 md:grid-cols-2;
+}
+
+.profile-widget-row {
+  @apply flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition hover:border-sky-300 hover:bg-sky-50;
+}
+
+.profile-widget-row span {
+  @apply flex min-w-0 flex-col;
+}
+
+.profile-widget-row strong {
+  @apply truncate text-sm font-semibold text-gray-900;
+}
+
+.profile-widget-row small {
+  @apply truncate text-xs text-gray-500;
+}
+
+.profile-widget-row em {
+  @apply shrink-0 rounded-full bg-white px-3 py-1 text-xs not-italic text-gray-600;
+}
+
 .span-2 {
   @apply lg:col-span-2;
 }
@@ -824,6 +967,52 @@ html[data-theme='midnight'] .dashboard-hero-clock,
 html[data-theme='midnight'] .dashboard-hero-search {
   background-color: rgba(15, 23, 42, 0.45) !important;
   border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme='midnight'] .web-bookmark-suggestions {
+  background-color: #0f172a !important;
+  border-color: rgba(148, 163, 184, 0.24) !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .web-bookmark-suggestion:hover,
+html[data-theme='midnight'] .web-bookmark-suggestion.active {
+  background-color: rgba(14, 165, 233, 0.18) !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .web-bookmark-suggestion-copy span {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='midnight'] .profile-hero-card {
+  background-image: linear-gradient(to bottom right, #0f172a, #10243d, #082f49) !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+html[data-theme='midnight'] .profile-role-pill,
+html[data-theme='midnight'] .profile-widget-row,
+html[data-theme='midnight'] .profile-widget-row em {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .profile-hero-copy strong,
+html[data-theme='midnight'] .profile-detail-list strong,
+html[data-theme='midnight'] .profile-widget-row strong {
+  color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .profile-hero-copy small,
+html[data-theme='midnight'] .profile-detail-list span,
+html[data-theme='midnight'] .profile-widget-row small {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='midnight'] .profile-widget-row:hover {
+  background-color: rgba(14, 165, 233, 0.14) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
 }
 
 html[data-theme='midnight'] .clock-widget-time,

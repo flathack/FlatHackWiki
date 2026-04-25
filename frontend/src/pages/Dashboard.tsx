@@ -91,6 +91,31 @@ function useIsMobile() {
 
 type DashboardState = DashboardResponse | null;
 
+function flattenBookmarkItems(items: BookmarkItem[]): BookmarkItem[] {
+  return items.flatMap((item) => [item, ...flattenBookmarkItems(item.children ?? [])]);
+}
+
+function scoreBookmarkMatch(bookmark: BookmarkItem, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery || bookmark.itemType !== 'BOOKMARK' || !bookmark.url) return 0;
+
+  const title = bookmark.title.toLowerCase();
+  const url = bookmark.url.toLowerCase();
+  const category = bookmark.category?.toLowerCase() ?? '';
+  const description = bookmark.description?.toLowerCase() ?? '';
+  const haystack = `${title} ${url} ${category} ${description}`;
+
+  if (title === normalizedQuery) return 100;
+  if (title.startsWith(normalizedQuery)) return 80;
+  if (title.includes(normalizedQuery)) return 60;
+  if (url.includes(normalizedQuery)) return 35;
+  if (category.includes(normalizedQuery)) return 25;
+  if (description.includes(normalizedQuery)) return 15;
+  if (normalizedQuery.split(/\s+/).every((part) => haystack.includes(part))) return 10;
+
+  return 0;
+}
+
 export default function Dashboard() {
   const { user, logout, updateUser } = useAuthStore();
   const navigate = useNavigate();
@@ -106,6 +131,7 @@ export default function Dashboard() {
   const [now, setNow] = useState(new Date());
   const [wikiSearchQuery, setWikiSearchQuery] = useState('');
   const [webSearchQuery, setWebSearchQuery] = useState('');
+  const [activeBookmarkSuggestionIndex, setActiveBookmarkSuggestionIndex] = useState(0);
   const [profileName, setProfileName] = useState('');
   const [profileSubtitle, setProfileSubtitle] = useState(defaultSubtitle);
   const [showProfileSubtitle, setShowProfileSubtitle] = useState(true);
@@ -272,6 +298,17 @@ export default function Dashboard() {
     webSearchWidget.settings.provider in searchProviders
       ? (webSearchWidget.settings.provider as keyof typeof searchProviders)
       : 'duckduckgo';
+  const bookmarkSuggestions = useMemo(() => {
+    const query = webSearchQuery.trim();
+    if (query.length < 2 || !dashboard?.bookmarks.tree.length) return [];
+
+    return flattenBookmarkItems(dashboard.bookmarks.tree)
+      .map((bookmark) => ({ bookmark, score: scoreBookmarkMatch(bookmark, query) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || a.bookmark.title.localeCompare(b.bookmark.title))
+      .slice(0, 6)
+      .map((item) => item.bookmark);
+  }, [dashboard?.bookmarks.tree, webSearchQuery]);
   const telegramPollInterval = useMemo(() => {
     const chatSettings = dashboard?.telegramChat?.settings;
     if (!chatSettings) return 15000;
@@ -279,6 +316,15 @@ export default function Dashboard() {
       ? chatSettings.pollIntervalMs
       : 15000;
   }, [dashboard?.telegramChat?.settings]);
+  const profileInitials = useMemo(() => {
+    const name = (profileName || user?.displayName || user?.name || user?.email || '').trim();
+    if (!name) return 'U';
+    const parts = name.split(/\s+/).filter(Boolean);
+    return parts.length > 1
+      ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+      : name.slice(0, 2).toUpperCase();
+  }, [profileName, user?.displayName, user?.email, user?.name]);
+  const visibleWidgetCount = dashboard?.widgets.filter((widget) => widget.isVisible).length ?? 0;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -288,6 +334,16 @@ export default function Dashboard() {
 
     return () => window.clearTimeout(timer);
   }, [dashboard?.widgets]);
+
+  useEffect(() => {
+    setActiveBookmarkSuggestionIndex(0);
+  }, [webSearchQuery]);
+
+  useEffect(() => {
+    setActiveBookmarkSuggestionIndex((current) =>
+      bookmarkSuggestions.length === 0 ? 0 : Math.min(current, bookmarkSuggestions.length - 1)
+    );
+  }, [bookmarkSuggestions.length]);
 
   useEffect(() => {
     const telegramWidgetVisible = dashboard?.widgets.some(
@@ -586,6 +642,76 @@ export default function Dashboard() {
     window.open(providerUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const openBookmarkSuggestion = (bookmark: BookmarkItem) => {
+    if (!bookmark.url) return;
+    window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleWebSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' && bookmarkSuggestions.length > 0) {
+      event.preventDefault();
+      setActiveBookmarkSuggestionIndex((current) => (current + 1) % bookmarkSuggestions.length);
+      return;
+    }
+
+    if (event.key === 'ArrowUp' && bookmarkSuggestions.length > 0) {
+      event.preventDefault();
+      setActiveBookmarkSuggestionIndex((current) =>
+        current === 0 ? bookmarkSuggestions.length - 1 : current - 1
+      );
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      setWebSearchQuery('');
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      const selectedBookmark = bookmarkSuggestions[activeBookmarkSuggestionIndex];
+      if (selectedBookmark) {
+        event.preventDefault();
+        openBookmarkSuggestion(selectedBookmark);
+        return;
+      }
+
+      runHeroWebSearch();
+    }
+  };
+
+  const renderBookmarkSuggestions = (compact = false) => {
+    if (bookmarkSuggestions.length === 0) return null;
+
+    return (
+      <div className={`web-bookmark-suggestions ${compact ? 'compact' : ''}`} role="listbox">
+        {bookmarkSuggestions.map((bookmark, index) => (
+          <button
+            key={bookmark.id}
+            type="button"
+            className={`web-bookmark-suggestion ${index === activeBookmarkSuggestionIndex ? 'active' : ''}`}
+            onMouseEnter={() => setActiveBookmarkSuggestionIndex(index)}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              openBookmarkSuggestion(bookmark);
+            }}
+            role="option"
+            aria-selected={index === activeBookmarkSuggestionIndex}
+          >
+            {bookmark.faviconUrl ? (
+              <img className="bookmark-favicon" src={bookmark.faviconUrl} alt="" />
+            ) : (
+              <span className="bookmark-favicon-fallback">{bookmark.title.slice(0, 1).toUpperCase()}</span>
+            )}
+            <span className="web-bookmark-suggestion-copy">
+              <strong>{bookmark.title}</strong>
+              <span>{bookmark.url}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   const sendTelegramMessage = async () => {
     const content = telegramDraft.trim();
     if (!content) return;
@@ -656,6 +782,10 @@ export default function Dashboard() {
           brave: `https://search.brave.com/search?q=${encodeURIComponent(webSearchQuery)}`,
           bing: `https://www.bing.com/search?q=${encodeURIComponent(webSearchQuery)}`,
         }[provider as keyof typeof searchProviders];
+        const runWidgetWebSearch = () => {
+          if (!webSearchQuery.trim()) return;
+          window.open(providerUrl, '_blank', 'noopener,noreferrer');
+        };
 
         return (
           <WidgetShell
@@ -668,20 +798,17 @@ export default function Dashboard() {
                 className="input"
                 value={webSearchQuery}
                 onChange={(e) => setWebSearchQuery(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === 'Enter' &&
-                  webSearchQuery.trim() &&
-                  window.open(providerUrl, '_blank', 'noopener,noreferrer')
-                }
-                placeholder="Im Web suchen"
+                onKeyDown={handleWebSearchKeyDown}
+                placeholder="Im Web und in Lesezeichen suchen"
               />
               <button
                 className="btn btn-primary"
-                onClick={() => webSearchQuery.trim() && window.open(providerUrl, '_blank', 'noopener,noreferrer')}
+                onClick={runWidgetWebSearch}
               >
                 Öffnen
               </button>
             </div>
+            {renderBookmarkSuggestions(true)}
           </WidgetShell>
         );
       }
@@ -1190,13 +1317,14 @@ export default function Dashboard() {
                     className="input"
                     value={webSearchQuery}
                     onChange={(e) => setWebSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && runHeroWebSearch()}
-                    placeholder="Direkt im Web suchen ..."
+                    onKeyDown={handleWebSearchKeyDown}
+                    placeholder="Direkt im Web und in Lesezeichen suchen ..."
                   />
                   <button className="btn btn-primary" onClick={runHeroWebSearch}>
                     Suchen
                   </button>
                 </div>
+                {renderBookmarkSuggestions()}
               </div>
             </div>
           </div>
@@ -1324,7 +1452,145 @@ export default function Dashboard() {
                 Schließen
               </button>
             </div>
-            <div className="dialog-grid">
+            <section className="profile-hero-card">
+              <div className="profile-avatar">{profileInitials}</div>
+              <div className="profile-hero-copy">
+                <span>Angemeldet als</span>
+                <strong>{user?.displayName || user?.name || 'Benutzer'}</strong>
+                <small>{user?.email}</small>
+              </div>
+              <div className="profile-role-pill">{user?.globalRole || 'USER'}</div>
+            </section>
+
+            <div className="profile-layout-grid">
+              <section className="dialog-card profile-main-card">
+                <div className="profile-section-header">
+                  <div>
+                    <span>Stammdaten</span>
+                    <h3>Persoenliche Angaben</h3>
+                  </div>
+                </div>
+                <div className="profile-form-grid">
+                  <label className="profile-field">
+                    <span>Anzeigename</span>
+                    <input className="input" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name fuer die Begruessung" />
+                  </label>
+                  <label className="profile-field">
+                    <span>E-Mail</span>
+                    <input className="input" value={user?.email || ''} disabled />
+                  </label>
+                  <label className="profile-field">
+                    <span>Rolle</span>
+                    <input className="input" value={user?.globalRole || 'USER'} disabled />
+                  </label>
+                  <label className="checkbox-row profile-toggle-row">
+                    <input type="checkbox" checked={showProfileSubtitle} onChange={(e) => setShowProfileSubtitle(e.target.checked)} />
+                    <span>Dashboard-Unterzeile anzeigen</span>
+                  </label>
+                </div>
+                <label className="profile-field">
+                  <span>Dashboard-Unterzeile</span>
+                  <textarea className="input widget-notes" value={profileSubtitle} onChange={(e) => setProfileSubtitle(e.target.value)} placeholder={defaultSubtitle} />
+                </label>
+                {profileError && <div className="widget-message widget-message-error">{profileError}</div>}
+                {profileMessage && <div className="widget-message widget-message-success">{profileMessage}</div>}
+                <div className="widget-toolbar-end">
+                  <button className="btn btn-primary" onClick={saveProfile} disabled={profileSaving}>
+                    {profileSaving ? 'Speichert ...' : 'Profil speichern'}
+                  </button>
+                </div>
+              </section>
+
+              <aside className="profile-side-stack">
+                <section className="dialog-card">
+                  <div className="profile-section-header">
+                    <div>
+                      <span>Status</span>
+                      <h3>Account</h3>
+                    </div>
+                  </div>
+                  <div className="profile-detail-list">
+                    <div><span>Name</span><strong>{user?.displayName || user?.name || '-'}</strong></div>
+                    <div><span>E-Mail</span><strong>{user?.email || '-'}</strong></div>
+                    <div><span>Rolle</span><strong>{user?.globalRole || 'USER'}</strong></div>
+                  </div>
+                </section>
+
+                <section className="dialog-card">
+                  <div className="profile-section-header">
+                    <div>
+                      <span>Design</span>
+                      <h3>Darstellung</h3>
+                    </div>
+                  </div>
+                  <div className="dashboard-radius-options profile-radius-options">
+                    {radiusPresets.map((preset) => (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        className={`chip-button ${currentUiRadius === preset.value ? 'active' : ''}`}
+                        onClick={() => void saveUiRadius(preset.value)}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </aside>
+
+              <section className="dialog-card span-2">
+                <div className="profile-section-header">
+                  <div>
+                    <span>Dashboard</span>
+                    <h3>Uebersicht</h3>
+                  </div>
+                </div>
+                <div className="widget-stat-grid">
+                  <div className="widget-stat-box"><span>Widgets sichtbar</span><strong>{visibleWidgetCount}</strong></div>
+                  <div className="widget-stat-box"><span>Widgets gesamt</span><strong>{dashboard?.widgets.length ?? 0}</strong></div>
+                  <div className="widget-stat-box"><span>Lesezeichen</span><strong>{dashboard?.bookmarks.bookmarkCount ?? 0}</strong></div>
+                  <div className="widget-stat-box"><span>Bereiche</span><strong>{dashboard?.spaces.total ?? 0}</strong></div>
+                </div>
+              </section>
+
+              <section className="dialog-card span-2">
+                <div className="profile-section-header">
+                  <div>
+                    <span>Konfiguration</span>
+                    <h3>Aktive Widgets</h3>
+                  </div>
+                  <button className="btn btn-secondary" onClick={() => setWidgetLibraryOpen(true)}>
+                    Widget hinzufuegen
+                  </button>
+                </div>
+                <div className="profile-widget-list">
+                  {dashboard?.widgets.map((widget) => {
+                    const definition = widgetDefinitionMap[widget.type] ?? {
+                      label: widget.type,
+                      description: 'Dashboard-Widget',
+                    };
+
+                    return (
+                      <button
+                        key={widget.id}
+                        className="profile-widget-row"
+                        onClick={() => {
+                          setWidgetConfigId(widget.id);
+                          setSettingsOpen(false);
+                        }}
+                      >
+                        <span>
+                          <strong>{definition.label}</strong>
+                          <small>{widget.title || definition.description}</small>
+                        </span>
+                        <em>{widget.isVisible ? 'Sichtbar' : 'Ausgeblendet'}</em>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+            <div className="dialog-grid legacy-profile-grid">
               <section className="dialog-card span-2">
                 <h3>Profil</h3>
                 <div className="widget-form-grid">

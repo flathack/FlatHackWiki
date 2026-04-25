@@ -8,6 +8,8 @@ export interface WidgetDefinition {
 }
 
 export const widgetDefinitions: WidgetDefinition[] = [
+  { type: 'CLOCK', label: 'Uhr', description: 'Aktuelle Uhrzeit und Datum', singleton: true },
+  { type: 'WEB_SEARCH', label: 'Web-Suche', description: 'Websuche mit Lesezeichen-Vorschlägen', singleton: true },
   { type: 'WIKI_SEARCH', label: 'Wiki-Suche', description: 'Schnellsuche im Wiki', singleton: true },
   { type: 'WEATHER', label: 'Wetter', description: 'Wetter für einen konfigurierbaren Ort', singleton: true },
   { type: 'FAVORITE_SPACES', label: 'Favorisierte Bereiche', description: 'Wichtige Wiki-Bereiche im Blick', singleton: true },
