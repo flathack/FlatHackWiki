@@ -1,176 +1,279 @@
-﻿import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { adminApi, type AdminAuditEntry, type AdminStats, type AdminUser } from '../api/client';
+import AppHeader from '../components/AppHeader';
 import { useAuthStore } from '../context/auth.store';
 
-interface AuditEntry {
-  id: string;
-  action: string;
-  resourceType: string;
-  resourceId: string;
-  ipAddress: string;
-  createdAt: string;
-  user?: { name: string; email: string };
-}
+const roles = ['SUPER_ADMIN', 'SYSTEM_ADMIN', 'SPACE_ADMIN', 'EDITOR', 'AUTHOR', 'COMMENTER', 'VIEWER', 'GUEST', 'USER'];
+const statuses: AdminUser['status'][] = ['ACTIVE', 'INACTIVE', 'DELETED'];
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  globalRole: string;
+function formatDate(value: string) {
+  return new Date(value).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 export default function AdminPage() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'users' | 'audit'>('users');
-  const [users, setUsers] = useState<User[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'audit' | 'system'>('overview');
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditEntry[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busyAction, setBusyAction] = useState('');
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   const isAdmin = user?.globalRole === 'SUPER_ADMIN' || user?.globalRole === 'SYSTEM_ADMIN';
+  const activeUsers = useMemo(() => users.filter((item) => item.status === 'ACTIVE'), [users]);
+
+  const loadData = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const [statsResponse, usersResponse, auditResponse] = await Promise.all([
+        adminApi.stats(),
+        adminApi.users(),
+        adminApi.auditLog({ limit: 100 }),
+      ]);
+      setStats(statsResponse.data);
+      setUsers(usersResponse.data);
+      setAuditLogs(auditResponse.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Admin-Daten konnten nicht geladen werden');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (isAdmin) loadData();
+    if (isAdmin) void loadData();
     else setLoading(false);
   }, [isAdmin]);
 
-  const loadData = async () => {
-    setLoading(false);
+  const updateUser = async (targetUser: AdminUser, data: { name?: string; status?: AdminUser['status']; globalRole?: string | null }) => {
+    setBusyAction(`${targetUser.id}-update`);
+    setError('');
+    setMessage('');
+    try {
+      const { data: updated } = await adminApi.updateUser(targetUser.id, data);
+      setUsers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setMessage(`Benutzer ${updated.email} wurde aktualisiert.`);
+      const statsResponse = await adminApi.stats();
+      setStats(statsResponse.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Benutzer konnte nicht aktualisiert werden');
+    } finally {
+      setBusyAction('');
+    }
+  };
+
+  const revokeSessions = async (targetUser: AdminUser) => {
+    setBusyAction(`${targetUser.id}-sessions`);
+    setError('');
+    setMessage('');
+    try {
+      const { data } = await adminApi.revokeSessions(targetUser.id);
+      setMessage(`${data.revoked} Session(s) fuer ${targetUser.email} widerrufen.`);
+      const statsResponse = await adminApi.stats();
+      setStats(statsResponse.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Sessions konnten nicht widerrufen werden');
+    } finally {
+      setBusyAction('');
+    }
+  };
+
+  const deleteUser = async (targetUser: AdminUser) => {
+    if (!window.confirm(`Benutzer ${targetUser.email} wirklich als gelöscht markieren?`)) return;
+    setBusyAction(`${targetUser.id}-delete`);
+    setError('');
+    setMessage('');
+    try {
+      await adminApi.deleteUser(targetUser.id);
+      await loadData();
+      setMessage(`Benutzer ${targetUser.email} wurde als geloescht markiert.`);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Benutzer konnte nicht geloescht werden');
+    } finally {
+      setBusyAction('');
+    }
   };
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Zugriff verweigert</h2>
-          <p className="text-gray-500">Du benötigst Administratorrechte, um diese Seite aufzurufen.</p>
-          <Link to="/" className="text-blue-600 mt-4 block">← Zurück zur Startseite</Link>
-        </div>
+      <div className="dashboard-page-shell">
+        <AppHeader subtitle="Administration" />
+        <main className="page-loader">
+          <div className="widget-message widget-message-error">Zugriff verweigert. Administratorrechte erforderlich.</div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="text-gray-500 hover:text-gray-700">← Startseite</Link>
-            <span className="text-gray-300">/</span>
-            <span className="font-medium">Admin</span>
+    <div className="dashboard-page-shell">
+      <AppHeader subtitle="Administration, Benutzer, Audit und Systemstatus." />
+
+      <main className="dashboard-main-shell">
+        <section className="admin-hero">
+          <div>
+            <div className="dashboard-hero-label">Administration</div>
+            <h1 className="dashboard-hero-title">Systemverwaltung</h1>
+            <p className="dashboard-hero-copy">Benutzer verwalten, Rollen setzen, Sessions widerrufen und Audit-Ereignisse pruefen.</p>
           </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold mb-6">Administration</h1>
-
-        <div className="flex gap-4 border-b border-gray-200 mb-6">
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`pb-2 px-4 font-medium ${
-              activeTab === 'users'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Benutzer
+          <button className="btn btn-primary" onClick={() => void loadData()} disabled={loading}>
+            {loading ? 'Laedt ...' : 'Aktualisieren'}
           </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`pb-2 px-4 font-medium ${
-              activeTab === 'audit'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Audit-Protokoll
-          </button>
+        </section>
+
+        {error && <div className="widget-message widget-message-error">{error}</div>}
+        {message && <div className="widget-message widget-message-success">{message}</div>}
+
+        <div className="admin-tabs">
+          {[
+            ['overview', 'Uebersicht'],
+            ['users', 'Benutzer'],
+            ['audit', 'Audit'],
+            ['system', 'System'],
+          ].map(([value, label]) => (
+            <button key={value} className={`admin-tab ${activeTab === value ? 'active' : ''}`} onClick={() => setActiveTab(value as typeof activeTab)}>
+              {label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
-          <div className="text-gray-500">Wird geladen...</div>
+          <div className="page-loader">Admin-Daten werden geladen ...</div>
+        ) : activeTab === 'overview' ? (
+          <section className="groupware-grid">
+            <article className="dialog-card span-2">
+              <div className="widget-stat-grid">
+                <div className="widget-stat-box"><span>Benutzer</span><strong>{stats?.userCount ?? 0}</strong></div>
+                <div className="widget-stat-box"><span>Aktiv</span><strong>{stats?.activeUserCount ?? activeUsers.length}</strong></div>
+                <div className="widget-stat-box"><span>Bereiche</span><strong>{stats?.spaceCount ?? 0}</strong></div>
+                <div className="widget-stat-box"><span>Seiten</span><strong>{stats?.pageCount ?? 0}</strong></div>
+                <div className="widget-stat-box"><span>Kommentare</span><strong>{stats?.commentCount ?? 0}</strong></div>
+                <div className="widget-stat-box"><span>Sessions</span><strong>{stats?.sessionCount ?? 0}</strong></div>
+              </div>
+            </article>
+            <article className="dialog-card">
+              <h3>Letzte Audit-Ereignisse</h3>
+              <div className="admin-activity-list">
+                {auditLogs.slice(0, 6).map((entry) => (
+                  <div key={entry.id}>
+                    <strong>{entry.action}</strong>
+                    <span>{entry.user?.email || 'System'} · {formatDate(entry.createdAt)}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+            <article className="dialog-card">
+              <h3>Benutzerstatus</h3>
+              <div className="profile-detail-list">
+                <div><span>Aktiv</span><strong>{stats?.activeUserCount ?? 0}</strong></div>
+                <div><span>Inaktiv</span><strong>{stats?.inactiveUserCount ?? 0}</strong></div>
+                <div><span>Gesamt</span><strong>{stats?.userCount ?? 0}</strong></div>
+              </div>
+            </article>
+          </section>
         ) : activeTab === 'users' ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">E-Mail</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rolle</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktionen</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{u.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                        {u.globalRole}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        u.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {u.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 hover:text-blue-800 mr-3">Bearbeiten</button>
-                      <button className="text-red-600 hover:text-red-800">Löschen</button>
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && (
+          <section className="admin-table-card">
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                      Keine Benutzer gefunden
-                    </td>
+                    <th>Benutzer</th>
+                    <th>Rolle</th>
+                    <th>Status</th>
+                    <th>Erstellt</th>
+                    <th>Aktionen</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {users.map((targetUser) => (
+                    <tr key={targetUser.id}>
+                      <td>
+                        <strong>{targetUser.profile?.displayName || targetUser.name}</strong>
+                        <span>{targetUser.email}</span>
+                      </td>
+                      <td>
+                        <select
+                          className="input admin-select"
+                          value={targetUser.globalRole}
+                          disabled={busyAction.startsWith(targetUser.id)}
+                          onChange={(event) => updateUser(targetUser, { globalRole: event.target.value === 'USER' ? null : event.target.value })}
+                        >
+                          {roles.map((role) => <option key={role} value={role}>{role}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className="input admin-select"
+                          value={targetUser.status}
+                          disabled={busyAction.startsWith(targetUser.id)}
+                          onChange={(event) => updateUser(targetUser, { status: event.target.value as AdminUser['status'] })}
+                        >
+                          {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                        </select>
+                      </td>
+                      <td>{formatDate(targetUser.createdAt)}</td>
+                      <td>
+                        <div className="admin-row-actions">
+                          <button className="text-button" disabled={busyAction.startsWith(targetUser.id)} onClick={() => revokeSessions(targetUser)}>Sessions widerrufen</button>
+                          <button className="text-button danger" disabled={busyAction.startsWith(targetUser.id)} onClick={() => deleteUser(targetUser)}>Loeschen</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : activeTab === 'audit' ? (
+          <section className="admin-table-card">
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Zeitpunkt</th>
+                    <th>Benutzer</th>
+                    <th>Aktion</th>
+                    <th>Ressource</th>
+                    <th>IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((entry) => (
+                    <tr key={entry.id}>
+                      <td>{formatDate(entry.createdAt)}</td>
+                      <td>{entry.user?.email || 'System'}</td>
+                      <td><code>{entry.action}</code></td>
+                      <td>{entry.resourceType}{entry.resourceId ? `:${entry.resourceId}` : ''}</td>
+                      <td>{entry.ipAddress || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zeitpunkt</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Benutzer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktion</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ressource</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {auditLogs.map((log) => (
-                  <tr key={log.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(log.createdAt).toLocaleString('de-DE')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">{log.user?.name || 'System'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{log.action}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {log.resourceType}:{log.resourceId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{log.ipAddress}</td>
-                  </tr>
-                ))}
-                {auditLogs.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                      Noch keine Audit-Einträge vorhanden
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <section className="groupware-grid">
+            <article className="dialog-card">
+              <h3>Health</h3>
+              <div className="profile-detail-list">
+                <div><span>API</span><strong>Online, wenn diese Seite Daten laedt</strong></div>
+                <div><span>Audit Logs</span><strong>{stats?.auditLogCount ?? 0}</strong></div>
+                <div><span>Aktive Sessions</span><strong>{stats?.sessionCount ?? 0}</strong></div>
+              </div>
+            </article>
+            <article className="dialog-card">
+              <h3>Betrieb</h3>
+              <ol className="groupware-steps">
+                <li>Backups regelmaessig pruefen.</li>
+                <li>Docker Images geplant aktualisieren.</li>
+                <li>Admin-Accounts sparsam vergeben.</li>
+                <li>Sessions nach Passwortwechsel widerrufen.</li>
+              </ol>
+            </article>
+          </section>
         )}
       </main>
     </div>

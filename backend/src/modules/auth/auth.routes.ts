@@ -18,6 +18,10 @@ router.post('/login', authRateLimiter, validate(loginSchema), authController.log
 router.post('/logout', authController.logout);
 router.post('/refresh', validate(refreshSchema), authController.refresh);
 router.post('/password-reset', authRateLimiter, validate(passwordResetSchema), authController.requestPasswordReset);
+router.get('/oidc/config', authController.oidcConfig);
+router.get('/oidc/login', authRateLimiter, authController.oidcLogin);
+router.get('/oidc/callback', authRateLimiter, authController.oidcCallback);
+router.get('/oidc/logout', authController.oidcLogout);
 
 router.get('/me', authenticate, authController.me);
 router.patch('/me', authenticate, validate(updateMeSchema), authController.updateMe);

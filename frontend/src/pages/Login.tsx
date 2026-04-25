@@ -1,6 +1,6 @@
-﻿import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authApi } from '../api/client';
+import { API_BASE, authApi } from '../api/client';
 import { useAuthStore } from '../context/auth.store';
 
 export default function LoginPage() {
@@ -10,8 +10,43 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [oidcConfig, setOidcConfig] = useState<{
+    enabled: boolean;
+    providerName: string;
+    loginUrl: string | null;
+  } | null>(null);
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const { setAuth, setTokens } = useAuthStore();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oidcAccess = params.get('oidc_access');
+    const oidcRefresh = params.get('oidc_refresh');
+    const returnTo = params.get('returnTo') || '/';
+
+    if (!oidcAccess || !oidcRefresh) return;
+
+    const completeOidcLogin = async () => {
+      try {
+        setTokens({ accessToken: oidcAccess, refreshToken: oidcRefresh });
+        const me = await authApi.me();
+        setAuth({ accessToken: oidcAccess, refreshToken: oidcRefresh, user: me.data });
+        window.history.replaceState(null, '', '/login');
+        navigate(returnTo.startsWith('/') ? returnTo : '/');
+      } catch {
+        setError('Zentrale Anmeldung war erfolgreich, aber das Wiki-Profil konnte nicht geladen werden.');
+      }
+    };
+
+    void completeOidcLogin();
+  }, [navigate, setAuth, setTokens]);
+
+  useEffect(() => {
+    authApi
+      .oidcConfig()
+      .then(({ data }) => setOidcConfig(data))
+      .catch(() => setOidcConfig(null));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +73,15 @@ export default function LoginPage() {
     }
   };
 
+  const handleOidcLogin = () => {
+    const loginUrl = oidcConfig?.loginUrl;
+    if (!loginUrl) return;
+
+    const returnTo = new URLSearchParams(window.location.search).get('returnTo') || '/';
+    const separator = loginUrl.includes('?') ? '&' : '?';
+    window.location.href = `${API_BASE}${loginUrl}${separator}returnTo=${encodeURIComponent(returnTo)}`;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
@@ -50,6 +94,19 @@ export default function LoginPage() {
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
+          </div>
+        )}
+
+        {oidcConfig?.enabled && oidcConfig.loginUrl && (
+          <div className="mb-5">
+            <button type="button" className="btn btn-primary w-full" onClick={handleOidcLogin}>
+              Mit {oidcConfig.providerName} anmelden
+            </button>
+            <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+              <span className="h-px flex-1 bg-gray-200" />
+              <span>oder lokal</span>
+              <span className="h-px flex-1 bg-gray-200" />
+            </div>
           </div>
         )}
 
@@ -87,7 +144,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input"
-              placeholder="••••••••"
+              placeholder="Passwort"
               required
             />
           </div>

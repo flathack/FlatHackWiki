@@ -1,0 +1,105 @@
+services:
+  nextcloud-db:
+    image: postgres:16-alpine
+    container_name: flathackwiki-nextcloud-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${NEXTCLOUD_POSTGRES_DB:-nextcloud}
+      POSTGRES_USER: ${NEXTCLOUD_POSTGRES_USER:-nextcloud}
+      POSTGRES_PASSWORD: ${NEXTCLOUD_POSTGRES_PASSWORD:-ChangeMeNextcloudDb1234}
+    volumes:
+      - nextcloud_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NEXTCLOUD_POSTGRES_USER:-nextcloud} -d ${NEXTCLOUD_POSTGRES_DB:-nextcloud}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  nextcloud-redis:
+    image: redis:7-alpine
+    container_name: flathackwiki-nextcloud-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - nextcloud_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  nextcloud:
+    image: nextcloud:stable-apache
+    container_name: flathackwiki-nextcloud
+    restart: unless-stopped
+    ports:
+      - "${NEXTCLOUD_PORT:-8080}:80"
+    environment:
+      POSTGRES_HOST: nextcloud-db
+      POSTGRES_DB: ${NEXTCLOUD_POSTGRES_DB:-nextcloud}
+      POSTGRES_USER: ${NEXTCLOUD_POSTGRES_USER:-nextcloud}
+      POSTGRES_PASSWORD: ${NEXTCLOUD_POSTGRES_PASSWORD:-ChangeMeNextcloudDb1234}
+      REDIS_HOST: ${NEXTCLOUD_REDIS_HOST:-nextcloud-redis}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD:-ChangeMeNextcloud1234}
+      NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_TRUSTED_DOMAINS:-localhost 127.0.0.1}
+      PHP_MEMORY_LIMIT: 512M
+      PHP_UPLOAD_LIMIT: 512M
+    volumes:
+      - nextcloud_data:/var/www/html/data
+      - nextcloud_config:/var/www/html/config
+      - nextcloud_apps:/var/www/html/custom_apps
+    depends_on:
+      nextcloud-db:
+        condition: service_healthy
+      nextcloud-redis:
+        condition: service_healthy
+
+  nextcloud-https:
+    image: caddy:2-alpine
+    container_name: flathackwiki-nextcloud-https
+    restart: unless-stopped
+    ports:
+      - "${NEXTCLOUD_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./docker/nextcloud/Caddyfile:/etc/caddy/Caddyfile:ro
+      - nextcloud_caddy_data:/data
+      - nextcloud_caddy_config:/config
+    depends_on:
+      - nextcloud
+
+  nextcloud-cron:
+    image: nextcloud:stable-apache
+    container_name: flathackwiki-nextcloud-cron
+    restart: unless-stopped
+    entrypoint: /cron.sh
+    environment:
+      POSTGRES_HOST: nextcloud-db
+      POSTGRES_DB: ${NEXTCLOUD_POSTGRES_DB:-nextcloud}
+      POSTGRES_USER: ${NEXTCLOUD_POSTGRES_USER:-nextcloud}
+      POSTGRES_PASSWORD: ${NEXTCLOUD_POSTGRES_PASSWORD:-ChangeMeNextcloudDb1234}
+      REDIS_HOST: ${NEXTCLOUD_REDIS_HOST:-nextcloud-redis}
+    volumes:
+      - nextcloud_data:/var/www/html/data
+      - nextcloud_config:/var/www/html/config
+      - nextcloud_apps:/var/www/html/custom_apps
+    depends_on:
+      nextcloud:
+        condition: service_started
+
+  nextcloud-backup-target:
+    image: alpine:3.20
+    container_name: flathackwiki-nextcloud-backup-target
+    profiles: ["backup"]
+    command: "sh -c \"mkdir -p /backup && echo 'Backup-Ziel bereit: /backup' && sleep infinity\""
+    volumes:
+      - ${NAS_BACKUP_PATH:-./backups/nextcloud}:/backup
+
+volumes:
+  nextcloud_db:
+  nextcloud_redis:
+  nextcloud_data:
+  nextcloud_config:
+  nextcloud_apps:
+  nextcloud_caddy_data:
+  nextcloud_caddy_config:

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../context/auth.store';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+export const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -241,12 +241,47 @@ export interface WeatherResponse {
   humidity: string;
   windKph: string;
 }
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'DELETED';
+  globalRole: string;
+  createdAt: string;
+  updatedAt: string;
+  profile?: { displayName?: string | null; avatarUrl?: string | null } | null;
+}
+export interface AdminAuditEntry {
+  id: string;
+  action: string;
+  resourceType: string;
+  resourceId?: string | null;
+  ipAddress?: string | null;
+  createdAt: string;
+  user?: { id: string; name: string; email: string } | null;
+}
+export interface AdminStats {
+  userCount: number;
+  activeUserCount: number;
+  inactiveUserCount: number;
+  spaceCount: number;
+  pageCount: number;
+  commentCount: number;
+  auditLogCount: number;
+  sessionCount: number;
+}
 
 export const authApi = {
   login: (data: LoginRequest) => api.post<{ accessToken: string; refreshToken: string; user: any }>('/auth/login', data),
   register: (data: RegisterRequest) => api.post('/auth/register', data),
   logout: (refreshToken: string) => api.post('/auth/logout', { refreshToken }),
   me: () => api.get<MeResponse>('/auth/me'),
+  oidcConfig: () => api.get<{
+    enabled: boolean;
+    providerName: string;
+    loginUrl: string | null;
+    logoutUrl: string | null;
+  }>('/auth/oidc/config'),
   updateMe: (data: {
     displayName?: string;
     dashboardSubtitle?: string | null;
@@ -363,4 +398,14 @@ export const dashboardApi = {
       api.patch<TimeEntry>(`/dashboard/time-tracking/entries/${entryId}`, data),
     deleteEntry: (entryId: string) => api.delete(`/dashboard/time-tracking/entries/${entryId}`),
   },
+};
+
+export const adminApi = {
+  stats: () => api.get<AdminStats>('/admin/stats'),
+  users: () => api.get<AdminUser[]>('/admin/users'),
+  auditLog: (params: { limit?: number; offset?: number } = {}) => api.get<AdminAuditEntry[]>('/admin/audit-log', { params }),
+  updateUser: (userId: string, data: { name?: string; status?: AdminUser['status']; globalRole?: string | null }) =>
+    api.patch<AdminUser>(`/admin/users/${userId}`, data),
+  deleteUser: (userId: string) => api.delete(`/admin/users/${userId}`),
+  revokeSessions: (userId: string) => api.post<{ revoked: number }>(`/admin/users/${userId}/revoke-sessions`),
 };

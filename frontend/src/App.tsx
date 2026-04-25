@@ -11,6 +11,7 @@ import PageView from './pages/PageView';
 import PageEditor from './pages/PageEditor';
 import Search from './pages/Search';
 import AdminPage from './pages/Admin';
+import CalendarContacts from './pages/CalendarContacts';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/search" element={<Search />} />
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/calendar-contacts" element={<ProtectedRoute><CalendarContacts /></ProtectedRoute>} />
         <Route path="/spaces/new" element={<ProtectedRoute><CreateSpace /></ProtectedRoute>} />
         <Route path="/spaces/:key" element={<ProtectedRoute><SpacePage /></ProtectedRoute>} />
         <Route path="/spaces/:key/pages/new" element={<ProtectedRoute><PageEditor /></ProtectedRoute>} />

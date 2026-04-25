@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service.js';
+import { config } from '../../config/index.js';
 
 class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
@@ -51,6 +52,52 @@ class AuthController {
       const result = await authService.refresh(req.body.refreshToken);
       
       res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async oidcConfig(_req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(authService.getOidcPublicConfig());
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async oidcLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const returnTo = typeof req.query.returnTo === 'string' ? req.query.returnTo : '/';
+      const loginUrl = await authService.getOidcAuthorizationUrl(returnTo);
+      res.redirect(loginUrl);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async oidcCallback(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.handleOidcCallback(
+        typeof req.query.code === 'string' ? req.query.code : undefined,
+        typeof req.query.state === 'string' ? req.query.state : undefined,
+        req.ip,
+        req.headers['user-agent']
+      );
+
+      const redirectUrl = new URL('/login', config.FRONTEND_URL);
+      redirectUrl.searchParams.set('oidc_access', result.accessToken);
+      redirectUrl.searchParams.set('oidc_refresh', result.refreshToken);
+      redirectUrl.searchParams.set('returnTo', result.returnTo);
+      res.redirect(redirectUrl.toString());
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async oidcLogout(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const logoutUrl = await authService.getOidcLogoutUrl();
+      res.redirect(logoutUrl);
     } catch (error) {
       next(error);
     }

@@ -23,6 +23,7 @@ model User {
 
   // Relations
   profile           UserProfile?
+  externalIdentities ExternalIdentity[]
   sessions          UserSession[]
   roleAssignments   RoleAssignment[]
   ownedSpaces       Space[]             @relation("SpaceOwner")
@@ -44,6 +45,23 @@ model User {
   telegramMessages  TelegramChatMessage[]
 
   @@map("users")
+}
+
+model ExternalIdentity {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  provider  String   @db.VarChar(100)
+  subject   String   @db.VarChar(255)
+  email     String   @db.VarChar(255)
+  name      String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, subject])
+  @@index([userId])
+  @@map("external_identities")
 }
 
 enum UserStatus {

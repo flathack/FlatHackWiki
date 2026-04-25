@@ -16,6 +16,7 @@ import {
   type DashboardWidgetType,
   type WeatherResponse,
 } from '../api/client';
+import AppHeader from '../components/AppHeader';
 import ThemeSelector from '../components/ThemeSelector';
 import { BookmarkBar, BookmarkManagerDialog } from '../components/dashboard/BookmarkManager';
 import { WidgetShell } from '../components/dashboard/WidgetShell';
@@ -1244,7 +1245,13 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-page-shell">
-      <header className="dashboard-topbar">
+      <AppHeader
+        onToggleEditMode={() => setEditMode((current) => !current)}
+        editMode={editMode}
+        onOpenWidgetLibrary={() => setWidgetLibraryOpen(true)}
+        onOpenProfile={() => setSettingsOpen(true)}
+      />
+      <div className="legacy-profile-grid">
         <div>
           <div className="dashboard-brand">FlatHacksWiki</div>
           <p className="dashboard-brand-copy">
@@ -1258,6 +1265,9 @@ export default function Dashboard() {
               Admin
             </Link>
           )}
+          <Link to="/calendar-contacts" className="text-button">
+            Kalender & Kontakte
+          </Link>
           <button className={`btn ${editMode ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setEditMode((current) => !current)}>
             {editMode ? 'Layout-Modus beenden' : 'Layout bearbeiten'}
           </button>
@@ -1271,7 +1281,7 @@ export default function Dashboard() {
             Abmelden
           </button>
         </div>
-      </header>
+      </div>
 
       <main className="dashboard-main-shell">
         <section className="dashboard-hero-card">

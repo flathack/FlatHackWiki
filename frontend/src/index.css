@@ -109,6 +109,14 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply flex flex-wrap items-center gap-2;
 }
 
+.nav-link {
+  @apply rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900;
+}
+
+.nav-link.active {
+  @apply bg-sky-100 text-sky-900;
+}
+
 .dashboard-main-shell {
   @apply flex w-full flex-col gap-4 px-3 py-4 md:px-5 md:py-5;
 }
@@ -796,6 +804,118 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply shrink-0 rounded-full bg-white px-3 py-1 text-xs not-italic text-gray-600;
 }
 
+.groupware-hero {
+  @apply flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 px-5 py-6 text-white shadow-xl md:flex-row md:items-center md:justify-between md:px-6;
+}
+
+.groupware-grid {
+  @apply grid gap-6 lg:grid-cols-2;
+}
+
+.groupware-hero-actions {
+  @apply flex flex-wrap gap-2;
+}
+
+.groupware-action-grid {
+  @apply mt-4 grid gap-3 md:grid-cols-3;
+}
+
+.groupware-url-box {
+  @apply mt-4 flex flex-col gap-2 rounded-2xl border border-gray-200 bg-gray-50 p-4;
+}
+
+.groupware-url-box span {
+  @apply text-xs font-semibold uppercase tracking-[0.18em] text-gray-500;
+}
+
+.groupware-url-box code {
+  @apply block break-all rounded-xl bg-white px-3 py-2 text-xs text-gray-700;
+}
+
+.groupware-copy-button {
+  @apply w-fit;
+}
+
+.groupware-check-grid {
+  @apply mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.groupware-steps {
+  @apply mt-4 list-decimal space-y-2 pl-5 text-sm text-gray-700;
+}
+
+.admin-hero {
+  @apply flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 px-5 py-6 text-white shadow-xl md:flex-row md:items-center md:justify-between md:px-6;
+}
+
+.admin-tabs {
+  @apply flex flex-wrap gap-2 border-b border-gray-200;
+}
+
+.admin-tab {
+  @apply rounded-t-xl px-4 py-3 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-900;
+}
+
+.admin-tab.active {
+  @apply bg-white text-sky-700 shadow-sm;
+}
+
+.admin-table-card {
+  @apply overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm;
+}
+
+.admin-table-scroll {
+  @apply overflow-x-auto;
+}
+
+.admin-table {
+  @apply min-w-full divide-y divide-gray-200 text-sm;
+}
+
+.admin-table thead {
+  @apply bg-gray-50;
+}
+
+.admin-table th {
+  @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-gray-500;
+}
+
+.admin-table td {
+  @apply px-4 py-3 align-middle text-gray-700;
+}
+
+.admin-table td strong {
+  @apply block font-semibold text-gray-900;
+}
+
+.admin-table td span {
+  @apply block text-xs text-gray-500;
+}
+
+.admin-select {
+  @apply min-w-[150px] py-2 text-xs;
+}
+
+.admin-row-actions {
+  @apply flex flex-wrap gap-3;
+}
+
+.admin-activity-list {
+  @apply mt-4 flex flex-col divide-y divide-gray-100;
+}
+
+.admin-activity-list div {
+  @apply py-3;
+}
+
+.admin-activity-list strong {
+  @apply block text-sm text-gray-900;
+}
+
+.admin-activity-list span {
+  @apply text-xs text-gray-500;
+}
+
 .span-2 {
   @apply lg:col-span-2;
 }
@@ -1015,6 +1135,40 @@ html[data-theme='midnight'] .profile-widget-row:hover {
   border-color: rgba(56, 189, 248, 0.35) !important;
 }
 
+html[data-theme='midnight'] .groupware-steps {
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .groupware-url-box,
+html[data-theme='midnight'] .groupware-url-box code {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .groupware-url-box span {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='midnight'] .admin-table-card,
+html[data-theme='midnight'] .admin-tab.active,
+html[data-theme='midnight'] .admin-table thead {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .admin-table td,
+html[data-theme='midnight'] .admin-table th,
+html[data-theme='midnight'] .admin-tab,
+html[data-theme='midnight'] .admin-activity-list span {
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .admin-table td strong,
+html[data-theme='midnight'] .admin-activity-list strong {
+  color: #f8fafc !important;
+}
+
 html[data-theme='midnight'] .clock-widget-time,
 html[data-theme='midnight'] .clock-widget-date,
 html[data-theme='midnight'] .weather-widget-temp,
@@ -1176,6 +1330,16 @@ html[data-theme='midnight'] .btn-secondary {
 
 html[data-theme='midnight'] .btn-secondary:hover {
   background-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .nav-link {
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .nav-link:hover,
+html[data-theme='midnight'] .nav-link.active {
+  background-color: rgba(14, 165, 233, 0.18) !important;
+  color: #f8fafc !important;
 }
 
 .input {
