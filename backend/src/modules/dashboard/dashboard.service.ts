@@ -8,6 +8,9 @@
   type TimeTrackingProject,
   type UserDashboardWidget,
 } from '@prisma/client';
+import { XMLParser } from 'fast-xml-parser';
+import ical from 'node-ical';
+import { config } from '../../config/index.js';
 import { db } from '../../config/database.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../core/errors/app.errors.js';
 
@@ -57,6 +60,62 @@ type BookmarkTreeItem = {
   children: BookmarkTreeItem[];
 };
 
+type CalendarWidgetSettings = {
+  mode?: string;
+  calendarIds?: string[];
+  maxItems?: number;
+  showCalendarColors?: boolean;
+  highlightWindowMinutes?: number;
+};
+
+type CalendarSourceSummary = {
+  id: string;
+  name: string;
+  color: string | null;
+  href: string;
+};
+
+type CalendarEventSummary = {
+  id: string;
+  calendarId: string;
+  calendarName: string;
+  calendarColor: string | null;
+  title: string;
+  startAt: string;
+  endAt: string;
+  isAllDay: boolean;
+  isRecurring: boolean;
+  location: string | null;
+  isToday: boolean;
+  isNow: boolean;
+  startsSoon: boolean;
+  nextcloudUrl: string | null;
+};
+
+type CalendarDashboardState = {
+  status: 'disabled' | 'setup_required' | 'ready' | 'error';
+  message: string | null;
+  nextcloudUrl: string | null;
+  calendars: Array<{ id: string; name: string; color: string | null }>;
+  events: CalendarEventSummary[];
+  lastSyncedAt: string | null;
+};
+
+type CalendarCacheEntry = {
+  expiresAt: number;
+  data: CalendarDashboardState;
+};
+
+const calDavXmlParser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '',
+  removeNSPrefix: true,
+  trimValues: true,
+});
+
+const calendarCache = new Map<string, CalendarCacheEntry>();
+const CALENDAR_CACHE_TTL_MS = 3 * 60 * 1000;
+
 const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y: number; width: number; height: number; minWidth: number; minHeight: number; maxWidth?: number; maxHeight?: number; settings?: Prisma.JsonObject }> = {
   CLOCK: {
     title: 'Uhrzeit',
@@ -100,9 +159,25 @@ const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y:
       city: 'Berlin',
     },
   },
+  CALENDAR: {
+    title: 'Kalender',
+    x: 4,
+    y: 7,
+    width: 4,
+    height: 5,
+    minWidth: 4,
+    minHeight: 4,
+    settings: {
+      mode: 'agenda',
+      calendarIds: [],
+      maxItems: 6,
+      showCalendarColors: true,
+      highlightWindowMinutes: 90,
+    },
+  },
   FAVORITE_SPACES: {
     title: 'Favorisierte Bereiche',
-    x: 4,
+    x: 8,
     y: 3,
     width: 4,
     height: 4,
@@ -115,7 +190,7 @@ const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y:
   NOTES: {
     title: 'Notizen',
     x: 8,
-    y: 3,
+    y: 7,
     width: 4,
     height: 4,
     minWidth: 3,
@@ -195,6 +270,7 @@ const defaultWidgetOrder = [
   'WEB_SEARCH',
   'WIKI_SEARCH',
   'WEATHER',
+  'CALENDAR',
   'FAVORITE_SPACES',
   'NOTES',
   'STATS',
@@ -624,6 +700,432 @@ function getWeatherDescription(code?: number) {
   return descriptions[code ?? -1] || 'Unbekannt';
 }
 
+function arrayify<T>(value: T | T[] | undefined | null): T[] {
+  if (Array.isArray(value)) return value;
+  return value == null ? [] : [value];
+}
+
+function getNextcloudCalendarUrl() {
+  const url = config.NEXTCLOUD_PUBLIC_URL?.trim() || config.NEXTCLOUD_URL?.trim();
+  return url ? `${url.replace(/\/$/, '')}/apps/calendar` : null;
+}
+
+function getNextcloudInternalBaseUrl() {
+  return config.NEXTCLOUD_INTERNAL_URL?.trim() || config.NEXTCLOUD_URL?.trim() || null;
+}
+
+function getConfiguredNextcloudCredentialUser() {
+  return config.NEXTCLOUD_APP_PASSWORD_USER?.trim() || config.NEXTCLOUD_USERNAME?.trim() || null;
+}
+
+type NextcloudCredentials = {
+  username: string;
+  password: string;
+  source: 'user-profile' | 'global-env';
+};
+
+function getEmailUsernameFallback(email?: string | null) {
+  const fallback = email?.split('@')[0]?.trim();
+  return fallback ? fallback.toLowerCase() : null;
+}
+
+function buildCalendarSetupState(message: string): CalendarDashboardState {
+  return {
+    status: 'setup_required',
+    message,
+    nextcloudUrl: getNextcloudCalendarUrl(),
+    calendars: [],
+    events: [],
+    lastSyncedAt: null,
+  };
+}
+
+function buildCalendarDisabledState(): CalendarDashboardState {
+  return {
+    status: 'disabled',
+    message: null,
+    nextcloudUrl: getNextcloudCalendarUrl(),
+    calendars: [],
+    events: [],
+    lastSyncedAt: null,
+  };
+}
+
+function normalizeCalendarSettings(settings: Record<string, unknown> | null | undefined): CalendarWidgetSettings {
+  return {
+    mode: typeof settings?.mode === 'string' ? settings.mode : 'agenda',
+    calendarIds: Array.isArray(settings?.calendarIds)
+      ? settings.calendarIds.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      : [],
+    maxItems:
+      typeof settings?.maxItems === 'number' && Number.isFinite(settings.maxItems)
+        ? Math.max(1, Math.min(12, Math.round(settings.maxItems)))
+        : 6,
+    showCalendarColors: settings?.showCalendarColors !== false,
+    highlightWindowMinutes:
+      typeof settings?.highlightWindowMinutes === 'number' && Number.isFinite(settings.highlightWindowMinutes)
+        ? Math.max(5, Math.min(360, Math.round(settings.highlightWindowMinutes)))
+        : 90,
+  };
+}
+
+function getCalendarCacheKey(settings: CalendarWidgetSettings, username: string) {
+  return JSON.stringify({
+    url: getNextcloudInternalBaseUrl() ?? '',
+    username,
+    calendarIds: [...(settings.calendarIds ?? [])].sort(),
+    highlightWindowMinutes: settings.highlightWindowMinutes ?? 90,
+    lookaheadDays: config.NEXTCLOUD_CALENDAR_LOOKAHEAD_DAYS,
+  });
+}
+
+function formatCalDavDate(date: Date) {
+  return date
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
+}
+
+function overlapsRange(startAt: Date, endAt: Date, rangeStart: Date, rangeEnd: Date) {
+  return startAt < rangeEnd && endAt > rangeStart;
+}
+
+function getCalendarDayKey(value: Date | string) {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return [date.getFullYear(), `${date.getMonth() + 1}`.padStart(2, '0'), `${date.getDate()}`.padStart(2, '0')].join('-');
+}
+
+function sanitizeCalendarColor(value: unknown) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  const match = trimmed.match(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})/);
+  return match ? match[0].slice(0, 7) : null;
+}
+
+async function requestCalDav(path: string, credentials: NextcloudCredentials, init?: RequestInit & { headers?: Record<string, string> }) {
+  const baseUrl = getNextcloudInternalBaseUrl();
+
+  if (!baseUrl || !credentials.username || !credentials.password) {
+    throw new Error('Nextcloud-Zugangsdaten fehlen.');
+  }
+
+  const target = new URL(path, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`).toString();
+  const token = Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64');
+  const response = await fetch(target, {
+    ...init,
+    headers: {
+      Authorization: `Basic ${token}`,
+      Accept: 'application/xml, text/xml;q=0.9, */*;q=0.8',
+      ...init?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Nextcloud antwortet mit ${response.status}.`);
+  }
+
+  return response.text();
+}
+
+function parseCalDavCalendars(xml: string): CalendarSourceSummary[] {
+  const parsed = calDavXmlParser.parse(xml) as any;
+  const responses = arrayify(parsed?.multistatus?.response);
+
+  return responses
+    .map((response) => {
+      const propstats = arrayify(response?.propstat);
+      const okProp = propstats.find((entry) => String(entry?.status ?? '').includes('200'))?.prop;
+      if (!okProp) return null;
+
+      const resourceType = okProp.resourcetype ?? {};
+      if (!('calendar' in resourceType)) return null;
+
+      const href = decodeURIComponent(String(response.href ?? ''));
+      const id = href.split('/').filter(Boolean).at(-1) ?? href;
+      return {
+        id,
+        name: String(okProp.displayname ?? id),
+        color: sanitizeCalendarColor(okProp['calendar-color']),
+        href,
+      } satisfies CalendarSourceSummary;
+    })
+    .filter((calendar): calendar is CalendarSourceSummary => calendar !== null);
+}
+
+function parseCalendarDataBlocks(xml: string) {
+  const parsed = calDavXmlParser.parse(xml) as any;
+  const responses = arrayify(parsed?.multistatus?.response);
+
+  return responses
+    .map((response) => {
+      const propstats = arrayify(response?.propstat);
+      const okProp = propstats.find((entry) => String(entry?.status ?? '').includes('200'))?.prop;
+      const ics = okProp?.['calendar-data'];
+      return typeof ics === 'string' && ics.trim() ? ics : null;
+    })
+    .filter((value): value is string => Boolean(value));
+}
+
+function expandRecurringEvent(event: any, rangeStart: Date, rangeEnd: Date) {
+  const durationMs = Math.max(60_000, new Date(event.end ?? event.start).getTime() - new Date(event.start).getTime());
+  const exdates = new Set(
+    Object.values(event.exdate ?? {}).map((value: any) => new Date(value?.start ?? value).getTime())
+  );
+
+  return event.rrule
+    .between(rangeStart, rangeEnd, true)
+    .filter((occurrence: Date) => !exdates.has(occurrence.getTime()))
+    .map((occurrence: Date) => ({
+      start: occurrence,
+      end: new Date(occurrence.getTime() + durationMs),
+    }));
+}
+
+function extractEventsFromCalendarData(
+  calendar: CalendarSourceSummary,
+  icsData: string,
+  rangeStart: Date,
+  rangeEnd: Date,
+  highlightWindowMinutes: number,
+  nextcloudUrl: string | null
+) {
+  const now = new Date();
+  const dayKey = getCalendarDayKey(now);
+  const items = ical.parseICS(icsData) as Record<string, any>;
+  const eventList: CalendarEventSummary[] = [];
+
+  for (const item of Object.values(items)) {
+    if (!item || item.type !== 'VEVENT' || !item.start) continue;
+
+    const baseStart = new Date(item.start);
+    const baseEnd = new Date(item.end ?? item.start);
+    const occurrences = item.rrule
+      ? expandRecurringEvent(item, rangeStart, rangeEnd)
+      : [{ start: baseStart, end: baseEnd }];
+
+    for (const occurrence of occurrences) {
+      if (!overlapsRange(occurrence.start, occurrence.end, rangeStart, rangeEnd)) {
+        continue;
+      }
+
+      const startsSoon =
+        occurrence.start.getTime() > now.getTime() &&
+        occurrence.start.getTime() - now.getTime() <= highlightWindowMinutes * 60_000;
+      const isNow = occurrence.start.getTime() <= now.getTime() && occurrence.end.getTime() >= now.getTime();
+
+      eventList.push({
+        id: `${calendar.id}:${item.uid ?? item.summary ?? occurrence.start.toISOString()}:${occurrence.start.toISOString()}`,
+        calendarId: calendar.id,
+        calendarName: calendar.name,
+        calendarColor: calendar.color,
+        title: String(item.summary ?? 'Ohne Titel'),
+        startAt: occurrence.start.toISOString(),
+        endAt: occurrence.end.toISOString(),
+        isAllDay: Boolean(item.datetype === 'date' || item.start?.dateOnly || item.end?.dateOnly),
+        isRecurring: Boolean(item.rrule),
+        location: typeof item.location === 'string' ? item.location : null,
+        isToday: getCalendarDayKey(occurrence.start) === dayKey,
+        isNow,
+        startsSoon,
+        nextcloudUrl,
+      });
+    }
+  }
+
+  return eventList;
+}
+
+async function resolveNextcloudUsername(userId: string) {
+  const configuredUsername = config.NEXTCLOUD_USERNAME?.trim();
+  if (configuredUsername) {
+    return configuredUsername;
+  }
+
+  const profile = await db.userProfile.findUnique({
+    where: { userId },
+    select: { nextcloudUsername: true },
+  });
+
+  const profileUsername = profile?.nextcloudUsername?.trim();
+  if (profileUsername) {
+    return profileUsername;
+  }
+
+  const identity = await db.externalIdentity.findFirst({
+    where: {
+      userId,
+      provider: 'oidc',
+    },
+    select: {
+      username: true,
+      email: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const resolvedUsername = identity?.username?.trim() || getEmailUsernameFallback(identity?.email);
+  return resolvedUsername || null;
+}
+
+async function resolveNextcloudCredentials(userId: string): Promise<NextcloudCredentials | null> {
+  const username = await resolveNextcloudUsername(userId);
+  if (!username) {
+    return null;
+  }
+
+  const profile = await db.userProfile.findUnique({
+    where: { userId },
+    select: {
+      nextcloudAppPassword: true,
+    },
+  });
+
+  const profilePassword = profile?.nextcloudAppPassword?.trim();
+  if (profilePassword) {
+    return {
+      username,
+      password: profilePassword,
+      source: 'user-profile',
+    };
+  }
+
+  const globalPassword = config.NEXTCLOUD_APP_PASSWORD?.trim();
+  if (!globalPassword) {
+    return null;
+  }
+
+  return {
+    username,
+    password: globalPassword,
+    source: 'global-env',
+  };
+}
+
+async function fetchNextcloudCalendarStateForUser(userId: string, settings: CalendarWidgetSettings): Promise<CalendarDashboardState> {
+  const nextcloudUrl = getNextcloudCalendarUrl();
+  if (!getNextcloudInternalBaseUrl()) {
+    return buildCalendarSetupState('NEXTCLOUD_INTERNAL_URL bzw. NEXTCLOUD_URL ist im Backend noch nicht konfiguriert.');
+  }
+
+  const credentials = await resolveNextcloudCredentials(userId);
+  if (!credentials?.username) {
+    return buildCalendarSetupState('Der gemeinsame OIDC-Login liefert aktuell noch keinen nutzbaren Nextcloud-Benutzernamen.');
+  }
+
+  if (!credentials.password) {
+    return buildCalendarSetupState('Fuer diesen Benutzer ist noch kein Nextcloud-App-Passwort hinterlegt.');
+  }
+
+  const credentialUser = getConfiguredNextcloudCredentialUser();
+  if (credentials.source === 'global-env' && credentialUser && credentialUser !== credentials.username) {
+    return buildCalendarSetupState(
+      `Das aktuell konfigurierte Nextcloud-App-Passwort gehoert zu ${credentialUser}. Fuer ${credentials.username} ist ein eigenes App-Passwort noetig.`
+    );
+  }
+
+  const cacheKey = getCalendarCacheKey(settings, credentials.username);
+  const cached = calendarCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
+  try {
+    const calendarsXml = await requestCalDav(`/remote.php/dav/calendars/${encodeURIComponent(credentials.username)}/`, credentials, {
+      method: 'PROPFIND',
+      headers: {
+        Depth: '1',
+        'Content-Type': 'application/xml; charset=utf-8',
+      },
+      body: `<?xml version="1.0" encoding="UTF-8"?>
+        <d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/" xmlns:oc="http://owncloud.org/ns/">
+          <d:prop>
+            <d:displayname />
+            <oc:calendar-color />
+            <d:resourcetype />
+          </d:prop>
+        </d:propfind>`,
+    });
+
+    const calendars = parseCalDavCalendars(calendarsXml);
+    const selectedCalendars = settings.calendarIds?.length
+      ? calendars.filter((calendar) => settings.calendarIds?.includes(calendar.id))
+      : calendars;
+
+    const rangeStart = new Date();
+    rangeStart.setHours(0, 0, 0, 0);
+    const rangeEnd = new Date(rangeStart);
+    rangeEnd.setDate(rangeEnd.getDate() + config.NEXTCLOUD_CALENDAR_LOOKAHEAD_DAYS);
+
+    const eventResponses = await Promise.all(
+      selectedCalendars.map(async (calendar) => {
+        const eventsXml = await requestCalDav(calendar.href, credentials, {
+          method: 'REPORT',
+          headers: {
+            Depth: '1',
+            'Content-Type': 'application/xml; charset=utf-8',
+          },
+          body: `<?xml version="1.0" encoding="UTF-8"?>
+            <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+              <d:prop>
+                <d:getetag />
+                <c:calendar-data />
+              </d:prop>
+              <c:filter>
+                <c:comp-filter name="VCALENDAR">
+                  <c:comp-filter name="VEVENT">
+                    <c:time-range start="${formatCalDavDate(rangeStart)}" end="${formatCalDavDate(rangeEnd)}" />
+                  </c:comp-filter>
+                </c:comp-filter>
+              </c:filter>
+            </c:calendar-query>`,
+        });
+
+        const dataBlocks = parseCalendarDataBlocks(eventsXml);
+        return dataBlocks.flatMap((icsData) =>
+          extractEventsFromCalendarData(
+            calendar,
+            icsData,
+            rangeStart,
+            rangeEnd,
+            settings.highlightWindowMinutes ?? 90,
+            nextcloudUrl
+          )
+        );
+      })
+    );
+
+    const dedupe = new Map<string, CalendarEventSummary>();
+    for (const event of eventResponses.flat()) {
+      dedupe.set(event.id, event);
+    }
+
+    const data: CalendarDashboardState = {
+      status: 'ready',
+      message: null,
+      nextcloudUrl,
+      calendars: selectedCalendars.map(({ href, ...calendar }) => calendar),
+      events: [...dedupe.values()].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()),
+      lastSyncedAt: new Date().toISOString(),
+    };
+
+    calendarCache.set(cacheKey, {
+      expiresAt: Date.now() + CALENDAR_CACHE_TTL_MS,
+      data,
+    });
+
+    return data;
+  } catch (error: any) {
+    return {
+      status: 'error',
+      message: error?.message || 'Nextcloud-Kalender konnte nicht geladen werden.',
+      nextcloudUrl,
+      calendars: [],
+      events: [],
+      lastSyncedAt: null,
+    };
+  }
+}
+
 async function geocodeAddress(query: string) {
   const response = await fetch(
     `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
@@ -832,7 +1334,9 @@ class DashboardService {
 
   async getDashboard(userId: string) {
     const dashboard = await this.ensureDashboard(userId);
-    const [bookmarksRaw, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages] = await Promise.all([
+    const calendarWidget = dashboard.widgets.find((widget) => widget.type === 'CALENDAR');
+    const calendarSettings = normalizeCalendarSettings((calendarWidget?.settings ?? {}) as Record<string, unknown>);
+    const [bookmarksRaw, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages, calendar] = await Promise.all([
       bookmarkDb.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
       db.commuteProfile.findUnique({ where: { userId } }),
       db.space.findMany({ orderBy: { updatedAt: 'desc' }, include: { owner: { select: { id: true, name: true } } } }),
@@ -853,6 +1357,7 @@ class DashboardService {
         orderBy: { createdAt: 'asc' },
         take: 40,
       }),
+      calendarWidget ? fetchNextcloudCalendarStateForUser(userId, calendarSettings) : Promise.resolve(buildCalendarDisabledState()),
     ]);
 
     const todayStart = getStartOfDay(new Date());
@@ -888,6 +1393,7 @@ class DashboardService {
         toolbar: bookmarkTree.filter((item) => item.showInToolbar).map(sanitizeBookmarkNode),
         ...bookmarkStats,
       },
+      calendar,
       commute: {
         profile: commuteProfile,
         todayMode,

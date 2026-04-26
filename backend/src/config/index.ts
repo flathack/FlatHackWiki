@@ -19,6 +19,14 @@ const envSchema = z.object({
   
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
+  NEXTCLOUD_URL: z.string().optional(),
+  NEXTCLOUD_INTERNAL_URL: z.string().optional(),
+  NEXTCLOUD_PUBLIC_URL: z.string().optional(),
+  NEXTCLOUD_APP_PASSWORD_USER: z.string().optional(),
+  NEXTCLOUD_USERNAME: z.string().optional(),
+  NEXTCLOUD_APP_PASSWORD: z.string().optional(),
+  NEXTCLOUD_CALENDAR_LOOKAHEAD_DAYS: z.coerce.number().int().min(1).max(90).default(14),
+
   OIDC_ENABLED: envBoolean.default(false),
   OIDC_PROVIDER_NAME: z.string().default('Zentrales Konto'),
   OIDC_ISSUER: z.string().optional(),

@@ -70,6 +70,8 @@ For a GHCR deployment, set at minimum `JWT_SECRET` and optionally override `BACK
 
 For Portainer, use `docker-compose.ghcr.yml` as your stack file.
 
+For a NAS/Portainer deployment including OIDC and Nextcloud calendar settings, see `docs/portainer-ghcr-deployment.md`.
+
 Important environment variables:
 
 - `BACKEND_IMAGE=ghcr.io/<your-user-or-org>/openclaw-wiki-backend:latest`

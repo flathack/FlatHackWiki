@@ -12,6 +12,7 @@ export const widgetDefinitions: WidgetDefinition[] = [
   { type: 'WEB_SEARCH', label: 'Web-Suche', description: 'Websuche mit Lesezeichen-Vorschlägen', singleton: true },
   { type: 'WIKI_SEARCH', label: 'Wiki-Suche', description: 'Schnellsuche im Wiki', singleton: true },
   { type: 'WEATHER', label: 'Wetter', description: 'Wetter für einen konfigurierbaren Ort', singleton: true },
+  { type: 'CALENDAR', label: 'Kalender', description: 'Naechste Nextcloud-Termine im Dashboard', singleton: true },
   { type: 'FAVORITE_SPACES', label: 'Favorisierte Bereiche', description: 'Wichtige Wiki-Bereiche im Blick', singleton: true },
   { type: 'NOTES', label: 'Notizen', description: 'Persönliche Schnellnotizen', singleton: true },
   { type: 'STATS', label: 'Übersicht', description: 'Kennzahlen zum Arbeitsbereich', singleton: true },

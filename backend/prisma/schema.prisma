@@ -53,6 +53,7 @@ model ExternalIdentity {
   provider  String   @db.VarChar(100)
   subject   String   @db.VarChar(255)
   email     String   @db.VarChar(255)
+  username  String?  @db.VarChar(255)
   name      String?  @db.VarChar(255)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -79,6 +80,8 @@ model UserProfile {
   dashboardSubtitle      String? @map("dashboard_subtitle") @db.Text
   showDashboardSubtitle  Boolean @default(true) @map("show_dashboard_subtitle")
   uiRadius               Int     @default(28) @map("ui_radius")
+  nextcloudUsername      String? @map("nextcloud_username") @db.VarChar(255)
+  nextcloudAppPassword   String? @map("nextcloud_app_password") @db.VarChar(255)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -148,6 +151,7 @@ enum DashboardWidgetType {
   WIKI_SEARCH
   WEB_SEARCH
   WEATHER
+  CALENDAR
   FAVORITE_SPACES
   NOTES
   STATS

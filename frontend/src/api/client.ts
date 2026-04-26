@@ -84,6 +84,8 @@ export interface MeResponse {
   dashboardSubtitle: string | null;
   showDashboardSubtitle: boolean;
   uiRadius?: number;
+  nextcloudUsername?: string | null;
+  hasNextcloudAppPassword?: boolean;
   profile?: {
     displayName?: string | null;
     dashboardSubtitle?: string | null;
@@ -92,6 +94,7 @@ export interface MeResponse {
     avatarUrl?: string | null;
     timezone?: string;
     locale?: string;
+    nextcloudUsername?: string | null;
   } | null;
 }
 export interface Space { id: string; name: string; key: string; description?: string; visibility: string; owner: { id: string; name: string } }
@@ -101,6 +104,7 @@ export type DashboardWidgetType =
   | 'WIKI_SEARCH'
   | 'WEB_SEARCH'
   | 'WEATHER'
+  | 'CALENDAR'
   | 'FAVORITE_SPACES'
   | 'NOTES'
   | 'STATS'
@@ -183,6 +187,35 @@ export interface CommuteRoute {
   source?: { label: string };
   destination?: { label: string };
 }
+export interface CalendarSource {
+  id: string;
+  name: string;
+  color?: string | null;
+}
+export interface CalendarEvent {
+  id: string;
+  calendarId: string;
+  calendarName: string;
+  calendarColor?: string | null;
+  title: string;
+  startAt: string;
+  endAt: string;
+  isAllDay: boolean;
+  isRecurring: boolean;
+  location?: string | null;
+  isToday: boolean;
+  isNow: boolean;
+  startsSoon: boolean;
+  nextcloudUrl?: string | null;
+}
+export interface CalendarWidgetState {
+  status: 'disabled' | 'setup_required' | 'ready' | 'error';
+  message?: string | null;
+  nextcloudUrl?: string | null;
+  calendars: CalendarSource[];
+  events: CalendarEvent[];
+  lastSyncedAt?: string | null;
+}
 export interface TimeTrackingProject {
   id: string;
   name: string;
@@ -214,6 +247,7 @@ export interface TelegramChatMessage {
 export interface DashboardResponse {
   widgets: DashboardWidget[];
   bookmarks: BookmarkState;
+  calendar: CalendarWidgetState;
   commute: {
     profile: CommuteProfile | null;
     todayMode: 'office' | 'homeOffice' | 'unspecified' | 'unset';
@@ -299,6 +333,8 @@ export const authApi = {
     dashboardSubtitle?: string | null;
     showDashboardSubtitle?: boolean;
     uiRadius?: number;
+    nextcloudUsername?: string | null;
+    nextcloudAppPassword?: string | null;
   }) => api.patch<MeResponse & { message: string }>('/auth/me', data),
 };
 

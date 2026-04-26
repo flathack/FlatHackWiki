@@ -8,6 +8,8 @@ import {
 } from 'react-grid-layout';
 import {
   authApi,
+  type CalendarEvent,
+  type CalendarWidgetState,
   dashboardApi,
   type BookmarkItem,
   type CommuteProfile,
@@ -76,6 +78,34 @@ function formatDateTimeLocal(value: string) {
   const offset = date.getTimezoneOffset();
   const localDate = new Date(date.getTime() - offset * 60000);
   return localDate.toISOString().slice(0, 16);
+}
+
+function formatCalendarTimeRange(event: CalendarEvent) {
+  if (event.isAllDay) return 'Ganztägig';
+
+  const start = new Date(event.startAt);
+  const end = new Date(event.endAt);
+  return `${start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function formatCalendarDayLabel(value: string) {
+  const date = new Date(value);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return 'Heute';
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (date.toDateString() === tomorrow.toDateString()) return 'Morgen';
+
+  return date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+}
+
+function getCalendarBadge(calendar: CalendarWidgetState) {
+  if (calendar.status === 'setup_required') return 'Setup';
+  if (calendar.status === 'error') return 'Fehler';
+  if (calendar.events.some((event) => event.isNow)) return 'Laeuft jetzt';
+  if (calendar.events[0]) return formatCalendarDayLabel(calendar.events[0].startAt);
+  return 'Frei';
 }
 
 function useIsMobile() {
@@ -796,6 +826,105 @@ export default function Dashboard() {
             )}
           </WidgetShell>
         );
+      case 'CALENDAR': {
+        const calendar = dashboard?.calendar;
+        const maxItems = typeof settings.maxItems === 'number' ? Math.max(1, Math.min(12, settings.maxItems)) : 6;
+        const showCalendarColors = settings.showCalendarColors !== false;
+        const visibleEvents = (calendar?.events ?? []).slice(0, maxItems);
+        const primaryEvent = visibleEvents.find((event) => event.isNow || event.startsSoon) ?? visibleEvents[0];
+
+        return (
+          <WidgetShell
+            title={widget.title}
+            subtitle="Heute und die naechsten Termine aus Nextcloud"
+            badge={calendar ? getCalendarBadge(calendar) : 'Kalender'}
+            actions={calendar?.nextcloudUrl ? <a className="btn btn-secondary" href={calendar.nextcloudUrl} target="_blank" rel="noreferrer">Nextcloud</a> : undefined}
+          >
+            {calendar?.status === 'setup_required' ? (
+              <div className="widget-stack">
+                <div className="widget-message">{calendar.message || 'Die Nextcloud-Kalenderanbindung ist noch nicht eingerichtet.'}</div>
+                <div className="widget-toolbar-end">
+                  <Link className="btn btn-primary" to="/calendar-contacts">Einrichtung ansehen</Link>
+                </div>
+              </div>
+            ) : calendar?.status === 'error' ? (
+              <div className="widget-stack">
+                <div className="widget-message widget-message-error">{calendar.message || 'Kalender konnte nicht geladen werden.'}</div>
+                {calendar.nextcloudUrl ? (
+                  <div className="widget-toolbar-end">
+                    <a className="btn btn-secondary" href={calendar.nextcloudUrl} target="_blank" rel="noreferrer">In Nextcloud oeffnen</a>
+                  </div>
+                ) : null}
+              </div>
+            ) : visibleEvents.length === 0 ? (
+              <div className="widget-stack">
+                <div className="widget-message">Heute sind keine Termine geplant. Das Widget zeigt automatisch die naechsten Eintraege, sobald Daten verfuegbar sind.</div>
+                <div className="calendar-widget-meta">
+                  <span>{calendar?.calendars.length ?? 0} Kalender verbunden</span>
+                  {calendar?.lastSyncedAt ? <span>Aktualisiert {formatDateLabel(calendar.lastSyncedAt)}</span> : null}
+                </div>
+              </div>
+            ) : (
+              <div className="calendar-widget-shell">
+                {primaryEvent ? (
+                  <div className="calendar-widget-hero">
+                    <div className="calendar-widget-hero-label">
+                      {primaryEvent.isNow ? 'Laeuft jetzt' : primaryEvent.startsSoon ? 'Beginnt bald' : formatCalendarDayLabel(primaryEvent.startAt)}
+                    </div>
+                    <div className="calendar-widget-hero-title">{primaryEvent.title}</div>
+                    <div className="calendar-widget-hero-copy">{formatCalendarTimeRange(primaryEvent)}</div>
+                    <div className="calendar-widget-hero-copy">
+                      {primaryEvent.calendarName}
+                      {primaryEvent.location ? ` • ${primaryEvent.location}` : ''}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="calendar-widget-list">
+                  {visibleEvents.map((event) => (
+                    <a
+                      key={event.id}
+                      className="calendar-widget-item"
+                      href={event.nextcloudUrl || calendar?.nextcloudUrl || '#'}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <div className="calendar-widget-item-side">
+                        {showCalendarColors ? (
+                          <span
+                            className="calendar-widget-color"
+                            style={{ backgroundColor: event.calendarColor || '#0ea5e9' }}
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                        <div>
+                          <div className="calendar-widget-day">{formatCalendarDayLabel(event.startAt)}</div>
+                          <div className="calendar-widget-time">{formatCalendarTimeRange(event)}</div>
+                        </div>
+                      </div>
+                      <div className="calendar-widget-item-main">
+                        <strong>{event.title}</strong>
+                        <span>
+                          {event.calendarName}
+                          {event.location ? ` • ${event.location}` : ''}
+                        </span>
+                      </div>
+                      <div className="calendar-widget-item-status">
+                        {event.isNow ? 'Jetzt' : event.startsSoon ? 'Bald' : event.isToday ? 'Heute' : 'Spaeter'}
+                      </div>
+                    </a>
+                  ))}
+                </div>
+
+                <div className="calendar-widget-meta">
+                  <span>{calendar?.calendars.length ?? 0} Kalender verbunden</span>
+                  {calendar?.lastSyncedAt ? <span>Aktualisiert {formatDateLabel(calendar.lastSyncedAt)}</span> : null}
+                </div>
+              </div>
+            )}
+          </WidgetShell>
+        );
+      }
       case 'FAVORITE_SPACES':
         return (
           <WidgetShell title={widget.title} subtitle="Deine wichtigsten Wiki-Bereiche an einem Ort">
@@ -1612,6 +1741,7 @@ export default function Dashboard() {
         <WidgetSettingsDialog
           widget={activeWidget}
           spaces={dashboard.spaces.items}
+          calendarState={dashboard.calendar}
           commuteProfile={dashboard.commute.profile}
           onClose={() => setWidgetConfigId(null)}
           onSaveWidget={async (data) => {
@@ -1632,6 +1762,7 @@ export default function Dashboard() {
 function WidgetSettingsDialog({
   widget,
   spaces,
+  calendarState,
   commuteProfile,
   onClose,
   onSaveWidget,
@@ -1639,6 +1770,7 @@ function WidgetSettingsDialog({
 }: {
   widget: DashboardWidget;
   spaces: DashboardResponse['spaces']['items'];
+  calendarState: DashboardResponse['calendar'];
   commuteProfile: CommuteProfile | null;
   onClose: () => void;
   onSaveWidget: (data: {
@@ -1709,11 +1841,85 @@ function WidgetSettingsDialog({
         )}
 
         {(widget.type === 'WEATHER' ||
+          widget.type === 'CALENDAR' ||
           widget.type === 'WEB_SEARCH' ||
           widget.type === 'FAVORITE_SPACES' ||
           widget.type === 'NOTES' ||
           widget.type === 'TELEGRAM_CHAT') && (
           <div className="widget-stack">
+            {widget.type === 'CALENDAR' && (
+              <div className="widget-subsection">
+                <label className="form-label">Ansicht</label>
+                <select className="input" value={String(settings.mode || 'agenda')} onChange={(e) => setSettings((current) => ({ ...current, mode: e.target.value }))}>
+                  <option value="agenda">Agenda</option>
+                  <option value="today">Heute</option>
+                  <option value="next">Naechste Termine</option>
+                </select>
+
+                <label className="form-label">Maximale Eintraege</label>
+                <input
+                  className="input"
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={String(settings.maxItems || 6)}
+                  onChange={(e) => setSettings((current) => ({ ...current, maxItems: Number(e.target.value) || 6 }))}
+                />
+
+                <label className="checkbox-card align-left">
+                  <input
+                    type="checkbox"
+                    checked={settings.showCalendarColors !== false}
+                    onChange={(e) => setSettings((current) => ({ ...current, showCalendarColors: e.target.checked }))}
+                  />
+                  <span>Kalenderfarben anzeigen</span>
+                </label>
+
+                <label className="form-label">Zeitraum fuer `beginnt bald` in Minuten</label>
+                <input
+                  className="input"
+                  type="number"
+                  min={5}
+                  max={360}
+                  step={5}
+                  value={String(settings.highlightWindowMinutes || 90)}
+                  onChange={(e) => setSettings((current) => ({ ...current, highlightWindowMinutes: Number(e.target.value) || 90 }))}
+                />
+
+                {calendarState.calendars.length > 0 ? (
+                  <>
+                    <label className="form-label">Sichtbare Kalender</label>
+                    <div className="option-grid">
+                      {calendarState.calendars.map((calendar) => {
+                        const activeIds = Array.isArray(settings.calendarIds) ? (settings.calendarIds as string[]) : [];
+                        const checked = activeIds.includes(calendar.id);
+                        return (
+                          <label key={calendar.id} className="checkbox-card align-left">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setSettings((current) => ({
+                                  ...current,
+                                  calendarIds: checked
+                                    ? activeIds.filter((id) => id !== calendar.id)
+                                    : [...activeIds, calendar.id],
+                                }))
+                              }
+                            />
+                            <span>{calendar.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="widget-message">
+                    {calendarState.message || 'Sobald die Nextcloud-Anbindung aktiv ist, koennen hier einzelne Kalender gewaehlt werden.'}
+                  </div>
+                )}
+              </div>
+            )}
             {widget.type === 'WEATHER' && (
               <div className="widget-subsection">
                 <label className="form-label">Ort</label>

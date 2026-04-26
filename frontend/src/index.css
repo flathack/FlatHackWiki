@@ -1232,6 +1232,70 @@ html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.in
   @apply flex min-h-0 flex-1 flex-col gap-3;
 }
 
+.calendar-widget-shell {
+  @apply flex min-h-0 flex-col gap-3;
+}
+
+.calendar-widget-hero {
+  @apply rounded-[24px] bg-gradient-to-br from-cyan-50 via-white to-sky-100 px-4 py-4;
+}
+
+.calendar-widget-hero-label {
+  @apply text-xs font-semibold uppercase tracking-[0.18em] text-sky-700;
+}
+
+.calendar-widget-hero-title {
+  @apply mt-2 text-xl font-semibold text-slate-900;
+}
+
+.calendar-widget-hero-copy {
+  @apply mt-1 text-sm text-slate-600;
+}
+
+.calendar-widget-list {
+  @apply grid gap-2.5;
+}
+
+.calendar-widget-item {
+  @apply grid gap-3 rounded-2xl border border-gray-200 bg-white px-3 py-3 text-left transition hover:border-sky-300 hover:shadow-sm md:grid-cols-[auto,1fr,auto];
+}
+
+.calendar-widget-item-side {
+  @apply flex items-start gap-3;
+}
+
+.calendar-widget-color {
+  @apply mt-1 block h-10 w-1.5 rounded-full;
+}
+
+.calendar-widget-day {
+  @apply text-xs font-semibold uppercase tracking-[0.14em] text-gray-500;
+}
+
+.calendar-widget-time {
+  @apply mt-1 text-sm font-medium text-slate-800;
+}
+
+.calendar-widget-item-main {
+  @apply flex min-w-0 flex-col gap-1;
+}
+
+.calendar-widget-item-main strong {
+  @apply truncate text-base text-slate-900;
+}
+
+.calendar-widget-item-main span {
+  @apply truncate text-sm text-slate-500;
+}
+
+.calendar-widget-item-status {
+  @apply text-xs font-semibold uppercase tracking-[0.16em] text-sky-700;
+}
+
+.calendar-widget-meta {
+  @apply flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500;
+}
+
 .telegram-chat-history {
   @apply flex min-h-[220px] flex-1 flex-col gap-2 overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 p-3;
 }

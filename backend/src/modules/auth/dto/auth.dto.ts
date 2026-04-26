@@ -47,6 +47,8 @@ export const updateMeSchema = z.object({
     dashboardSubtitle: z.string().trim().max(500).nullable().optional(),
     showDashboardSubtitle: z.boolean().optional(),
     uiRadius: z.number().int().min(8).max(40).optional(),
+    nextcloudUsername: z.string().trim().min(1).max(255).nullable().optional(),
+    nextcloudAppPassword: z.string().trim().min(1).max(255).nullable().optional(),
   }),
 });
 

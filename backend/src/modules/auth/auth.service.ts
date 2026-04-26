@@ -230,7 +230,19 @@ export class AuthService {
         name: true,
         status: true,
         createdAt: true,
-        profile: true,
+        profile: {
+          select: {
+            displayName: true,
+            avatarUrl: true,
+            timezone: true,
+            locale: true,
+            dashboardSubtitle: true,
+            showDashboardSubtitle: true,
+            uiRadius: true,
+            nextcloudUsername: true,
+            nextcloudAppPassword: true,
+          },
+        },
       },
     });
 
@@ -240,19 +252,34 @@ export class AuthService {
 
     const globalRole = await this.getGlobalRole(userId);
 
+    const safeProfile = user.profile
+      ? {
+          displayName: user.profile.displayName,
+          avatarUrl: user.profile.avatarUrl,
+          timezone: user.profile.timezone,
+          locale: user.profile.locale,
+          dashboardSubtitle: user.profile.dashboardSubtitle,
+          showDashboardSubtitle: user.profile.showDashboardSubtitle,
+          uiRadius: user.profile.uiRadius,
+          nextcloudUsername: user.profile.nextcloudUsername,
+        }
+      : null;
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       status: user.status,
       createdAt: user.createdAt,
-      profile: user.profile,
+      profile: safeProfile,
       displayName: user.profile?.displayName || user.name,
       dashboardSubtitle:
         user.profile?.dashboardSubtitle ||
         'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
       showDashboardSubtitle: user.profile?.showDashboardSubtitle ?? true,
       uiRadius: user.profile?.uiRadius ?? 28,
+      nextcloudUsername: user.profile?.nextcloudUsername || null,
+      hasNextcloudAppPassword: Boolean(user.profile?.nextcloudAppPassword),
       globalRole,
     };
   }
@@ -279,6 +306,18 @@ export class AuthService {
           ? null
           : input.dashboardSubtitle.trim();
     const uiRadius = input.uiRadius;
+    const nextcloudUsername =
+      input.nextcloudUsername === undefined
+        ? undefined
+        : input.nextcloudUsername === null
+          ? null
+          : input.nextcloudUsername.trim();
+    const nextcloudAppPassword =
+      input.nextcloudAppPassword === undefined
+        ? undefined
+        : input.nextcloudAppPassword === null
+          ? null
+          : input.nextcloudAppPassword.trim();
 
     await db.user.update({
       where: { id: userId },
@@ -294,6 +333,8 @@ export class AuthService {
                   : dashboardSubtitle,
               showDashboardSubtitle: input.showDashboardSubtitle ?? true,
               uiRadius: uiRadius ?? 28,
+              nextcloudUsername: nextcloudUsername === undefined ? null : nextcloudUsername,
+              nextcloudAppPassword: nextcloudAppPassword === undefined ? null : nextcloudAppPassword,
             },
             update: {
               ...(displayName ? { displayName } : {}),
@@ -302,6 +343,8 @@ export class AuthService {
                 ? { showDashboardSubtitle: input.showDashboardSubtitle }
                 : {}),
               ...(uiRadius !== undefined ? { uiRadius } : {}),
+              ...(nextcloudUsername !== undefined ? { nextcloudUsername } : {}),
+              ...(nextcloudAppPassword !== undefined ? { nextcloudAppPassword } : {}),
             },
           },
         },
@@ -506,6 +549,7 @@ export class AuthService {
 
   private async upsertOidcUser(userInfo: Required<Pick<OidcUserInfo, 'sub' | 'email'>> & OidcUserInfo) {
     const name = userInfo.name || userInfo.preferred_username || userInfo.email;
+    const username = userInfo.preferred_username?.trim() || userInfo.email.split('@')[0]?.trim() || null;
     const existingIdentity = await db.externalIdentity.findUnique({
       where: {
         provider_subject: {
@@ -521,6 +565,7 @@ export class AuthService {
         where: { id: existingIdentity.id },
         data: {
           email: userInfo.email,
+          username,
           name,
         },
       });
@@ -566,6 +611,7 @@ export class AuthService {
         provider: OIDC_PROVIDER_KEY,
         subject: userInfo.sub,
         email: userInfo.email,
+        username,
         name,
       },
     });

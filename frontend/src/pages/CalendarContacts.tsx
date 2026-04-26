@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { authApi } from '../api/client';
 import { useAuthStore } from '../context/auth.store';
 import AppHeader from '../components/AppHeader';
 
@@ -28,9 +29,12 @@ function CopyButton({ value }: { value: string }) {
 
 export default function CalendarContacts() {
   const user = useAuthStore((state) => state.user);
-  const [nextcloudUser, setNextcloudUser] = useState(() =>
-    window.localStorage.getItem('nextcloud-user') || getDefaultNextcloudUser(user?.email, user?.name)
-  );
+  const updateUser = useAuthStore((state) => state.updateUser);
+  const [nextcloudUser, setNextcloudUser] = useState(() => user?.nextcloudUsername || getDefaultNextcloudUser(user?.email, user?.name));
+  const [nextcloudAppPassword, setNextcloudAppPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   const davPrincipalUrl = useMemo(
     () => `${nextcloudUrl}/remote.php/dav/principals/users/${encodeURIComponent(nextcloudUser)}/`,
@@ -40,9 +44,33 @@ export default function CalendarContacts() {
   const contactsUrl = `${nextcloudUrl}/apps/contacts`;
   const appPasswordsUrl = `${nextcloudUrl}/settings/user/security`;
 
-  const saveNextcloudUser = (value: string) => {
-    setNextcloudUser(value);
-    window.localStorage.setItem('nextcloud-user', value);
+  const saveNextcloudSettings = async () => {
+    setSaving(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const normalizedUsername = nextcloudUser.trim() || null;
+      const normalizedPassword = nextcloudAppPassword.trim() || null;
+      const { data } = await authApi.updateMe({
+        nextcloudUsername: normalizedUsername,
+        nextcloudAppPassword: normalizedPassword ?? undefined,
+      });
+
+      updateUser({
+        nextcloudUsername: data.nextcloudUsername,
+        hasNextcloudAppPassword: data.hasNextcloudAppPassword,
+      });
+      if (normalizedUsername) {
+        setNextcloudUser(normalizedUsername);
+      }
+      setNextcloudAppPassword('');
+      setMessage('Nextcloud-Zugang gespeichert. Das Kalender-Widget nutzt jetzt dein eigenes App-Passwort.');
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Nextcloud-Zugang konnte nicht gespeichert werden.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -104,10 +132,27 @@ export default function CalendarContacts() {
               <input
                 className="input"
                 value={nextcloudUser}
-                onChange={(event) => saveNextcloudUser(event.target.value.trim())}
+                onChange={(event) => setNextcloudUser(event.target.value)}
                 placeholder="z. B. steve"
               />
             </label>
+            <label className="profile-field">
+              <span>Nextcloud-App-Passwort</span>
+              <input
+                className="input"
+                type="password"
+                value={nextcloudAppPassword}
+                onChange={(event) => setNextcloudAppPassword(event.target.value)}
+                placeholder={user?.hasNextcloudAppPassword ? 'Neues App-Passwort eingeben, um es zu ersetzen' : 'App-Passwort aus Nextcloud eintragen'}
+              />
+            </label>
+            {error ? <div className="widget-message widget-message-error">{error}</div> : null}
+            {message ? <div className="widget-message widget-message-success">{message}</div> : null}
+            <div className="widget-toolbar-end">
+              <button type="button" className="btn btn-primary" onClick={() => void saveNextcloudSettings()} disabled={saving || !nextcloudUser.trim()}>
+                {saving ? 'Speichert ...' : 'Zugang speichern'}
+              </button>
+            </div>
             <div className="groupware-url-box">
               <span>DAV Serveradresse</span>
               <code>{davPrincipalUrl}</code>
@@ -126,6 +171,7 @@ export default function CalendarContacts() {
               <div><span>Nextcloud</span><strong>{nextcloudUrl}</strong></div>
               <div><span>Kalender</span><strong>Calendar App installiert</strong></div>
               <div><span>Kontakte</span><strong>Contacts App installiert</strong></div>
+              <div><span>Widget-Zugang</span><strong>{user?.hasNextcloudAppPassword ? 'App-Passwort gespeichert' : 'Noch nicht gespeichert'}</strong></div>
               <div><span>Familie</span><strong>Gruppe family vorbereitet</strong></div>
             </div>
           </article>

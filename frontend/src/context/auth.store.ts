@@ -9,6 +9,8 @@ interface User {
   dashboardSubtitle?: string | null;
   showDashboardSubtitle?: boolean;
   uiRadius?: number;
+  nextcloudUsername?: string | null;
+  hasNextcloudAppPassword?: boolean;
   globalRole: string;
 }
 
