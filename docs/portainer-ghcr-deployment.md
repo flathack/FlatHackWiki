@@ -128,3 +128,7 @@ Relevant auf dem NAS sind vor allem:
 - Die generische Stack-Datei verwendet absichtlich keine lokalen Script-Bind-Mounts.
 - Der Nextcloud-OIDC-Bootstrap spricht den laufenden Nextcloud-Container ueber `/var/run/docker.sock` an.
 - Wenn du schon alte lokale Testcontainer hast, beeinflusst das den NAS-Stack nicht. Relevant ist nur der Portainer-Deploy aus der aktuellen `docker-compose.ghcr.yml`.
+
+## 9. Updates aus dem Git-Repository
+
+Fuer den regulaeren Update-Weg vom Git-Repository bis zum NAS-Stack siehe [docs/nas-update-from-git.md](c:\Users\steve\Github\AmazonChecker\OpenClawWiki\openclaw-wiki\docs\nas-update-from-git.md).

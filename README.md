@@ -72,6 +72,8 @@ For Portainer, use `docker-compose.ghcr.yml` as your stack file.
 
 For a NAS/Portainer deployment including OIDC and Nextcloud calendar settings, see `docs/portainer-ghcr-deployment.md`.
 
+For the update path from your Git repository to the NAS stack, see `docs/nas-update-from-git.md`.
+
 Important environment variables:
 
 - `BACKEND_IMAGE=ghcr.io/<your-user-or-org>/openclaw-wiki-backend:latest`
