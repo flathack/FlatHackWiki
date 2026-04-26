@@ -11,6 +11,11 @@ coverage/
 !.env.ghcr.example
 !.env.nextcloud.example
 !.env.nas.example
+.env.ghcr.personal
+.env.ghcr.personal.*
+.env.ghcr.local
+.env.ghcr.local.*
+.env.ghcr.terramaster*
 
 uploads/
 backend/uploads/
@@ -29,4 +34,6 @@ backups/
 
 docker-compose.personal.yml
 docker-compose.ghcr.personal.yml
+docker-compose.ghcr.local.yml
+docker-compose.ghcr.private.yml
 docker/nextcloud/Caddyfile.personal

@@ -1,134 +1,130 @@
 # Portainer Deployment auf dem NAS
 
-Diese Variante ist fuer Portainer gedacht und nutzt die produktionsnahen Images aus GHCR statt der lokalen Dev-Container.
+Diese Variante ist fuer Portainer auf einem x86_64- beziehungsweise amd64-NAS gedacht und bildet den kompletten lokalen Stack nach: Wiki, PostgreSQL, Keycloak, Nextcloud, Redis, Caddy und die OIDC-Bootstraps.
 
 ## Zielbild
 
-- Portainer deployed `docker-compose.ghcr.yml` als Stack.
-- PostgreSQL, API und Frontend laufen auf dem NAS.
-- OIDC und Nextcloud koennen ueber Umgebungsvariablen aktiviert werden.
-- Benutzerbezogene Nextcloud-App-Passwoerter werden in der Datenbank gespeichert. Die globalen `NEXTCLOUD_*` Variablen sind nur noch optionaler Fallback.
+- Portainer deployed `docker-compose.ghcr.yml` als kompletten Stack.
+- Die Datei nutzt GHCR-Images fuer Frontend und Backend.
+- Keycloak- und Nextcloud-OIDC werden beim Start automatisch konfiguriert.
+- Es gibt keine lokalen Sourcecode- oder Windows-Pfad-Bind-Mounts mehr.
 
-## 1. Images bereitstellen
+## 1. Voraussetzungen
 
-Du brauchst zwei Images in einer Registry, die dein NAS ziehen kann:
+- Dein NAS muss Docker-Images fuer `linux/amd64` ziehen koennen.
+- Fuer private GHCR-Repositories muss in Portainer unter `Registries` ein GitHub-Registry-Login hinterlegt sein.
+- Fuer persistente Daten nutzt der Stack benannte Docker-Volumes.
 
-- `ghcr.io/<user-oder-org>/openclaw-wiki-backend:latest`
-- `ghcr.io/<user-oder-org>/openclaw-wiki-frontend:latest`
+## 2. Stack-Datei verwenden
 
-Wenn dein GitHub-Repo die Workflow-Datei `.github/workflows/docker-publish.yml` nutzt, reicht ein Push auf `main` oder ein manueller Workflow-Run.
+Verwende in Portainer die Datei [docker-compose.ghcr.yml](c:\Users\steve\Github\AmazonChecker\OpenClawWiki\openclaw-wiki\docker-compose.ghcr.yml).
 
-## 2. Stack-Datei in Portainer verwenden
+Die Stack-Datei ist auf produktionsnahen Betrieb ausgelegt und startet:
 
-Verwende als Stack-Datei den Inhalt von `docker-compose.ghcr.yml`.
+- Wiki API
+- Wiki Frontend
+- Wiki PostgreSQL
+- Keycloak plus Keycloak-PostgreSQL
+- Nextcloud plus Nextcloud-PostgreSQL und Redis
+- Caddy als HTTPS-Terminator fuer Nextcloud
+- einen Keycloak-Bootstrap-Job
+- einen Nextcloud-OIDC-Bootstrap-Job
 
-Wichtig: Diese Datei ist fuer den produktiven Containerbetrieb gedacht. Sie mountet keinen Sourcecode und startet die API nicht im Watch-Modus.
+## 3. Environment-Variablen vorbereiten
 
-## 3. Umgebungsvariablen setzen
+Nutze [.env.ghcr.example](c:\Users\steve\Github\AmazonChecker\OpenClawWiki\openclaw-wiki\.env.ghcr.example) als allgemeine, github-taugliche Vorlage.
 
-Nutze `.env.ghcr.example` als Vorlage fuer die Portainer-Environment-Variablen.
+Lege deine echten NAS-Werte in einer privaten Datei wie `.env.ghcr.personal` oder `.env.ghcr.local` ab. Diese Dateien sind absichtlich in `.gitignore` eingetragen und gehoeren nicht ins Repository.
 
-Pflichtwerte:
+Mindestens anpassen solltest du:
 
-- `BACKEND_IMAGE`
-- `FRONTEND_IMAGE`
-- `JWT_SECRET`
 - `POSTGRES_PASSWORD`
 - `DATABASE_URL`
+- `JWT_SECRET`
+- `KEYCLOAK_DB_PASSWORD`
+- `KEYCLOAK_ADMIN_PASSWORD`
+- `OIDC_CLIENT_SECRET`
+- `NEXTCLOUD_DB_PASSWORD`
+- `NEXTCLOUD_ADMIN_PASSWORD`
+- `NEXTCLOUD_OIDC_CLIENT_SECRET`
+- `APP_URL`
+- `FRONTEND_URL`
+- `CORS_ORIGIN`
+- `OIDC_PUBLIC_ISSUER`
+- `OIDC_REDIRECT_URI`
+- `NEXTCLOUD_PUBLIC_URL`
+- `NEXTCLOUD_TRUSTED_DOMAINS`
+- `NEXTCLOUD_OVERWRITEHOST`
 
-Typisches Beispiel:
+Typischer Startpunkt fuer dein NAS:
 
 ```env
-BACKEND_IMAGE=ghcr.io/dein-user/openclaw-wiki-backend:latest
-FRONTEND_IMAGE=ghcr.io/dein-user/openclaw-wiki-frontend:latest
+BACKEND_IMAGE=ghcr.io/flathack/openclaw-wiki-backend:latest
+FRONTEND_IMAGE=ghcr.io/flathack/openclaw-wiki-frontend:latest
 
-POSTGRES_USER=wikiuser
-POSTGRES_PASSWORD=<starkes-passwort>
-POSTGRES_DB=flathacks_wiki
-DATABASE_URL=postgresql://wikiuser:<starkes-passwort>@postgres:5432/flathacks_wiki?schema=public
-
-JWT_SECRET=<mindestens-32-zeichen>
-
-APP_ENV=production
-APP_URL=https://wiki.deinedomain.tld/api
+APP_URL=https://wiki.deinedomain.tld
 FRONTEND_URL=https://wiki.deinedomain.tld
 CORS_ORIGIN=https://wiki.deinedomain.tld
+FRONTEND_PORT=3002
 
-API_PORT=3001
-FRONTEND_PORT=8088
-```
-
-## 4. OIDC fuer Keycloak setzen
-
-Wenn dein NAS-Deployment denselben zentralen Login wie lokal nutzen soll:
-
-```env
-OIDC_ENABLED=true
-OIDC_PROVIDER_NAME=Zentrales Konto
+KEYCLOAK_PORT=8081
 OIDC_ISSUER=http://keycloak:8080/realms/flathackwiki
 OIDC_PUBLIC_ISSUER=https://sso.deinedomain.tld/realms/flathackwiki
-OIDC_CLIENT_ID=flathackwiki
-OIDC_CLIENT_SECRET=<client-secret>
 OIDC_REDIRECT_URI=https://wiki.deinedomain.tld/api/v1/auth/oidc/callback
-OIDC_SCOPES=openid email profile
-OIDC_TOKEN_AUTH_METHOD=client_secret_post
-OIDC_DEFAULT_ROLE=VIEWER
-OIDC_SUPER_ADMIN_EMAILS=admin@deinedomain.tld
-```
 
-`OIDC_ISSUER` ist die interne Container-Adresse.
-
-`OIDC_PUBLIC_ISSUER` ist die von Browsern erreichbare URL.
-
-## 5. Nextcloud-Kalender setzen
-
-Fuer das neue Kalender-Widget gilt:
-
-- Jeder Benutzer sollte sein eigenes Nextcloud-App-Passwort im Profil speichern.
-- `NEXTCLOUD_APP_PASSWORD` ist nur noch ein optionaler globaler Fallback.
-
-Typische Konfiguration:
-
-```env
-NEXTCLOUD_INTERNAL_URL=http://nextcloud
+NEXTCLOUD_HTTP_PORT=8080
+NEXTCLOUD_HTTPS_PORT=8443
 NEXTCLOUD_PUBLIC_URL=https://cloud.deinedomain.tld
-NEXTCLOUD_CALENDAR_LOOKAHEAD_DAYS=14
+NEXTCLOUD_TRUSTED_DOMAINS=cloud.deinedomain.tld localhost 127.0.0.1
+NEXTCLOUD_OVERWRITEHOST=cloud.deinedomain.tld
+NEXTCLOUD_OVERWRITEPROTOCOL=https
 ```
 
-Nur falls du weiterhin einen globalen Fallback willst:
+## 4. OIDC-Logik
 
-```env
-NEXTCLOUD_APP_PASSWORD_USER=steve
-NEXTCLOUD_APP_PASSWORD=<app-passwort>
-```
+Der Stack konfiguriert OIDC automatisch in zwei Schritten:
 
-## 6. Portainer-Deploy
+- `keycloak-bootstrap` legt Realm, Clients und den Admin-Benutzer an.
+- Optionale Demo-Benutzer koennen ueber die `KEYCLOAK_DEMO_USER_*` Variablen gesetzt werden.
+- `nextcloud-oidc-bootstrap` aktiviert `user_oidc` in Nextcloud und verdrahtet den Provider.
 
-In Portainer:
+Wichtige Trennung:
+
+- `OIDC_ISSUER` ist die interne Container-URL fuer die API.
+- `OIDC_PUBLIC_ISSUER` ist die Browser-URL fuer das Wiki-Frontend.
+- `OIDC_DISCOVERY_URI` zeigt fuer den Bootstrap intern auf Keycloak.
+
+## 5. Nextcloud und Kalender
+
+Das Kalender-Widget nutzt pro Benutzer eigene Nextcloud-Zugangsdaten aus dem Wiki-Profil. Die globalen `NEXTCLOUD_APP_PASSWORD_*` Werte bleiben nur ein optionaler Fallback.
+
+Relevant auf dem NAS sind vor allem:
+
+- `NEXTCLOUD_INTERNAL_URL=http://nextcloud`
+- `NEXTCLOUD_PUBLIC_URL=https://cloud.deinedomain.tld`
+- `NEXTCLOUD_CALENDAR_LOOKAHEAD_DAYS=14`
+
+## 6. Deploy in Portainer
 
 1. `Stacks` oeffnen.
-2. `Add stack`.
-3. Stack-Namen vergeben, z. B. `openclaw-wiki`.
-4. `docker-compose.ghcr.yml` einfuegen.
+2. `Add stack` waehlen.
+3. Einen Namen wie `openclaw-wiki` vergeben.
+4. Den Inhalt aus [docker-compose.ghcr.yml](c:\Users\steve\Github\AmazonChecker\OpenClawWiki\openclaw-wiki\docker-compose.ghcr.yml) einfuegen oder die Datei per Git-Stack referenzieren.
 5. Unter `Environment variables` die Werte aus deiner `.env.ghcr.example`-Ableitung eintragen.
-6. Falls GHCR privat ist, vorher unter `Registries` die GitHub-Registry anbinden.
-7. `Deploy the stack`.
+6. Den Stack deployen.
 
 ## 7. Nach dem ersten Start pruefen
 
-- Frontend erreichbar
-- `GET /api/health` liefert `status: ok`
-- Login funktioniert
-- Benutzer kann in den Profileinstellungen Nextcloud-Benutzername und App-Passwort speichern
-- Kalender-Widget zeigt eigene und freigegebene Kalender und laesst Kalenderauswahl zu
+- Frontend ist erreichbar.
+- Die API antwortet auf `/api/health`.
+- Keycloak ist auf dem konfigurierten Port erreichbar.
+- Nextcloud ist ueber den HTTPS-Port erreichbar.
+- Das Wiki zeigt den OIDC-Login an.
+- Benutzer koennen im Profil ihren Nextcloud-Benutzernamen und ihr App-Passwort speichern.
+- Das Kalender-Widget zeigt eigene und freigegebene Kalender mit Farben an.
 
-## 8. Reverse Proxy Hinweis
+## 8. Wichtige Hinweise fuer Portainer
 
-Wenn Portainer oder dein NAS selbst einen Reverse Proxy davor setzt, dann muessen `APP_URL`, `FRONTEND_URL`, `CORS_ORIGIN` und `OIDC_REDIRECT_URI` auf die extern erreichbare URL zeigen.
-
-Beispiel:
-
-- Frontend extern: `https://wiki.deinedomain.tld`
-- API extern ueber Nginx-Proxy im Frontend: `https://wiki.deinedomain.tld/api`
-
-Dann sollte die API intern trotzdem weiter auf Port `3001` laufen.
+- Die generische Stack-Datei verwendet absichtlich keine lokalen Script-Bind-Mounts.
+- Der Nextcloud-OIDC-Bootstrap spricht den laufenden Nextcloud-Container ueber `/var/run/docker.sock` an.
+- Wenn du schon alte lokale Testcontainer hast, beeinflusst das den NAS-Stack nicht. Relevant ist nur der Portainer-Deploy aus der aktuellen `docker-compose.ghcr.yml`.

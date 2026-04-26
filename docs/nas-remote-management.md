@@ -1,6 +1,6 @@
 # NAS Remote Management
 
-Das NAS ist per SSH erreichbar, und Synology nutzt Docker an nicht standardmaessigen Pfaden.
+Das NAS ist per SSH erreichbar. Die Werte in `.env.nas.example` sind jetzt auf einen normalen Docker-CLI-Aufruf ausgelegt, wie er auf einem TerraMaster- oder allgemeinen Linux-NAS ueblich ist.
 
 ## Lokale Einrichtung
 
@@ -38,7 +38,7 @@ python scripts/nas-docker.py shell "uname -a"
 
 - SSH-Ziel: `NAS_HOST` und `NAS_USER`
 - Authentifizierung: Passwort ueber `NAS_PASSWORD`
-- Docker-Binary auf dem NAS: `/Volume1/@apps/DockerEngine/dockerd/bin/docker`
-- Docker Compose auf dem NAS: `/Volume1/@apps/DockerEngine/dockerd/bin/docker-compose`
+- Docker-Binary auf dem NAS: standardmaessig `docker`
+- Docker Compose auf dem NAS: standardmaessig `docker compose`
 
-Der native Docker-Context ist bereits angelegt, aber die Synology-SSH-Konfiguration nimmt den lokalen Key noch nicht an. Der Python-Wrapper ist deshalb aktuell der robuste Weg fuer die direkte Verwaltung.
+Wenn dein TerraMaster abweichende Pfade oder ein eigenes Compose-Binary nutzt, kannst du `NAS_DOCKER_BIN` und `NAS_DOCKER_COMPOSE_BIN` entsprechend anpassen.
