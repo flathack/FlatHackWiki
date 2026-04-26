@@ -38,6 +38,8 @@ interface OidcState {
 
 export class AuthService {
   async register(input: RegisterInput) {
+    this.assertSelfRegistrationEnabled();
+
     const existingUser = await db.user.findUnique({
       where: { email: input.email },
     });
@@ -90,6 +92,8 @@ export class AuthService {
   }
 
   async login(input: LoginInput, ipAddress?: string, userAgent?: string) {
+    this.assertLocalLoginEnabled();
+
     const user = await db.user.findUnique({
       where: { email: input.email },
     });
@@ -155,6 +159,8 @@ export class AuthService {
       providerName: config.OIDC_PROVIDER_NAME,
       loginUrl: config.OIDC_ENABLED ? '/auth/oidc/login' : null,
       logoutUrl: config.OIDC_ENABLED ? '/auth/oidc/logout' : null,
+      localLoginEnabled: config.AUTH_LOCAL_LOGIN_ENABLED,
+      selfRegistrationEnabled: config.AUTH_SELF_REGISTRATION_ENABLED,
     };
   }
 
@@ -410,6 +416,18 @@ export class AuthService {
 
     if (!config.OIDC_ISSUER || !config.OIDC_CLIENT_ID || !config.OIDC_CLIENT_SECRET) {
       throw new AppError(500, 'OIDC_NOT_CONFIGURED', 'OIDC login is enabled but not fully configured');
+    }
+  }
+
+  private assertLocalLoginEnabled() {
+    if (!config.AUTH_LOCAL_LOGIN_ENABLED) {
+      throw new AppError(404, 'LOCAL_LOGIN_DISABLED', 'Local login is disabled');
+    }
+  }
+
+  private assertSelfRegistrationEnabled() {
+    if (!config.AUTH_SELF_REGISTRATION_ENABLED) {
+      throw new AppError(404, 'SELF_REGISTRATION_DISABLED', 'Self registration is disabled');
     }
   }
 

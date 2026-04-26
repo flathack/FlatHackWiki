@@ -75,6 +75,14 @@ api.interceptors.response.use(
 
 export interface LoginRequest { email: string; password: string }
 export interface RegisterRequest { email: string; password: string; name: string }
+export interface OidcPublicConfig {
+  enabled: boolean;
+  providerName: string;
+  loginUrl: string | null;
+  logoutUrl: string | null;
+  localLoginEnabled: boolean;
+  selfRegistrationEnabled: boolean;
+}
 export interface MeResponse {
   id: string;
   email: string;
@@ -317,17 +325,21 @@ export interface AdminStats {
   sessionCount: number;
 }
 
+export interface AdminCreateUserRequest {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+  globalRole?: string;
+}
+
 export const authApi = {
   login: (data: LoginRequest) => api.post<{ accessToken: string; refreshToken: string; user: any }>('/auth/login', data),
   register: (data: RegisterRequest) => api.post('/auth/register', data),
   logout: (refreshToken: string) => api.post('/auth/logout', { refreshToken }),
   me: () => api.get<MeResponse>('/auth/me'),
-  oidcConfig: () => api.get<{
-    enabled: boolean;
-    providerName: string;
-    loginUrl: string | null;
-    logoutUrl: string | null;
-  }>('/auth/oidc/config'),
+  oidcConfig: () => api.get<OidcPublicConfig>('/auth/oidc/config'),
   updateMe: (data: {
     displayName?: string;
     dashboardSubtitle?: string | null;
@@ -456,6 +468,7 @@ export const adminApi = {
   stats: () => api.get<AdminStats>('/admin/stats'),
   users: () => api.get<AdminUser[]>('/admin/users'),
   auditLog: (params: { limit?: number; offset?: number } = {}) => api.get<AdminAuditEntry[]>('/admin/audit-log', { params }),
+  createUser: (data: AdminCreateUserRequest) => api.post<AdminUser>('/admin/users', data),
   updateUser: (userId: string, data: { name?: string; status?: AdminUser['status']; globalRole?: string | null }) =>
     api.patch<AdminUser>(`/admin/users/${userId}`, data),
   deleteUser: (userId: string) => api.delete(`/admin/users/${userId}`),

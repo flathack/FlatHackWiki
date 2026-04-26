@@ -1,10 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { adminApi, type AdminAuditEntry, type AdminStats, type AdminUser } from '../api/client';
 import AppHeader from '../components/AppHeader';
 import { useAuthStore } from '../context/auth.store';
 
 const roles = ['SUPER_ADMIN', 'SYSTEM_ADMIN', 'SPACE_ADMIN', 'EDITOR', 'AUTHOR', 'COMMENTER', 'VIEWER', 'GUEST', 'USER'];
+const assignableRoles = ['SUPER_ADMIN', 'SYSTEM_ADMIN', 'SPACE_ADMIN', 'EDITOR', 'AUTHOR', 'COMMENTER', 'VIEWER', 'GUEST'];
 const statuses: AdminUser['status'][] = ['ACTIVE', 'INACTIVE', 'DELETED'];
+
+const initialCreateForm = {
+  username: '',
+  email: '',
+  firstName: '',
+  lastName: '',
+  password: '',
+  globalRole: 'VIEWER',
+};
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
@@ -20,6 +30,7 @@ export default function AdminPage() {
   const [busyAction, setBusyAction] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [createForm, setCreateForm] = useState(initialCreateForm);
 
   const isAdmin = user?.globalRole === 'SUPER_ADMIN' || user?.globalRole === 'SYSTEM_ADMIN';
   const activeUsers = useMemo(() => users.filter((item) => item.status === 'ACTIVE'), [users]);
@@ -92,6 +103,32 @@ export default function AdminPage() {
       setMessage(`Benutzer ${targetUser.email} wurde als geloescht markiert.`);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Benutzer konnte nicht geloescht werden');
+    } finally {
+      setBusyAction('');
+    }
+  };
+
+  const createUser = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusyAction('create-user');
+    setError('');
+    setMessage('');
+
+    try {
+      const { data: created } = await adminApi.createUser({
+        username: createForm.username,
+        email: createForm.email,
+        firstName: createForm.firstName,
+        lastName: createForm.lastName,
+        password: createForm.password,
+        globalRole: createForm.globalRole,
+      });
+
+      setCreateForm(initialCreateForm);
+      await loadData();
+      setMessage(`Benutzer ${created.email} wurde fuer OIDC, Wiki und Nextcloud-SSO vorbereitet.`);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Benutzer konnte nicht angelegt werden');
     } finally {
       setBusyAction('');
     }
@@ -175,7 +212,78 @@ export default function AdminPage() {
             </article>
           </section>
         ) : activeTab === 'users' ? (
-          <section className="admin-table-card">
+          <section className="groupware-grid">
+            <article className="dialog-card span-2">
+              <h3>Neuen OIDC-Benutzer anlegen</h3>
+              <p className="widget-shell-subtitle">
+                Der Benutzer wird in Keycloak angelegt, im Wiki vorprovisioniert und kann sich danach per SSO in Wiki und Nextcloud anmelden.
+              </p>
+              <form className="widget-form-grid" onSubmit={createUser}>
+                <label className="profile-field">
+                  <span>Benutzername</span>
+                  <input
+                    className="input"
+                    value={createForm.username}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, username: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>E-Mail</span>
+                  <input
+                    type="email"
+                    className="input"
+                    value={createForm.email}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, email: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>Vorname</span>
+                  <input
+                    className="input"
+                    value={createForm.firstName}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, firstName: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>Nachname</span>
+                  <input
+                    className="input"
+                    value={createForm.lastName}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, lastName: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>Startpasswort</span>
+                  <input
+                    type="password"
+                    className="input"
+                    value={createForm.password}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, password: event.target.value }))}
+                    required
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>Wiki-Rolle</span>
+                  <select
+                    className="input"
+                    value={createForm.globalRole}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, globalRole: event.target.value }))}
+                  >
+                    {assignableRoles.map((role) => <option key={role} value={role}>{role}</option>)}
+                  </select>
+                </label>
+                <div className="widget-inline-actions stretch-mobile">
+                  <button className="btn btn-primary" type="submit" disabled={busyAction === 'create-user'}>
+                    {busyAction === 'create-user' ? 'Lege an ...' : 'Benutzer anlegen'}
+                  </button>
+                </div>
+              </form>
+            </article>
+            <article className="admin-table-card span-2">
             <div className="admin-table-scroll">
               <table className="admin-table">
                 <thead>
@@ -226,6 +334,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            </article>
           </section>
         ) : activeTab === 'audit' ? (
           <section className="admin-table-card">

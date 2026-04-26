@@ -1,8 +1,124 @@
+import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { db } from '../../config/database.js';
-import { ForbiddenError, NotFoundError } from '../../core/errors/app.errors.js';
-import type { UpdateUserInput } from './dto/admin.dto.js';
+import { config } from '../../config/index.js';
+import { AppError, ConflictError, ForbiddenError, NotFoundError } from '../../core/errors/app.errors.js';
+import type { CreateUserInput, UpdateUserInput } from './dto/admin.dto.js';
+
+const BCRYPT_ROUNDS = 12;
+
+type KeycloakUserRecord = {
+  id: string;
+  username?: string;
+  email?: string;
+};
 
 class AdminService {
+  async createUser(input: CreateUserInput) {
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const normalizedUsername = input.username.trim();
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName.trim();
+    const displayName = `${firstName} ${lastName}`.trim() || normalizedUsername;
+    const roleName = input.globalRole ?? config.OIDC_DEFAULT_ROLE;
+
+    const keycloakUser = await this.createKeycloakUser({
+      username: normalizedUsername,
+      email: normalizedEmail,
+      firstName,
+      lastName,
+      password: input.password,
+    });
+
+    try {
+      const userId = await db.$transaction(async (tx) => {
+        const existingUser = await tx.user.findUnique({ where: { email: normalizedEmail } });
+
+        if (existingUser?.status === 'DELETED') {
+          throw new ConflictError('Ein geloeschter Wiki-Benutzer mit dieser E-Mail existiert bereits.');
+        }
+
+        const passwordHash = await bcrypt.hash(`oidc:${randomUUID()}`, BCRYPT_ROUNDS);
+
+        const wikiUser =
+          existingUser ||
+          (await tx.user.create({
+            data: {
+              email: normalizedEmail,
+              passwordHash,
+              name: displayName,
+              emailVerified: true,
+            },
+          }));
+
+        await tx.user.update({
+          where: { id: wikiUser.id },
+          data: {
+            name: displayName,
+            emailVerified: true,
+            profile: {
+              upsert: {
+                create: {
+                  displayName,
+                  dashboardSubtitle:
+                    'Build a personal start page for the wiki with widgets, quick links, favorite spaces, and notes.',
+                  showDashboardSubtitle: true,
+                  uiRadius: 28,
+                },
+                update: {
+                  displayName,
+                },
+              },
+            },
+          },
+        });
+
+        await tx.externalIdentity.upsert({
+          where: {
+            provider_subject: {
+              provider: 'oidc',
+              subject: keycloakUser.id,
+            },
+          },
+          create: {
+            userId: wikiUser.id,
+            provider: 'oidc',
+            subject: keycloakUser.id,
+            email: normalizedEmail,
+            username: normalizedUsername,
+            name: displayName,
+          },
+          update: {
+            userId: wikiUser.id,
+            email: normalizedEmail,
+            username: normalizedUsername,
+            name: displayName,
+          },
+        });
+
+        await tx.roleAssignment.deleteMany({
+          where: { principalType: 'user', principalId: wikiUser.id, scopeType: 'GLOBAL' },
+        });
+
+        await tx.roleAssignment.create({
+          data: {
+            principalType: 'user',
+            principalId: wikiUser.id,
+            scopeType: 'GLOBAL',
+            roleName,
+          },
+        });
+
+        return wikiUser.id;
+      });
+
+      return this.getUser(userId);
+    } catch (error) {
+      await this.deleteKeycloakUser(keycloakUser.id).catch(() => undefined);
+      throw error;
+    }
+  }
+
   async listUsers() {
     const users = await db.user.findMany({
       select: {
@@ -154,6 +270,158 @@ class AdminService {
       select: { roleName: true },
     });
     return assignment?.roleName || 'USER';
+  }
+
+  private assertKeycloakProvisioningConfigured() {
+    if (!config.KEYCLOAK_URL || !config.KEYCLOAK_ADMIN || !config.KEYCLOAK_ADMIN_PASSWORD || !config.OIDC_REALM) {
+      throw new AppError(500, 'KEYCLOAK_PROVISIONING_NOT_CONFIGURED', 'Keycloak provisioning is not fully configured');
+    }
+  }
+
+  private async createKeycloakUser(input: {
+    username: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+  }) {
+    this.assertKeycloakProvisioningConfigured();
+
+    const adminToken = await this.getKeycloakAdminAccessToken();
+
+    if (await this.findKeycloakUserByUsername(input.username, adminToken)) {
+      throw new ConflictError('Ein OIDC-Benutzer mit diesem Benutzernamen existiert bereits.');
+    }
+
+    if (await this.findKeycloakUserByEmail(input.email, adminToken)) {
+      throw new ConflictError('Ein OIDC-Benutzer mit dieser E-Mail existiert bereits.');
+    }
+
+    const response = await this.keycloakRequest(`/admin/realms/${encodeURIComponent(config.OIDC_REALM)}/users`, adminToken, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: input.username,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        enabled: true,
+        emailVerified: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      if (response.status === 409) {
+        throw new ConflictError('Der OIDC-Benutzer existiert bereits.');
+      }
+      throw new AppError(502, 'KEYCLOAK_CREATE_USER_FAILED', body || 'Keycloak user could not be created');
+    }
+
+    const location = response.headers.get('location') || response.headers.get('Location');
+    const userId = location?.split('/').pop();
+    if (!userId) {
+      throw new AppError(502, 'KEYCLOAK_CREATE_USER_INVALID', 'Keycloak did not return a user id');
+    }
+
+    const passwordResponse = await this.keycloakRequest(
+      `/admin/realms/${encodeURIComponent(config.OIDC_REALM)}/users/${encodeURIComponent(userId)}/reset-password`,
+      adminToken,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'password',
+          temporary: false,
+          value: input.password,
+        }),
+      }
+    );
+
+    if (!passwordResponse.ok) {
+      const body = await passwordResponse.text().catch(() => '');
+      throw new AppError(502, 'KEYCLOAK_SET_PASSWORD_FAILED', body || 'Keycloak password could not be set');
+    }
+
+    return { id: userId };
+  }
+
+  private async deleteKeycloakUser(userId: string) {
+    this.assertKeycloakProvisioningConfigured();
+    const adminToken = await this.getKeycloakAdminAccessToken();
+    await this.keycloakRequest(`/admin/realms/${encodeURIComponent(config.OIDC_REALM)}/users/${encodeURIComponent(userId)}`, adminToken, {
+      method: 'DELETE',
+    });
+  }
+
+  private async findKeycloakUserByUsername(username: string, adminToken: string) {
+    const response = await this.keycloakRequest(
+      `/admin/realms/${encodeURIComponent(config.OIDC_REALM)}/users?username=${encodeURIComponent(username)}&exact=true`,
+      adminToken
+    );
+
+    if (!response.ok) {
+      throw new AppError(502, 'KEYCLOAK_QUERY_USER_FAILED', 'Keycloak user lookup failed');
+    }
+
+    const users = (await response.json()) as KeycloakUserRecord[];
+    return users.some((entry) => entry.username?.toLowerCase() === username.toLowerCase());
+  }
+
+  private async findKeycloakUserByEmail(email: string, adminToken: string) {
+    const response = await this.keycloakRequest(
+      `/admin/realms/${encodeURIComponent(config.OIDC_REALM)}/users?email=${encodeURIComponent(email)}`,
+      adminToken
+    );
+
+    if (!response.ok) {
+      throw new AppError(502, 'KEYCLOAK_QUERY_USER_FAILED', 'Keycloak user lookup failed');
+    }
+
+    const users = (await response.json()) as KeycloakUserRecord[];
+    return users.some((entry) => entry.email?.toLowerCase() === email.toLowerCase());
+  }
+
+  private async getKeycloakAdminAccessToken() {
+    this.assertKeycloakProvisioningConfigured();
+
+    const body = new URLSearchParams({
+      grant_type: 'password',
+      client_id: 'admin-cli',
+      username: config.KEYCLOAK_ADMIN!,
+      password: config.KEYCLOAK_ADMIN_PASSWORD!,
+    });
+
+    const response = await fetch(
+      `${config.KEYCLOAK_URL!.replace(/\/$/, '')}/realms/${encodeURIComponent(config.KEYCLOAK_ADMIN_REALM)}/protocol/openid-connect/token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      }
+    );
+
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => '');
+      throw new AppError(502, 'KEYCLOAK_ADMIN_LOGIN_FAILED', bodyText || 'Keycloak admin token could not be requested');
+    }
+
+    const tokenResponse = (await response.json()) as { access_token?: string };
+    if (!tokenResponse.access_token) {
+      throw new AppError(502, 'KEYCLOAK_ADMIN_LOGIN_INVALID', 'Keycloak admin token response is invalid');
+    }
+
+    return tokenResponse.access_token;
+  }
+
+  private keycloakRequest(path: string, adminToken: string, init: RequestInit = {}) {
+    return fetch(`${config.KEYCLOAK_URL!.replace(/\/$/, '')}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        ...(init.headers || {}),
+      },
+    });
   }
 }
 

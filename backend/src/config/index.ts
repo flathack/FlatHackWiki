@@ -27,7 +27,11 @@ const envSchema = z.object({
   NEXTCLOUD_APP_PASSWORD: z.string().optional(),
   NEXTCLOUD_CALENDAR_LOOKAHEAD_DAYS: z.coerce.number().int().min(1).max(90).default(14),
 
+  AUTH_LOCAL_LOGIN_ENABLED: envBoolean.default(true),
+  AUTH_SELF_REGISTRATION_ENABLED: envBoolean.default(true),
+
   OIDC_ENABLED: envBoolean.default(false),
+  OIDC_REALM: z.string().default('flathackwiki'),
   OIDC_PROVIDER_NAME: z.string().default('Zentrales Konto'),
   OIDC_ISSUER: z.string().optional(),
   OIDC_PUBLIC_ISSUER: z.string().optional(),
@@ -40,6 +44,10 @@ const envSchema = z.object({
     .enum(['SUPER_ADMIN', 'SYSTEM_ADMIN', 'SPACE_ADMIN', 'EDITOR', 'AUTHOR', 'COMMENTER', 'VIEWER', 'GUEST'])
     .default('VIEWER'),
   OIDC_SUPER_ADMIN_EMAILS: z.string().default(''),
+  KEYCLOAK_URL: z.string().optional(),
+  KEYCLOAK_ADMIN_REALM: z.string().default('master'),
+  KEYCLOAK_ADMIN: z.string().optional(),
+  KEYCLOAK_ADMIN_PASSWORD: z.string().optional(),
 });
 
 export const config = envSchema.parse(process.env);

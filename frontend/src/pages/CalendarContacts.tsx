@@ -3,7 +3,16 @@ import { authApi } from '../api/client';
 import { useAuthStore } from '../context/auth.store';
 import AppHeader from '../components/AppHeader';
 
-const nextcloudUrl = (import.meta.env.VITE_NEXTCLOUD_URL || 'http://localhost:8080').replace(/\/$/, '');
+function getDefaultNextcloudUrl() {
+  if (typeof window === 'undefined') {
+    return 'https://localhost:8443';
+  }
+
+  const hostname = window.location.hostname || 'localhost';
+  return `https://${hostname}:8443`;
+}
+
+const nextcloudUrl = (import.meta.env.VITE_NEXTCLOUD_URL || getDefaultNextcloudUrl()).replace(/\/$/, '');
 
 function getDefaultNextcloudUser(email?: string, name?: string) {
   const fromEmail = email?.split('@')[0]?.trim();

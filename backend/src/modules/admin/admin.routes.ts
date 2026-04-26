@@ -3,7 +3,7 @@ import { adminApi } from './admin.service.js';
 import { authenticate } from '../../core/middleware/auth.middleware.js';
 import { requirePermission } from '../../core/middleware/rbac.middleware.js';
 import { validate } from '../../core/middleware/validation.middleware.js';
-import { updateUserSchema, userIdParamsSchema } from './dto/admin.dto.js';
+import { createUserSchema, updateUserSchema, userIdParamsSchema } from './dto/admin.dto.js';
 
 const router = Router();
 
@@ -34,6 +34,14 @@ router.get('/stats', requirePermission('audit.view'), async (req, res, next) => 
   try {
     const stats = await adminApi.getStats();
     res.json(stats);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/users', requirePermission('audit.view'), validate(createUserSchema), async (req, res, next) => {
+  try {
+    res.status(201).json(await adminApi.createUser(req.body));
   } catch (error) {
     next(error);
   }
