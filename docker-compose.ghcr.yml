@@ -44,7 +44,7 @@ services:
       OIDC_ENABLED: "${OIDC_ENABLED:-true}"
       OIDC_PROVIDER_NAME: "${OIDC_PROVIDER_NAME:-Single Sign-On}"
       OIDC_ISSUER: "${OIDC_ISSUER:-http://keycloak:8080/realms/flathackwiki}"
-      OIDC_PUBLIC_ISSUER: "${OIDC_PUBLIC_ISSUER:-http://localhost:8081/realms/flathackwiki}"
+      OIDC_PUBLIC_ISSUER: "${OIDC_PUBLIC_ISSUER:-https://localhost:8081/realms/flathackwiki}"
       OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-flathackwiki}"
       OIDC_CLIENT_SECRET: "${OIDC_CLIENT_SECRET:-ChangeMeWikiOidcClient1234}"
       OIDC_REDIRECT_URI: "${OIDC_REDIRECT_URI:-http://localhost:3002/api/v1/auth/oidc/callback}"
@@ -93,14 +93,58 @@ services:
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
       KC_DB_PASSWORD: "${KEYCLOAK_DB_PASSWORD:-change-me-keycloak-db-password}"
       KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: "xforwarded"
       KC_HOSTNAME_STRICT: "false"
       KC_BOOTSTRAP_ADMIN_USERNAME: "${KEYCLOAK_ADMIN:-admin}"
       KC_BOOTSTRAP_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:-ChangeMeKeycloak1234}"
-    ports:
-      - "${KEYCLOAK_PORT:-8081}:8080"
     depends_on:
       keycloak-db:
         condition: service_healthy
+
+  keycloak-https:
+    image: ${NGINX_IMAGE:-nginx:alpine}
+    restart: unless-stopped
+    environment:
+      KEYCLOAK_TLS_HOST: "${KEYCLOAK_TLS_HOST:-localhost}"
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        apk add --no-cache openssl >/dev/null
+        mkdir -p /certs
+        if [ ! -f /certs/keycloak.crt ] || [ ! -f /certs/keycloak.key ]; then
+          openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+            -keyout /certs/keycloak.key \
+            -out /certs/keycloak.crt \
+            -subj "/CN=${KEYCLOAK_TLS_HOST}" \
+            -addext "subjectAltName=IP:${KEYCLOAK_TLS_HOST},DNS:${KEYCLOAK_TLS_HOST}"
+        fi
+        cat > /etc/nginx/conf.d/default.conf <<EOF
+        server {
+          listen 443 ssl;
+          server_name ${KEYCLOAK_TLS_HOST};
+
+          ssl_certificate /certs/keycloak.crt;
+          ssl_certificate_key /certs/keycloak.key;
+
+          location / {
+            proxy_pass http://keycloak:8080;
+            proxy_http_version 1.1;
+            proxy_set_header Host ${KEYCLOAK_TLS_HOST}:${KEYCLOAK_PORT:-8081};
+            proxy_set_header X-Forwarded-Host ${KEYCLOAK_TLS_HOST}:${KEYCLOAK_PORT:-8081};
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header X-Forwarded-Port ${KEYCLOAK_PORT:-8081};
+          }
+        }
+        EOF
+        nginx -g 'daemon off;'
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:443"
+    volumes:
+      - keycloak_proxy_certs:/certs
+    depends_on:
+      keycloak:
+        condition: service_started
 
   keycloak-bootstrap:
     image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.0}
@@ -129,10 +173,11 @@ services:
         ensure_realm() {
           if realm_exists; then
             log "Realm $$OIDC_REALM existiert bereits."
+            kcadm_cmd update "realms/$$OIDC_REALM" -s enabled=true -s loginWithEmailAllowed=true -s duplicateEmailsAllowed=false -s resetPasswordAllowed=true -s sslRequired=NONE >/dev/null
             return
           fi
           log "Lege Realm $$OIDC_REALM an."
-          kcadm_cmd create realms -s realm="$$OIDC_REALM" -s enabled=true -s loginWithEmailAllowed=true -s duplicateEmailsAllowed=false -s resetPasswordAllowed=true
+          kcadm_cmd create realms -s realm="$$OIDC_REALM" -s enabled=true -s loginWithEmailAllowed=true -s duplicateEmailsAllowed=false -s resetPasswordAllowed=true -s sslRequired=NONE
         }
         write_client_payload() {
           cat > /tmp/client.json <<EOF
@@ -277,19 +322,42 @@ services:
         condition: service_healthy
 
   nextcloud-https:
-    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    image: ${NGINX_IMAGE:-nginx:alpine}
     restart: unless-stopped
+    environment:
+      NEXTCLOUD_TLS_HOST: "${NEXTCLOUD_TLS_HOST:-localhost}"
     entrypoint:
       - /bin/sh
       - -ec
       - |
-        cat > /etc/caddy/Caddyfile <<EOF
-        :443 {
-          tls internal
-          reverse_proxy nextcloud:80
+        apk add --no-cache openssl >/dev/null
+        mkdir -p /etc/nginx/certs
+        if [ ! -f /etc/nginx/certs/nextcloud.crt ] || [ ! -f /etc/nginx/certs/nextcloud.key ]; then
+          openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+            -keyout /etc/nginx/certs/nextcloud.key \
+            -out /etc/nginx/certs/nextcloud.crt \
+            -subj "/CN=${NEXTCLOUD_TLS_HOST}" \
+            -addext "subjectAltName=IP:${NEXTCLOUD_TLS_HOST},DNS:${NEXTCLOUD_TLS_HOST}"
+        fi
+        cat > /etc/nginx/conf.d/default.conf <<EOF
+        server {
+          listen 443 ssl;
+          server_name ${NEXTCLOUD_TLS_HOST};
+
+          ssl_certificate /etc/nginx/certs/nextcloud.crt;
+          ssl_certificate_key /etc/nginx/certs/nextcloud.key;
+
+          client_max_body_size 512M;
+
+          location / {
+            proxy_pass http://nextcloud:80;
+            proxy_http_version 1.1;
+            proxy_set_header Host ${NEXTCLOUD_TLS_HOST}:${NEXTCLOUD_HTTPS_PORT:-8443};
+            proxy_set_header X-Forwarded-Proto https;
+          }
         }
         EOF
-        caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+        nginx -g 'daemon off;'
     ports:
       - "${NEXTCLOUD_HTTPS_PORT:-8443}:443"
     volumes:
@@ -311,7 +379,7 @@ services:
         occ() { docker_exec "su -s /bin/sh www-data -c 'php /var/www/html/occ $$*'"; }
         wait_for_nextcloud() {
           attempt=0
-          until occ status >/dev/null 2>&1; do
+          until occ "status --output=json" 2>/dev/null | grep -q '"installed":true'; do
             attempt=$$((attempt + 1))
             if [ "$$attempt" -ge 120 ]; then
               log "Nextcloud ist nicht rechtzeitig bereit geworden."
@@ -319,6 +387,14 @@ services:
             fi
             sleep 5
           done
+        }
+        install_oidc_ca() {
+          if [ -z "$$OIDC_CA_CERT_PATH" ] || [ ! -f "$$OIDC_CA_CERT_PATH" ]; then
+            return
+          fi
+          log "Installiere Keycloak-Zertifikat im Nextcloud-Container."
+          docker cp "$$OIDC_CA_CERT_PATH" "$$NEXTCLOUD_CONTAINER_NAME:/usr/local/share/ca-certificates/flathack-keycloak.crt"
+          docker_exec "update-ca-certificates >/dev/null 2>&1 || true"
         }
         wait_for_discovery() {
           attempt=0
@@ -331,12 +407,20 @@ services:
             sleep 5
           done
         }
+        provider_discovery_uri() {
+          if [ -n "$$OIDC_PUBLIC_DISCOVERY_URI" ]; then
+            printf '%s' "$$OIDC_PUBLIC_DISCOVERY_URI"
+            return
+          fi
+          printf '%s' "$$OIDC_DISCOVERY_URI"
+        }
         append_provider_option() {
           if printf '%s' "$$1" | grep -q -- "$$2"; then
             PROVIDER_OPTIONS="$$PROVIDER_OPTIONS $$2=$$3"
           fi
         }
         wait_for_nextcloud
+        install_oidc_ca
         wait_for_discovery
         log "Installiere/aktiviere user_oidc."
         occ "app:install user_oidc" >/dev/null 2>&1 || true
@@ -346,6 +430,7 @@ services:
         occ "config:system:set user_oidc login_label --type=string --value=Mit\ $$OIDC_PROVIDER_NAME\ anmelden"
         occ "config:system:set user_oidc default_token_endpoint_auth_method --type=string --value='client_secret_post'"
         occ "config:app:set --type=boolean --value=1 user_oidc allow_multiple_user_backends"
+        occ "--no-interaction config:app:set --type=boolean --value=1 user_oidc allow_insecure_http"
         PROVIDER_HELP="$(occ "user_oidc:provider --help" 2>/dev/null || true)"
         PROVIDER_OPTIONS=""
         append_provider_option "$$PROVIDER_HELP" "--mapping-uid" "preferred_username"
@@ -355,16 +440,19 @@ services:
         append_provider_option "$$PROVIDER_HELP" "--group-provisioning" "1"
         append_provider_option "$$PROVIDER_HELP" "--unique-uid" "0"
         log "Konfiguriere den Nextcloud-OIDC-Provider."
-        occ "user_oidc:provider $$OIDC_PROVIDER_NAME --clientid='$$NEXTCLOUD_OIDC_CLIENT_ID' --clientsecret='$$NEXTCLOUD_OIDC_CLIENT_SECRET' --discoveryuri='$$OIDC_DISCOVERY_URI'$$PROVIDER_OPTIONS"
+        occ "user_oidc:provider $$OIDC_PROVIDER_NAME --clientid='$$NEXTCLOUD_OIDC_CLIENT_ID' --clientsecret='$$NEXTCLOUD_OIDC_CLIENT_SECRET' --discoveryuri='$(provider_discovery_uri)'$$PROVIDER_OPTIONS"
         log "Nextcloud-OIDC-Bootstrap abgeschlossen."
     environment:
       NEXTCLOUD_CONTAINER_NAME: "${NEXTCLOUD_CONTAINER_NAME:-flathackwiki-nextcloud}"
       NEXTCLOUD_OIDC_CLIENT_ID: "${NEXTCLOUD_OIDC_CLIENT_ID:-nextcloud}"
       NEXTCLOUD_OIDC_CLIENT_SECRET: "${NEXTCLOUD_OIDC_CLIENT_SECRET:-ChangeMeNextcloudOidcClient1234}"
+      OIDC_CA_CERT_PATH: "${OIDC_CA_CERT_PATH:-/oidc-certs/keycloak.crt}"
       OIDC_DISCOVERY_URI: "${OIDC_DISCOVERY_URI:-http://keycloak:8080/realms/flathackwiki/.well-known/openid-configuration}"
+      OIDC_PUBLIC_DISCOVERY_URI: "${OIDC_PUBLIC_DISCOVERY_URI:-https://localhost:8081/realms/flathackwiki/.well-known/openid-configuration}"
       OIDC_PROVIDER_NAME: "${OIDC_PROVIDER_NAME:-Single Sign-On}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - keycloak_proxy_certs:/oidc-certs:ro
     depends_on:
       nextcloud:
         condition: service_started
@@ -395,6 +483,7 @@ volumes:
   keycloak_db_data:
   nextcloud_db:
   nextcloud_redis:
+  keycloak_proxy_certs:
   nextcloud_data:
   nextcloud_config:
   nextcloud_apps:

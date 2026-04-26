@@ -15,7 +15,7 @@ occ() {
 
 wait_for_nextcloud() {
   attempt=0
-  until occ "status" >/dev/null 2>&1; do
+  until occ "status --output=json" 2>/dev/null | grep -q '"installed":true'; do
     attempt=$((attempt + 1))
     if [ "$attempt" -ge 120 ]; then
       log "Nextcloud ist nicht rechtzeitig bereit geworden."
@@ -23,6 +23,16 @@ wait_for_nextcloud() {
     fi
     sleep 5
   done
+}
+
+install_oidc_ca() {
+  if [ -z "${OIDC_CA_CERT_PATH:-}" ] || [ ! -f "$OIDC_CA_CERT_PATH" ]; then
+    return
+  fi
+
+  log "Installiere Keycloak-Zertifikat im Nextcloud-Container."
+  docker cp "$OIDC_CA_CERT_PATH" "$NEXTCLOUD_CONTAINER_NAME:/usr/local/share/ca-certificates/flathack-keycloak.crt"
+  docker_exec "update-ca-certificates >/dev/null 2>&1 || true"
 }
 
 wait_for_discovery() {
@@ -48,10 +58,12 @@ append_provider_option() {
 }
 
 OIDC_DISCOVERY_URI="${OIDC_DISCOVERY_URI:?OIDC_DISCOVERY_URI fehlt}"
+OIDC_PUBLIC_DISCOVERY_URI="${OIDC_PUBLIC_DISCOVERY_URI:-$OIDC_DISCOVERY_URI}"
 NEXTCLOUD_CONTAINER_NAME="${NEXTCLOUD_CONTAINER_NAME:-flathackwiki-nextcloud}"
 NEXTCLOUD_OIDC_PROVIDER_ID="${NEXTCLOUD_OIDC_PROVIDER_ID:-FlathackID}"
 
 wait_for_nextcloud
+install_oidc_ca
 wait_for_discovery
 
 log "Installiere/aktiviere user_oidc."
@@ -63,6 +75,7 @@ occ "config:system:set allow_local_remote_servers --type=boolean --value=true"
 occ "config:system:set user_oidc login_label --type=string --value=Mit\ FlathackID\ anmelden"
 occ "config:system:set user_oidc default_token_endpoint_auth_method --type=string --value='client_secret_post'"
 occ "config:app:set --type=boolean --value=1 user_oidc allow_multiple_user_backends"
+occ "--no-interaction config:app:set --type=boolean --value=1 user_oidc allow_insecure_http"
 
 PROVIDER_HELP="$(occ "user_oidc:provider --help" 2>/dev/null || true)"
 PROVIDER_OPTIONS=""
@@ -74,6 +87,6 @@ append_provider_option "$PROVIDER_HELP" "--group-provisioning" "1"
 append_provider_option "$PROVIDER_HELP" "--unique-uid" "0"
 
 log "Konfiguriere den Nextcloud-OIDC-Provider."
-occ "user_oidc:provider ${NEXTCLOUD_OIDC_PROVIDER_ID} --clientid='${NEXTCLOUD_OIDC_CLIENT_ID:?NEXTCLOUD_OIDC_CLIENT_ID fehlt}' --clientsecret='${NEXTCLOUD_OIDC_CLIENT_SECRET:?NEXTCLOUD_OIDC_CLIENT_SECRET fehlt}' --discoveryuri='${OIDC_DISCOVERY_URI}'${PROVIDER_OPTIONS}"
+occ "user_oidc:provider ${NEXTCLOUD_OIDC_PROVIDER_ID} --clientid='${NEXTCLOUD_OIDC_CLIENT_ID:?NEXTCLOUD_OIDC_CLIENT_ID fehlt}' --clientsecret='${NEXTCLOUD_OIDC_CLIENT_SECRET:?NEXTCLOUD_OIDC_CLIENT_SECRET fehlt}' --discoveryuri='${OIDC_PUBLIC_DISCOVERY_URI}'${PROVIDER_OPTIONS}"
 
 log "Nextcloud-OIDC-Bootstrap abgeschlossen."

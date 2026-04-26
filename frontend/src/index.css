@@ -10,6 +10,35 @@
   --ui-radius: 28px;
   --ui-radius-sm: 18px;
   --ui-radius-xs: 12px;
+  --bookmark-app-bg:
+    radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.12), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.1), transparent 24%),
+    linear-gradient(180deg, #f8fbff 0%, #eef6ff 50%, #f5f9ff 100%);
+  --bookmark-grid-line: rgba(14, 165, 233, 0.08);
+  --bookmark-shell-text: #10233d;
+  --bookmark-hero-border: rgba(14, 165, 233, 0.16);
+  --bookmark-hero-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.94));
+  --bookmark-panel-border: rgba(148, 163, 184, 0.24);
+  --bookmark-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.96));
+  --bookmark-panel-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+  --bookmark-muted-text: #64748b;
+  --bookmark-card-border: rgba(148, 163, 184, 0.22);
+  --bookmark-card-bg: rgba(255, 255, 255, 0.9);
+  --bookmark-card-text: #1e293b;
+  --bookmark-card-active-border: rgba(14, 165, 233, 0.38);
+  --bookmark-card-active-bg: rgba(14, 165, 233, 0.1);
+  --bookmark-strong-text: #0f172a;
+  --bookmark-copy-text: #475569;
+  --bookmark-icon-bg: rgba(14, 165, 233, 0.12);
+  --bookmark-icon-text: #0369a1;
+  --bookmark-icon-fallback-bg: linear-gradient(135deg, #0ea5e9, #7dd3fc);
+  --bookmark-icon-fallback-text: #f8fafc;
+  --bookmark-pill-bg: rgba(14, 165, 233, 0.12);
+  --bookmark-pill-text: #0369a1;
+  --bookmark-hero-label: #0369a1;
+  --bookmark-hero-copy: #475569;
+  --bookmark-warning-pill-bg: rgba(245, 158, 11, 0.18);
+  --bookmark-warning-pill-text: #b45309;
   color-scheme: light;
 }
 
@@ -20,6 +49,38 @@ body {
 html[data-theme='sepia'] body {
   background-color: #f4ecd8 !important;
   color: #4d3c2d !important;
+}
+
+html[data-theme='sepia'] {
+  --bookmark-app-bg:
+    radial-gradient(circle at 0% 0%, rgba(180, 120, 32, 0.14), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(120, 74, 34, 0.1), transparent 24%),
+    linear-gradient(180deg, #f6eddc 0%, #efe4cf 50%, #f8f0e1 100%);
+  --bookmark-grid-line: rgba(120, 74, 34, 0.08);
+  --bookmark-shell-text: #4d3c2d;
+  --bookmark-hero-border: rgba(120, 74, 34, 0.16);
+  --bookmark-hero-bg: linear-gradient(180deg, rgba(250, 242, 228, 0.96), rgba(241, 229, 206, 0.94));
+  --bookmark-panel-border: rgba(120, 74, 34, 0.2);
+  --bookmark-panel-bg: linear-gradient(180deg, rgba(249, 241, 226, 0.94), rgba(245, 235, 217, 0.96));
+  --bookmark-panel-shadow: 0 24px 80px rgba(92, 70, 50, 0.14);
+  --bookmark-muted-text: #7a6049;
+  --bookmark-card-border: rgba(120, 74, 34, 0.18);
+  --bookmark-card-bg: rgba(250, 242, 228, 0.9);
+  --bookmark-card-text: #4d3c2d;
+  --bookmark-card-active-border: rgba(180, 120, 32, 0.32);
+  --bookmark-card-active-bg: rgba(180, 120, 32, 0.12);
+  --bookmark-strong-text: #3f2f22;
+  --bookmark-copy-text: #6b533f;
+  --bookmark-icon-bg: rgba(180, 120, 32, 0.14);
+  --bookmark-icon-text: #9a5b16;
+  --bookmark-icon-fallback-bg: linear-gradient(135deg, #b7791f, #e7b35b);
+  --bookmark-icon-fallback-text: #fff8ec;
+  --bookmark-pill-bg: rgba(180, 120, 32, 0.14);
+  --bookmark-pill-text: #8a5417;
+  --bookmark-hero-label: #9a5b16;
+  --bookmark-hero-copy: #6b533f;
+  --bookmark-warning-pill-bg: rgba(180, 120, 32, 0.16);
+  --bookmark-warning-pill-text: #8a5417;
 }
 
 html[data-theme='sepia'] .bg-gray-50,
@@ -41,6 +102,35 @@ html[data-theme='midnight'] body {
 }
 
 html[data-theme='midnight'] {
+  --bookmark-app-bg:
+    radial-gradient(circle at 0% 0%, rgba(88, 196, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.12), transparent 24%),
+    linear-gradient(180deg, #06101d 0%, #091422 50%, #050b14 100%);
+  --bookmark-grid-line: rgba(255, 255, 255, 0.035);
+  --bookmark-shell-text: #edf3ff;
+  --bookmark-hero-border: rgba(132, 177, 255, 0.18);
+  --bookmark-hero-bg: linear-gradient(180deg, rgba(11, 24, 42, 0.94), rgba(7, 16, 29, 0.94));
+  --bookmark-panel-border: rgba(132, 177, 255, 0.18);
+  --bookmark-panel-bg: linear-gradient(180deg, rgba(14, 30, 52, 0.88), rgba(7, 16, 29, 0.9));
+  --bookmark-panel-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+  --bookmark-muted-text: #9fb2cf;
+  --bookmark-card-border: rgba(132, 177, 255, 0.16);
+  --bookmark-card-bg: rgba(6, 18, 30, 0.72);
+  --bookmark-card-text: #dbeafe;
+  --bookmark-card-active-border: rgba(88, 196, 255, 0.42);
+  --bookmark-card-active-bg: rgba(88, 196, 255, 0.14);
+  --bookmark-strong-text: #edf3ff;
+  --bookmark-copy-text: #c7d2fe;
+  --bookmark-icon-bg: rgba(88, 196, 255, 0.12);
+  --bookmark-icon-text: #89f0ff;
+  --bookmark-icon-fallback-bg: linear-gradient(135deg, #58c4ff, #89f0ff);
+  --bookmark-icon-fallback-text: #04111f;
+  --bookmark-pill-bg: rgba(88, 196, 255, 0.12);
+  --bookmark-pill-text: #89f0ff;
+  --bookmark-hero-label: #89f0ff;
+  --bookmark-hero-copy: #c7d2fe;
+  --bookmark-warning-pill-bg: rgba(245, 158, 11, 0.16);
+  --bookmark-warning-pill-text: #fcd34d;
   color-scheme: dark;
 }
 
@@ -748,11 +838,8 @@ html[data-theme='midnight'] .text-blue-600 {
 
 .bookmark-app-shell {
   max-width: none;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(88, 196, 255, 0.16), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.12), transparent 24%),
-    linear-gradient(180deg, #06101d 0%, #091422 50%, #050b14 100%);
-  color: #edf3ff;
+  background: var(--bookmark-app-bg);
+  color: var(--bookmark-shell-text);
   position: relative;
   overflow: hidden;
 }
@@ -763,8 +850,8 @@ html[data-theme='midnight'] .text-blue-600 {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(var(--bookmark-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bookmark-grid-line) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 92%);
 }
@@ -775,17 +862,29 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-app-hero {
-  border-color: rgba(132, 177, 255, 0.18);
-  background: linear-gradient(180deg, rgba(11, 24, 42, 0.94), rgba(7, 16, 29, 0.94));
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+  border-color: var(--bookmark-hero-border);
+  background: var(--bookmark-hero-bg);
+  box-shadow: var(--bookmark-panel-shadow);
+}
+
+.bookmark-app-hero .dashboard-hero-label {
+  color: var(--bookmark-hero-label);
+}
+
+.bookmark-app-hero .dashboard-hero-title {
+  color: var(--bookmark-strong-text);
+}
+
+.bookmark-app-hero .dashboard-hero-copy {
+  color: var(--bookmark-hero-copy);
 }
 
 .bookmark-sidebar,
 .bookmark-content-panel,
 .bookmark-detail-panel {
-  border-color: rgba(132, 177, 255, 0.18);
-  background: linear-gradient(180deg, rgba(14, 30, 52, 0.88), rgba(7, 16, 29, 0.9));
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+  border-color: var(--bookmark-panel-border);
+  background: var(--bookmark-panel-bg);
+  box-shadow: var(--bookmark-panel-shadow);
   backdrop-filter: blur(18px);
 }
 
@@ -794,7 +893,7 @@ html[data-theme='midnight'] .text-blue-600 {
 .bookmark-table th,
 .bookmark-table small,
 .bookmark-detail > a {
-  color: #9fb2cf;
+  color: var(--bookmark-muted-text);
 }
 
 .bookmark-sidebar-button,
@@ -807,9 +906,9 @@ html[data-theme='midnight'] .text-blue-600 {
 .bookmark-panel-tabs,
 .bookmark-bulk-bar,
 .bookmark-tree-empty {
-  border-color: rgba(132, 177, 255, 0.16);
-  background: rgba(6, 18, 30, 0.72);
-  color: #dbeafe;
+  border-color: var(--bookmark-card-border);
+  background: var(--bookmark-card-bg);
+  color: var(--bookmark-card-text);
 }
 
 .bookmark-sidebar-button:hover,
@@ -822,9 +921,9 @@ html[data-theme='midnight'] .text-blue-600 {
 .bookmark-table tr.active,
 .bookmark-view-toggle button.active,
 .bookmark-panel-tabs button.active {
-  border-color: rgba(88, 196, 255, 0.42);
-  background: rgba(88, 196, 255, 0.14);
-  color: #edf3ff;
+  border-color: var(--bookmark-card-active-border);
+  background: var(--bookmark-card-active-bg);
+  color: var(--bookmark-strong-text);
 }
 
 .bookmark-result-title-row strong,
@@ -833,34 +932,34 @@ html[data-theme='midnight'] .text-blue-600 {
 .bookmark-import-export h3,
 .bookmark-table td strong,
 .bookmark-detail .profile-detail-list strong {
-  color: #edf3ff;
+  color: var(--bookmark-strong-text);
 }
 
 .bookmark-result-copy p {
-  color: #c7d2fe;
+  color: var(--bookmark-copy-text);
 }
 
 .bookmark-result-icon,
 .bookmark-detail-icon {
-  background: rgba(88, 196, 255, 0.12);
-  color: #89f0ff;
+  background: var(--bookmark-icon-bg);
+  color: var(--bookmark-icon-text);
 }
 
 .bookmark-result-icon.fallback,
 .bookmark-detail-icon.fallback {
-  background: linear-gradient(135deg, #58c4ff, #89f0ff);
-  color: #04111f;
+  background: var(--bookmark-icon-fallback-bg);
+  color: var(--bookmark-icon-fallback-text);
 }
 
 .bookmark-pill,
 .bookmark-result-tags em {
-  background: rgba(88, 196, 255, 0.12);
-  color: #89f0ff;
+  background: var(--bookmark-pill-bg);
+  color: var(--bookmark-pill-text);
 }
 
 .bookmark-pill.warning {
-  background: rgba(245, 158, 11, 0.16);
-  color: #fcd34d;
+  background: var(--bookmark-warning-pill-bg);
+  color: var(--bookmark-warning-pill-text);
 }
 
 .bookmark-app-shell .bookmark-quick-add .input,
@@ -940,18 +1039,18 @@ html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.in
 
 .bookmark-folder-tree-row:hover,
 .bookmark-folder-tree-row.active {
-  border-color: rgba(88, 196, 255, 0.32);
-  background: rgba(88, 196, 255, 0.1);
+  border-color: var(--bookmark-card-active-border);
+  background: var(--bookmark-card-active-bg);
 }
 
 .bookmark-folder-tree-main {
   @apply flex min-w-0 flex-1 items-center gap-2 text-left text-sm font-semibold;
-  color: #dbeafe;
+  color: var(--bookmark-card-text);
 }
 
 .bookmark-folder-tree-caret {
   @apply flex h-5 w-5 shrink-0 items-center justify-center text-xs;
-  color: #58c4ff;
+  color: var(--bookmark-icon-text);
 }
 
 .bookmark-folder-tree-name {
@@ -960,7 +1059,7 @@ html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.in
 
 .bookmark-folder-tree-main strong {
   @apply shrink-0 text-xs;
-  color: #9fb2cf;
+  color: var(--bookmark-muted-text);
 }
 
 .bookmark-folder-tree-actions {
@@ -974,13 +1073,13 @@ html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.in
 .bookmark-folder-tree-actions button {
   @apply flex h-6 w-6 items-center justify-center border border-transparent text-xs font-bold transition;
   border-radius: 7px;
-  color: #9fb2cf;
+  color: var(--bookmark-muted-text);
 }
 
 .bookmark-folder-tree-actions button:hover {
-  border-color: rgba(88, 196, 255, 0.32);
-  background: rgba(88, 196, 255, 0.14);
-  color: #89f0ff;
+  border-color: var(--bookmark-card-active-border);
+  background: var(--bookmark-card-active-bg);
+  color: var(--bookmark-strong-text);
 }
 
 .bookmark-tree-empty {

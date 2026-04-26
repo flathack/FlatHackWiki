@@ -40,6 +40,12 @@ user_uuid() {
 ensure_realm() {
   if realm_exists; then
     log "Realm $OIDC_REALM existiert bereits."
+    kcadm_cmd update "realms/$OIDC_REALM" \
+      -s enabled=true \
+      -s loginWithEmailAllowed=true \
+      -s duplicateEmailsAllowed=false \
+      -s resetPasswordAllowed=true \
+      -s sslRequired=NONE >/dev/null
     return
   fi
 
@@ -49,7 +55,8 @@ ensure_realm() {
     -s enabled=true \
     -s loginWithEmailAllowed=true \
     -s duplicateEmailsAllowed=false \
-    -s resetPasswordAllowed=true
+    -s resetPasswordAllowed=true \
+    -s sslRequired=NONE
 }
 
 ensure_client() {
