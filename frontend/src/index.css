@@ -2006,6 +2006,7 @@ html[data-theme='midnight'] .bookmark-gear-button,
 html[data-theme='midnight'] .bookmark-folder-subgroup,
 html[data-theme='midnight'] .bookmark-context-menu,
 html[data-theme='midnight'] .bookmark-bar-empty-drop,
+html[data-theme='midnight'] .calendar-widget-item,
 html[data-theme='midnight'] .bookmark-sidebar-button:hover,
 html[data-theme='midnight'] .bookmark-sidebar-button.active,
 html[data-theme='midnight'] .bookmark-tag-filter,
@@ -2016,6 +2017,34 @@ html[data-theme='midnight'] .bookmark-panel-tabs button.active {
   background-color: #0f172a !important;
   border-color: #334155 !important;
   color: #e2e8f0 !important;
+}
+
+html[data-theme='midnight'] .calendar-widget-hero {
+  background: linear-gradient(135deg, rgba(8, 47, 73, 0.92), rgba(15, 23, 42, 0.96), rgba(14, 116, 144, 0.3)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+html[data-theme='midnight'] .calendar-widget-hero-label,
+html[data-theme='midnight'] .calendar-widget-item-status {
+  color: #7dd3fc !important;
+}
+
+html[data-theme='midnight'] .calendar-widget-hero-title,
+html[data-theme='midnight'] .calendar-widget-item-main strong,
+html[data-theme='midnight'] .calendar-widget-time {
+  color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .calendar-widget-hero-copy,
+html[data-theme='midnight'] .calendar-widget-day,
+html[data-theme='midnight'] .calendar-widget-item-main span,
+html[data-theme='midnight'] .calendar-widget-meta {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .calendar-widget-item:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.28) !important;
 }
 
 html[data-theme='midnight'] .bookmark-drop-slot.active {
