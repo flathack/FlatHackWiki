@@ -1161,7 +1161,7 @@ async function fetchRouteSummary(profile: CommuteProfile) {
       geocodeAddress(profile.destinationAddress),
     ]);
 
-    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${source.longitude},${source.latitude};${destination.longitude},${destination.latitude}?overview=false&steps=false&alternatives=false`;
+    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${source.longitude},${source.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson&steps=false&alternatives=false`;
     const response = await fetch(routeUrl, {
       headers: {
         'User-Agent': 'FlatHacksWiki/1.0 (dashboard commute widget)',
@@ -1175,7 +1175,14 @@ async function fetchRouteSummary(profile: CommuteProfile) {
 
     const payload = (await response.json()) as {
       code?: string;
-      routes?: Array<{ distance: number; duration: number }>;
+      routes?: Array<{
+        distance: number;
+        duration: number;
+        geometry?: {
+          type?: string;
+          coordinates?: Array<[number, number]>;
+        };
+      }>;
     };
 
     const route = payload.routes?.[0];
@@ -1193,6 +1200,11 @@ async function fetchRouteSummary(profile: CommuteProfile) {
       distanceKm: kilometers,
       durationMinutes: minutes,
       summary: `${kilometers} km in ca. ${minutes} Minuten`,
+      geometry: Array.isArray(route.geometry?.coordinates)
+        ? route.geometry.coordinates
+            .filter((coordinate) => Array.isArray(coordinate) && coordinate.length >= 2)
+            .map(([longitude, latitude]) => ({ latitude, longitude }))
+        : [],
       trafficNote:
         'Live-Verkehrsdaten sind für diese freie Routing-Quelle nicht verfügbar. Die Schätzung basiert auf dem aktuellen Routing ohne separate Stau-API.',
     };
@@ -2201,5 +2213,4 @@ ${renderBookmarksAsHtml(tree)}
 }
 
 export const dashboardService = new DashboardService();
-
 

@@ -2,6 +2,10 @@
 
 Enterprise Wiki System - FlatHacksWiki
 
+## Agent Context
+
+New coding agents should read `AGENTS.md` first. It documents the project goals, architecture, important paths, local Docker workflow, current product modules, and known implementation notes.
+
 ## Features
 
 - **Multi-Space Architecture** - Organize content in separate workspaces

@@ -29,6 +29,8 @@ FlathackWiki bleibt das persoenliche Portal und Dashboard. Kalender- und Kontakt
 - FlathackWiki-Seite `Kalender und Kontakte`.
 - Dashboard-Schnellzugriff auf Kalender und Kontakte.
 
+Fuer einen konkreten Umzug von Microsoft/Outlook nach Nextcloud siehe `docs/microsoft-calendar-to-nextcloud.md`.
+
 ## Sinnvolle Zusatzfeatures
 
 - Geburtstagskalender aus Kontakten.

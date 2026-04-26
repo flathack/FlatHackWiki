@@ -66,6 +66,9 @@ APP_URL=https://wiki.deinedomain.tld
 FRONTEND_URL=https://wiki.deinedomain.tld
 CORS_ORIGIN=https://wiki.deinedomain.tld
 FRONTEND_PORT=3002
+FRONTEND_TLS_HOST=wiki.deinedomain.tld
+FRONTEND_TLS_CERT_PATH=/etc/nginx/certs/frontend.crt
+FRONTEND_TLS_KEY_PATH=/etc/nginx/certs/frontend.key
 
 KEYCLOAK_PORT=8081
 OIDC_ISSUER=http://keycloak:8080/realms/flathackwiki
@@ -78,7 +81,12 @@ NEXTCLOUD_PUBLIC_URL=https://cloud.deinedomain.tld
 NEXTCLOUD_TRUSTED_DOMAINS=cloud.deinedomain.tld localhost 127.0.0.1
 NEXTCLOUD_OVERWRITEHOST=cloud.deinedomain.tld
 NEXTCLOUD_OVERWRITEPROTOCOL=https
+NEXTCLOUD_TLS_HOST=cloud.deinedomain.tld
+NEXTCLOUD_TLS_CERT_PATH=/etc/nginx/certs/nextcloud.crt
+NEXTCLOUD_TLS_KEY_PATH=/etc/nginx/certs/nextcloud.key
 ```
+
+Fuer ein echtes Zertifikat statt Self-Signed kann der `nextcloud-https`-Service Zertifikate aus `./certs/nextcloud` einlesen. In einem Tailscale-Setup kannst du auf dem NAS zum Beispiel `tailscale cert <dein-host>.ts.net` verwenden und Zertifikat plus Key in dieses Verzeichnis schreiben lassen.
 
 ## 4. OIDC-Logik
 

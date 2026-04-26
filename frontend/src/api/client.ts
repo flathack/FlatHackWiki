@@ -190,10 +190,11 @@ export interface CommuteRoute {
   summary?: string;
   distanceKm?: number;
   durationMinutes?: number;
+  geometry?: Array<{ latitude: number; longitude: number }>;
   message?: string;
   trafficNote?: string;
-  source?: { label: string };
-  destination?: { label: string };
+  source?: { label: string; latitude?: number; longitude?: number };
+  destination?: { label: string; latitude?: number; longitude?: number };
 }
 export interface CalendarSource {
   id: string;

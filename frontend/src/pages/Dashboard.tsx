@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Responsive,
@@ -13,6 +13,7 @@ import {
   dashboardApi,
   type BookmarkItem,
   type CommuteProfile,
+  type CommuteRoute,
   type DashboardResponse,
   type DashboardWidget,
   type DashboardWidgetType,
@@ -26,7 +27,7 @@ import { widgetDefinitionMap, widgetDefinitions } from '../components/dashboard/
 import { useAuthStore } from '../context/auth.store';
 
 const defaultSubtitle =
-  'Baue dir eine persönliche Startseite für das Wiki mit Widgets, Lesezeichen, favorisierten Bereichen und Notizen.';
+  'Baue dir eine persÃ¶nliche Startseite fÃ¼r das Wiki mit Widgets, Lesezeichen, favorisierten Bereichen und Notizen.';
 const weekdayLabels: Record<string, string> = {
   MONDAY: 'Mo',
   TUESDAY: 'Di',
@@ -81,7 +82,7 @@ function formatDateTimeLocal(value: string) {
 }
 
 function formatCalendarTimeRange(event: CalendarEvent) {
-  if (event.isAllDay) return 'Ganztägig';
+  if (event.isAllDay) return 'GanztÃ¤gig';
 
   const start = new Date(event.startAt);
   const end = new Date(event.endAt);
@@ -98,6 +99,102 @@ function formatCalendarDayLabel(value: string) {
   if (date.toDateString() === tomorrow.toDateString()) return 'Morgen';
 
   return date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+}
+
+function getCommuteMapPoints(route?: CommuteRoute | null) {
+  const source =
+    typeof route?.source?.latitude === 'number' && typeof route.source.longitude === 'number'
+      ? { latitude: route.source.latitude, longitude: route.source.longitude }
+      : null;
+  const destination =
+    typeof route?.destination?.latitude === 'number' && typeof route.destination.longitude === 'number'
+      ? { latitude: route.destination.latitude, longitude: route.destination.longitude }
+      : null;
+
+  const geometry = (route?.geometry ?? []).filter(
+    (point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude)
+  );
+
+  if (geometry.length >= 2) return geometry;
+  return [source, destination].filter((point): point is { latitude: number; longitude: number } => Boolean(point));
+}
+
+function getOsmRouteUrl(route?: CommuteRoute | null) {
+  const source = route?.source;
+  const destination = route?.destination;
+  if (
+    typeof source?.latitude !== 'number' ||
+    typeof source.longitude !== 'number' ||
+    typeof destination?.latitude !== 'number' ||
+    typeof destination.longitude !== 'number'
+  ) {
+    return null;
+  }
+
+  return `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${source.latitude}%2C${source.longitude}%3B${destination.latitude}%2C${destination.longitude}`;
+}
+
+function CommuteRouteMap({ route }: { route: CommuteRoute }) {
+  const points = getCommuteMapPoints(route);
+  const osmUrl = getOsmRouteUrl(route);
+
+  if (points.length < 2) {
+    return (
+      <div className="commute-map-empty">
+        Die Route wurde gefunden, aber der Kartendienst hat keine Liniengeometrie geliefert.
+      </div>
+    );
+  }
+
+  const latitudes = points.map((point) => point.latitude);
+  const longitudes = points.map((point) => point.longitude);
+  const minLat = Math.min(...latitudes);
+  const maxLat = Math.max(...latitudes);
+  const minLon = Math.min(...longitudes);
+  const maxLon = Math.max(...longitudes);
+  const latRange = Math.max(maxLat - minLat, 0.0001);
+  const lonRange = Math.max(maxLon - minLon, 0.0001);
+  const padding = 10;
+  const svgPoints = points
+    .map((point) => {
+      const x = padding + ((point.longitude - minLon) / lonRange) * (100 - padding * 2);
+      const y = padding + ((maxLat - point.latitude) / latRange) * (100 - padding * 2);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(' ');
+  const renderedPoints = svgPoints.split(' ');
+  const startPoint = renderedPoints[0];
+  const endPoint = renderedPoints[renderedPoints.length - 1] ?? startPoint;
+
+  return (
+    <div className="commute-map-card">
+      <svg className="commute-map-svg" viewBox="0 0 100 100" role="img" aria-label="Kartenansicht der Arbeitsweg-Route" preserveAspectRatio="none">
+        <defs>
+          <pattern id="commute-map-grid" width="12" height="12" patternUnits="userSpaceOnUse">
+            <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(15, 23, 42, 0.08)" strokeWidth="0.6" />
+          </pattern>
+          <linearGradient id="commute-route-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#06b6d4" />
+            <stop offset="100%" stopColor="#10b981" />
+          </linearGradient>
+        </defs>
+        <rect width="100" height="100" rx="5" fill="url(#commute-map-grid)" />
+        <polyline points={svgPoints} fill="none" stroke="rgba(2, 6, 23, 0.18)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={svgPoints} fill="none" stroke="url(#commute-route-gradient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={startPoint.split(',')[0]} cy={startPoint.split(',')[1]} r="4.2" className="commute-map-pin start" />
+        <circle cx={endPoint.split(',')[0]} cy={endPoint.split(',')[1]} r="4.2" className="commute-map-pin end" />
+      </svg>
+      <div className="commute-map-labels">
+        <span><strong>Start</strong>{route.source?.label || 'Startadresse'}</span>
+        <span><strong>Ziel</strong>{route.destination?.label || 'Zieladresse'}</span>
+      </div>
+      {osmUrl ? (
+        <a className="btn btn-secondary commute-map-link" href={osmUrl} target="_blank" rel="noreferrer">
+          In OpenStreetMap Ã¶ffnen
+        </a>
+      ) : null}
+    </div>
+  );
 }
 
 function getCalendarBadge(calendar: CalendarWidgetState) {
@@ -181,6 +278,7 @@ export default function Dashboard() {
   const [busyAction, setBusyAction] = useState('');
   const [telegramDraft, setTelegramDraft] = useState('');
   const [telegramSending, setTelegramSending] = useState(false);
+  const [commuteView, setCommuteView] = useState<'summary' | 'map'>('summary');
   const [weather, setWeather] = useState<{
     location: string;
     temperatureC: string;
@@ -273,7 +371,6 @@ export default function Dashboard() {
             widget.isVisible &&
             widget.type !== 'CLOCK' &&
             widget.type !== 'WEB_SEARCH' &&
-            widget.type !== 'WEATHER' &&
             widget.type !== 'BOOKMARKS'
         )
         .sort((a, b) => a.mobileOrder - b.mobileOrder),
@@ -456,7 +553,7 @@ export default function Dashboard() {
     setProfileError('');
     setProfileMessage('');
     if (!profileName.trim()) {
-      setProfileError('Bitte hinterlege einen Namen für die persönliche Begrüßung.');
+      setProfileError('Bitte hinterlege einen Namen fÃ¼r die persÃ¶nliche BegrÃ¼ÃŸung.');
       return;
     }
 
@@ -475,7 +572,7 @@ export default function Dashboard() {
         showDashboardSubtitle: data.showDashboardSubtitle,
         uiRadius: data.uiRadius,
       });
-      setProfileMessage('Profil gespeichert. Die Begrüßung wurde aktualisiert.');
+      setProfileMessage('Profil gespeichert. Die BegrÃ¼ÃŸung wurde aktualisiert.');
     } catch (err: any) {
       setProfileError(err.response?.data?.error?.message || 'Profil konnte nicht gespeichert werden');
     } finally {
@@ -499,7 +596,7 @@ export default function Dashboard() {
       setDashboardWidgets((widgets) => [...widgets, data]);
       setWidgetLibraryOpen(false);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Widget konnte nicht hinzugefügt werden');
+      setError(err.response?.data?.error?.message || 'Widget konnte nicht hinzugefÃ¼gt werden');
     } finally {
       setBusyAction('');
     }
@@ -534,7 +631,7 @@ export default function Dashboard() {
       await dashboardApi.bookmarks.delete(bookmarkId);
       await refreshBookmarks();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht gelöscht werden');
+      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht gelÃ¶scht werden');
       throw err;
     }
   };
@@ -718,7 +815,7 @@ export default function Dashboard() {
     switch (widget.type) {
       case 'CLOCK':
         return (
-          <WidgetShell title={widget.title} subtitle="Aktuelle Zeit für deinen Arbeitstag" badge="Live">
+          <WidgetShell title={widget.title} subtitle="Aktuelle Zeit fÃ¼r deinen Arbeitstag" badge="Live">
             <div className="clock-widget-panel">
               <div className="clock-widget-time">
                 {now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
@@ -789,7 +886,7 @@ export default function Dashboard() {
                 className="btn btn-primary"
                 onClick={runWidgetWebSearch}
               >
-                Öffnen
+                Ã–ffnen
               </button>
             </div>
             {renderBookmarkSuggestions(true)}
@@ -806,7 +903,7 @@ export default function Dashboard() {
             ) : weather ? (
               <div className="weather-widget-grid">
                 <div className="weather-widget-hero">
-                  <div className="weather-widget-temp">{weather.temperatureC} °C</div>
+                  <div className="weather-widget-temp">{weather.temperatureC} Â°C</div>
                   <div className="weather-widget-copy">{weather.description}</div>
                   <div className="weather-widget-copy">{weather.location}</div>
                 </div>
@@ -875,7 +972,7 @@ export default function Dashboard() {
                     <div className="calendar-widget-hero-copy">{formatCalendarTimeRange(primaryEvent)}</div>
                     <div className="calendar-widget-hero-copy">
                       {primaryEvent.calendarName}
-                      {primaryEvent.location ? ` • ${primaryEvent.location}` : ''}
+                      {primaryEvent.location ? ` â€¢ ${primaryEvent.location}` : ''}
                     </div>
                   </div>
                 ) : null}
@@ -906,7 +1003,7 @@ export default function Dashboard() {
                         <strong>{event.title}</strong>
                         <span>
                           {event.calendarName}
-                          {event.location ? ` • ${event.location}` : ''}
+                          {event.location ? ` â€¢ ${event.location}` : ''}
                         </span>
                       </div>
                       <div className="calendar-widget-item-status">
@@ -938,7 +1035,7 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="widget-message">Wähle in den Widget-Einstellungen Bereiche aus, die du immer sehen willst.</div>
+              <div className="widget-message">WÃ¤hle in den Widget-Einstellungen Bereiche aus, die du immer sehen willst.</div>
             )}
           </WidgetShell>
         );
@@ -973,14 +1070,14 @@ export default function Dashboard() {
         );
       case 'STATS':
         return (
-          <WidgetShell title={widget.title} subtitle="Schneller Überblick über dein Wiki">
+          <WidgetShell title={widget.title} subtitle="Schneller Ãœberblick Ã¼ber dein Wiki">
             <div className="widget-stat-grid">
               <div className="widget-stat-box">
                 <span>Bereiche gesamt</span>
                 <strong>{dashboard?.spaces.total ?? 0}</strong>
               </div>
               <div className="widget-stat-box">
-                <span>Öffentliche Bereiche</span>
+                <span>Ã–ffentliche Bereiche</span>
                 <strong>{dashboard?.spaces.publicCount ?? 0}</strong>
               </div>
               <div className="widget-stat-box">
@@ -1011,13 +1108,13 @@ export default function Dashboard() {
         const commute = dashboard?.commute;
         const modeLabel =
           commute?.todayMode === 'office'
-            ? 'Bürotag'
+            ? 'BÃ¼rotag'
             : commute?.todayMode === 'homeOffice'
               ? 'Homeoffice'
               : 'Heute flexibel';
 
         return (
-          <WidgetShell title={widget.title} subtitle="Arbeitsweg, Büro-Tage und Rückweg" badge={modeLabel}>
+          <WidgetShell title={widget.title} subtitle="Arbeitsweg, BÃ¼ro-Tage und RÃ¼ckweg" badge={modeLabel}>
             {!commute?.profile ? (
               <div className="widget-message">Richte deinen Arbeitsweg in den Widget-Einstellungen ein.</div>
             ) : commute.todayMode === 'homeOffice' ? (
@@ -1025,82 +1122,124 @@ export default function Dashboard() {
                 Heute ist Homeoffice hinterlegt. Kein Pendelweg notwendig.
               </div>
             ) : commute.route?.status === 'ok' ? (
-              <div className="card-list compact-list">
-                <div className="mini-card-link static-card">
-                  <strong>{commute.profile.sourceAddress}</strong>
-                  <span>{commute.profile.destinationAddress}</span>
+              <div className="commute-widget">
+                <div className="commute-view-toggle" role="tablist" aria-label="Arbeitsweg Ansicht">
+                  <button className={commuteView === 'summary' ? 'active' : ''} onClick={() => setCommuteView('summary')} type="button">
+                    Ãœbersicht
+                  </button>
+                  <button className={commuteView === 'map' ? 'active' : ''} onClick={() => setCommuteView('map')} type="button">
+                    Karte
+                  </button>
                 </div>
-                <div className="widget-stat-grid">
-                  <div className="widget-stat-box">
-                    <span>Strecke</span>
-                    <strong>{commute.route.distanceKm} km</strong>
-                  </div>
-                  <div className="widget-stat-box">
-                    <span>Fahrtzeit</span>
-                    <strong>{commute.route.durationMinutes} min</strong>
-                  </div>
-                </div>
-                <div className="widget-message">{commute.route.trafficNote}</div>
+
+                {commuteView === 'map' ? (
+                  <CommuteRouteMap route={commute.route} />
+                ) : (
+                  <>
+                    <div className="commute-route-card">
+                      <div>
+                        <span>Start</span>
+                        <strong>{commute.profile.sourceAddress}</strong>
+                      </div>
+                      <div className="commute-route-line" aria-hidden="true" />
+                      <div>
+                        <span>Ziel</span>
+                        <strong>{commute.profile.destinationAddress}</strong>
+                      </div>
+                    </div>
+                    <div className="widget-stat-grid">
+                      <div className="widget-stat-box">
+                        <span>Strecke</span>
+                        <strong>{commute.route.distanceKm} km</strong>
+                      </div>
+                      <div className="widget-stat-box">
+                        <span>Fahrtzeit</span>
+                        <strong>{commute.route.durationMinutes} min</strong>
+                      </div>
+                    </div>
+                    <div className="widget-message">{commute.route.trafficNote}</div>
+                  </>
+                )}
               </div>
             ) : (
-              <div className="widget-message">{commute?.route?.message || 'Heute liegen keine Routendaten vor.'}</div>
+              <div className="commute-widget">
+                {commute.route ? (
+                  <div className="commute-view-toggle" role="tablist" aria-label="Arbeitsweg Ansicht">
+                    <button className="active" type="button">
+                      Ãœbersicht
+                    </button>
+                    <button disabled type="button">
+                      Karte
+                    </button>
+                  </div>
+                ) : null}
+                <div className="widget-message">{commute?.route?.message || 'Heute liegen keine Routendaten vor.'}</div>
+              </div>
             )}
           </WidgetShell>
         );
       }
       case 'TIME_TRACKER': {
-        const timeTracking = dashboard?.timeTracking;
-        const runningEntry = timeTracking?.runningEntry;
-        const runningDurationMinutes = runningEntry
-          ? Math.max(1, Math.round((now.getTime() - new Date(runningEntry.startTime).getTime()) / 60000))
+        const compactTimeTracking = dashboard?.timeTracking;
+        const compactRunningEntry = compactTimeTracking?.runningEntry;
+        const compactRunningDurationMinutes = compactRunningEntry
+          ? Math.max(1, Math.round((now.getTime() - new Date(compactRunningEntry!.startTime).getTime()) / 60000))
           : 0;
+        const compactActiveProjects = compactTimeTracking?.projects.filter((project) => !project.isArchived) ?? [];
+        const compactSelectedProject = compactActiveProjects.find((project) => project.id === timerProjectId);
+        const compactRecentEntries = compactTimeTracking?.entries.slice(0, 5) ?? [];
 
         return (
-          <WidgetShell title={widget.title} subtitle="Projekte, Timer und manuelle Nachträge" badge={runningEntry ? 'Timer läuft' : 'Bereit'}>
-            <div className="widget-stack">
-              <div className="widget-inline-form stretch-mobile">
-                <select className="input" value={timerProjectId} onChange={(e) => setTimerProjectId(e.target.value)}>
-                  <option value="">Projekt auswählen</option>
-                  {timeTracking?.projects
-                    .filter((project) => !project.isArchived)
-                    .map((project) => (
+          <WidgetShell title={widget.title} subtitle="Timer, Tagesstand und schnelle NachtrÃ¤ge" badge={compactRunningEntry ? 'LÃ¤uft' : 'Bereit'}>
+            <div className="time-widget">
+              <div className={`time-widget-hero ${compactRunningEntry ? 'is-running' : ''}`}>
+                <div className="time-widget-status">
+                  <span>{compactRunningEntry ? 'Aktiver Timer' : 'Heute erfasst'}</span>
+                  <strong>{compactRunningEntry ? formatMinutes(compactRunningDurationMinutes) : formatMinutes(compactTimeTracking?.summary.todayMinutes ?? 0)}</strong>
+                  <em>
+                    {compactRunningEntry
+                      ? `${compactRunningEntry.project?.name || 'Projekt'} seit ${new Date(compactRunningEntry!.startTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`
+                      : compactSelectedProject?.name || 'Projekt auswÃ¤hlen'}
+                  </em>
+                </div>
+                <div className="time-widget-controls">
+                  <select className="input" value={timerProjectId} onChange={(e) => setTimerProjectId(e.target.value)} disabled={Boolean(compactRunningEntry)}>
+                    <option value="">Projekt auswÃ¤hlen</option>
+                    {compactActiveProjects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
                       </option>
                     ))}
-                </select>
-                {runningEntry ? (
-                  <button className="btn btn-primary" onClick={() => stopTimer(runningEntry.id)}>
-                    Ausstempeln
-                  </button>
-                ) : (
-                  <button className="btn btn-primary" onClick={startTimer} disabled={!timerProjectId}>
-                    Einstempeln
-                  </button>
-                )}
+                  </select>
+                  {compactRunningEntry ? (
+                    <button className="btn btn-primary" onClick={() => stopTimer(compactRunningEntry!.id)}>
+                      Stoppen
+                    </button>
+                  ) : (
+                    <button className="btn btn-primary" onClick={startTimer} disabled={!timerProjectId}>
+                      Starten
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="widget-stat-grid">
-                <div className="widget-stat-box">
+              <div className="time-widget-stats">
+                <div className="time-stat-card">
                   <span>Heute</span>
-                  <strong>{formatMinutes(timeTracking?.summary.todayMinutes ?? 0)}</strong>
+                  <strong>{formatMinutes(compactTimeTracking?.summary.todayMinutes ?? 0)}</strong>
                 </div>
-                <div className="widget-stat-box">
-                  <span>Diese Woche</span>
-                  <strong>{formatMinutes(timeTracking?.summary.weekMinutes ?? 0)}</strong>
+                <div className="time-stat-card">
+                  <span>Woche</span>
+                  <strong>{formatMinutes(compactTimeTracking?.summary.weekMinutes ?? 0)}</strong>
                 </div>
-                <div className="widget-stat-box">
+                <div className="time-stat-card">
                   <span>Projekte</span>
-                  <strong>{timeTracking?.projects.length ?? 0}</strong>
-                </div>
-                <div className="widget-stat-box">
-                  <span>Aktiv</span>
-                  <strong>{runningEntry ? formatMinutes(runningDurationMinutes) : 'Kein Timer'}</strong>
+                  <strong>{compactActiveProjects.length}</strong>
                 </div>
               </div>
 
-              <div className="widget-subsection">
-                <h4>Projekt anlegen</h4>
+              <details className="time-widget-panel">
+                <summary>Projekt anlegen</summary>
                 <div className="widget-form-grid">
                   <input className="input" value={projectForm.name} onChange={(e) => setProjectForm((current) => ({ ...current, name: e.target.value }))} placeholder="Projektname" />
                   <input className="input" value={projectForm.client} onChange={(e) => setProjectForm((current) => ({ ...current, client: e.target.value }))} placeholder="Kunde" />
@@ -1112,20 +1251,18 @@ export default function Dashboard() {
                     Projekt speichern
                   </button>
                 </div>
-              </div>
+              </details>
 
-              <div className="widget-subsection">
-                <h4>Manuellen Eintrag erfassen</h4>
+              <details className="time-widget-panel" open={Boolean(editingEntryId)}>
+                <summary>{editingEntryId ? 'Eintrag bearbeiten' : 'Manuellen Eintrag erfassen'}</summary>
                 <div className="widget-form-grid">
                   <select className="input" value={manualEntryForm.projectId} onChange={(e) => setManualEntryForm((current) => ({ ...current, projectId: e.target.value }))}>
-                    <option value="">Projekt auswählen</option>
-                    {timeTracking?.projects
-                      .filter((project) => !project.isArchived)
-                      .map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.name}
-                        </option>
-                      ))}
+                    <option value="">Projekt auswÃ¤hlen</option>
+                    {compactActiveProjects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
                   </select>
                   <input className="input" type="datetime-local" value={manualEntryForm.startTime} onChange={(e) => setManualEntryForm((current) => ({ ...current, startTime: e.target.value }))} />
                   <input className="input" type="datetime-local" value={manualEntryForm.endTime} onChange={(e) => setManualEntryForm((current) => ({ ...current, endTime: e.target.value }))} />
@@ -1133,21 +1270,28 @@ export default function Dashboard() {
                 </div>
                 <div className="widget-toolbar-end">
                   <button className="btn btn-secondary" onClick={saveManualEntry}>
-                    {editingEntryId ? 'Änderung speichern' : 'Eintrag speichern'}
+                    {editingEntryId ? 'Ã„nderung speichern' : 'Eintrag speichern'}
                   </button>
                 </div>
-              </div>
+              </details>
 
-              <div className="widget-subsection">
-                <h4>Letzte Einträge</h4>
-                <div className="card-list compact-list">
-                  {timeTracking?.entries.slice(0, 6).map((entry) => (
-                    <div key={entry.id} className="mini-card-link static-card">
-                      <strong>{entry.project?.name || 'Projekt'}</strong>
-                      <span>
-                        {formatDateLabel(entry.startTime)}
-                        {entry.endTime ? ` bis ${formatDateLabel(entry.endTime)}` : ' • läuft'}
-                      </span>
+              <div className="time-widget-history">
+                <div className="time-widget-history-header">
+                  <span>Letzte EintrÃ¤ge</span>
+                  <small>{compactRecentEntries.length} sichtbar</small>
+                </div>
+                {compactRecentEntries.length ? (
+                  compactRecentEntries.map((entry) => (
+                    <div key={entry.id} className="time-entry-row">
+                      <span className="time-entry-dot" style={{ backgroundColor: entry.project?.color || '#0ea5e9' }} />
+                      <div className="time-entry-main">
+                        <strong>{entry.project?.name || 'Projekt'}</strong>
+                        <small>
+                          {formatDateLabel(entry.startTime)}
+                          {entry.endTime ? ` bis ${formatDateLabel(entry.endTime)}` : ' â€¢ lÃ¤uft'}
+                        </small>
+                      </div>
+                      <em>{formatMinutes(entry.durationMinutes ?? (entry.endTime ? 0 : compactRunningDurationMinutes))}</em>
                       <div className="widget-inline-actions">
                         <button
                           className="text-button"
@@ -1170,12 +1314,14 @@ export default function Dashboard() {
                             await loadDashboard();
                           }}
                         >
-                          Löschen
+                          LÃ¶schen
                         </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <div className="widget-message">Noch keine Zeiten erfasst.</div>
+                )}
               </div>
             </div>
           </WidgetShell>
@@ -1251,8 +1397,8 @@ export default function Dashboard() {
     }
 
     return (
-      <WidgetShell title={widget.title} subtitle="Dieses Widget ist derzeit nicht verfügbar.">
-        <div className="widget-message">Für diesen Widget-Typ liegt aktuell noch keine Darstellung vor.</div>
+      <WidgetShell title={widget.title} subtitle="Dieses Widget ist derzeit nicht verfÃ¼gbar.">
+        <div className="widget-message">FÃ¼r diesen Widget-Typ liegt aktuell noch keine Darstellung vor.</div>
       </WidgetShell>
     );
   };
@@ -1284,7 +1430,7 @@ export default function Dashboard() {
         <div>
           <div className="dashboard-brand">FlatHacksWiki</div>
           <p className="dashboard-brand-copy">
-            Persönlicher Arbeitsbereich für Wissen, Links und Mini-Anwendungen.
+            PersÃ¶nlicher Arbeitsbereich fÃ¼r Wissen, Links und Mini-Anwendungen.
           </p>
         </div>
         <div className="dashboard-topbar-actions">
@@ -1304,7 +1450,7 @@ export default function Dashboard() {
             {editMode ? 'Layout-Modus beenden' : 'Layout bearbeiten'}
           </button>
           <button className="btn btn-secondary" onClick={() => setWidgetLibraryOpen(true)}>
-            Widget hinzufügen
+            Widget hinzufÃ¼gen
           </button>
           <button className="btn btn-secondary" onClick={() => setSettingsOpen(true)}>
             Profil & Dashboard
@@ -1319,12 +1465,12 @@ export default function Dashboard() {
         <section className="dashboard-hero-card">
           <div className="dashboard-hero-content">
             <div>
-              <div className="dashboard-hero-label">Persönliche Startseite</div>
+              <div className="dashboard-hero-label">PersÃ¶nliche Startseite</div>
               <h1 className="dashboard-hero-title">{greeting}</h1>
               {shouldShowSubtitle && subtitleText && <p className="dashboard-hero-copy">{subtitleText}</p>}
               {!greetingName && (
                 <p className="dashboard-hero-hint">
-                  Hinterlege deinen Namen im Profil, damit die Begrüßung persönlicher wird.
+                  Hinterlege deinen Namen im Profil, damit die BegrÃ¼ÃŸung persÃ¶nlicher wird.
                 </p>
               )}
             </div>
@@ -1352,10 +1498,10 @@ export default function Dashboard() {
                     {weatherWidgetVisible && (
                       <div className="dashboard-weather-chip">
                         {weatherLoading ? (
-                          <span>Wetter lädt …</span>
+                          <span>Wetter lÃ¤dt â€¦</span>
                         ) : weather ? (
                           <>
-                            <strong>{weather.temperatureC} °C</strong>
+                            <strong>{weather.temperatureC} Â°C</strong>
                             <span>{weather.description}</span>
                           </>
                         ) : weatherError ? (
@@ -1408,7 +1554,7 @@ export default function Dashboard() {
           <section className="dashboard-edit-hint">
             <strong>Layout-Bearbeitung aktiv</strong>
             <span>
-              Widgets lassen sich jetzt mit der Maus verschieben und in der Größe anpassen. Auf Smartphones
+              Widgets lassen sich jetzt mit der Maus verschieben und in der GrÃ¶ÃŸe anpassen. Auf Smartphones
               bleibt das Layout stabil und stapelt sich untereinander.
             </span>
             <div className="dashboard-radius-toolbar">
@@ -1435,10 +1581,10 @@ export default function Dashboard() {
               <div key={widget.id} className="dashboard-widget-frame auto-widget-frame mobile-frame">
                 {editMode && (
                   <div className="dashboard-widget-toolbar">
-                    <div className="widget-drag-handle">⋮⋮</div>
+                    <div className="widget-drag-handle">â‹®â‹®</div>
                     <div className="dashboard-widget-toolbar-actions">
                       <button className="text-button" onClick={() => updateWidget(widget.id, { isCollapsed: !widget.isCollapsed })}>
-                        {widget.isCollapsed ? 'Öffnen' : 'Einklappen'}
+                        {widget.isCollapsed ? 'Ã–ffnen' : 'Einklappen'}
                       </button>
                       <button className="text-button" onClick={() => setWidgetConfigId(widget.id)}>
                         Konfigurieren
@@ -1482,10 +1628,10 @@ export default function Dashboard() {
                   <div key={widget.id} className="dashboard-widget-frame layout-widget-frame">
                     {editMode && (
                       <div className="dashboard-widget-toolbar">
-                        <div className="widget-drag-handle">⋮⋮</div>
+                        <div className="widget-drag-handle">â‹®â‹®</div>
                         <div className="dashboard-widget-toolbar-actions">
                           <button className="text-button" onClick={() => updateWidget(widget.id, { isCollapsed: !widget.isCollapsed })}>
-                            {widget.isCollapsed ? 'Öffnen' : 'Einklappen'}
+                            {widget.isCollapsed ? 'Ã–ffnen' : 'Einklappen'}
                           </button>
                           <button className="text-button" onClick={() => setWidgetConfigId(widget.id)}>
                             Konfigurieren
@@ -1511,10 +1657,10 @@ export default function Dashboard() {
             <div className="dialog-header">
               <div>
                 <div className="dialog-eyebrow">Profil & Dashboard</div>
-                <h2>Persönliche Einstellungen</h2>
+                <h2>PersÃ¶nliche Einstellungen</h2>
               </div>
               <button className="btn btn-secondary" onClick={() => setSettingsOpen(false)}>
-                Schließen
+                SchlieÃŸen
               </button>
             </div>
             <section className="profile-hero-card">
@@ -1659,7 +1805,7 @@ export default function Dashboard() {
               <section className="dialog-card span-2">
                 <h3>Profil</h3>
                 <div className="widget-form-grid">
-                  <input className="input" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name für die Begrüßung" />
+                  <input className="input" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name fÃ¼r die BegrÃ¼ÃŸung" />
                   <label className="checkbox-row">
                     <input type="checkbox" checked={showProfileSubtitle} onChange={(e) => setShowProfileSubtitle(e.target.checked)} />
                     <span>Untertitel anzeigen</span>
@@ -1710,15 +1856,15 @@ export default function Dashboard() {
             <div className="dialog-header">
               <div>
                 <div className="dialog-eyebrow">Widget-Bibliothek</div>
-                <h2>Widget hinzufügen</h2>
+                <h2>Widget hinzufÃ¼gen</h2>
               </div>
               <button className="btn btn-secondary" onClick={() => setWidgetLibraryOpen(false)}>
-                Schließen
+                SchlieÃŸen
               </button>
             </div>
             <div className="card-list compact-list">
               {availableWidgets.length === 0 ? (
-                <div className="widget-message">Alle verfügbaren Widgets sind bereits im Dashboard vorhanden.</div>
+                <div className="widget-message">Alle verfÃ¼gbaren Widgets sind bereits im Dashboard vorhanden.</div>
               ) : (
                 availableWidgets.map((definition) => (
                   <div key={definition.type} className="mini-card-link static-card">
@@ -1726,7 +1872,7 @@ export default function Dashboard() {
                     <span>{definition.description}</span>
                     <div className="widget-toolbar-end">
                       <button className="btn btn-primary" disabled={busyAction === `add-${definition.type}`} onClick={() => addWidget(definition.type)}>
-                        {busyAction === `add-${definition.type}` ? 'Wird hinzugefügt ...' : 'Hinzufügen'}
+                        {busyAction === `add-${definition.type}` ? 'Wird hinzugefÃ¼gt ...' : 'HinzufÃ¼gen'}
                       </button>
                     </div>
                   </div>
@@ -1791,7 +1937,7 @@ function WidgetSettingsDialog({
       officeDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY'],
       homeOfficeDays: ['THURSDAY', 'FRIDAY'],
       outboundLabel: 'Hinfahrt',
-      returnLabel: 'Rückfahrt',
+      returnLabel: 'RÃ¼ckfahrt',
       departureTime: '08:00',
       returnDepartureTime: '17:00',
     }
@@ -1829,7 +1975,7 @@ function WidgetSettingsDialog({
             <h2>{widgetDefinitionMap[widget.type].label}</h2>
           </div>
           <button className="btn btn-secondary" onClick={onClose}>
-            Schließen
+            SchlieÃŸen
           </button>
         </div>
 
@@ -1988,12 +2134,12 @@ function WidgetSettingsDialog({
                   onChange={(e) => setSettings((current) => ({ ...current, botUsername: e.target.value }))}
                   placeholder="OpenClaw Bot"
                 />
-                <label className="form-label">Begrüßungstext</label>
+                <label className="form-label">BegrÃ¼ÃŸungstext</label>
                 <textarea
                   className="input widget-notes"
                   value={String(settings.greetingText || '')}
                   onChange={(e) => setSettings((current) => ({ ...current, greetingText: e.target.value }))}
-                  placeholder="Optionaler Begrüßungstext im Chat-Widget"
+                  placeholder="Optionaler BegrÃ¼ÃŸungstext im Chat-Widget"
                 />
                 <label className="form-label">Polling in Millisekunden</label>
                 <input
@@ -2010,7 +2156,7 @@ function WidgetSettingsDialog({
                   }
                 />
                 <div className="widget-message">
-                  Das Secret für Telegram bleibt im Backend. Hinterlege dort
+                  Das Secret fÃ¼r Telegram bleibt im Backend. Hinterlege dort
                   `TELEGRAM_BOT_TOKEN` oder `OPENCLAW_BOT_WEBHOOK_URL`.
                 </div>
               </div>
@@ -2024,10 +2170,10 @@ function WidgetSettingsDialog({
               <input className="input" value={commute.sourceAddress} onChange={(e) => setCommute((current) => ({ ...current, sourceAddress: e.target.value }))} placeholder="Startadresse" />
               <input className="input" value={commute.destinationAddress} onChange={(e) => setCommute((current) => ({ ...current, destinationAddress: e.target.value }))} placeholder="Zieladresse" />
               <input className="input" value={commute.departureTime || ''} onChange={(e) => setCommute((current) => ({ ...current, departureTime: e.target.value }))} placeholder="Abfahrt Hinfahrt" />
-              <input className="input" value={commute.returnDepartureTime || ''} onChange={(e) => setCommute((current) => ({ ...current, returnDepartureTime: e.target.value }))} placeholder="Abfahrt Rückfahrt" />
+              <input className="input" value={commute.returnDepartureTime || ''} onChange={(e) => setCommute((current) => ({ ...current, returnDepartureTime: e.target.value }))} placeholder="Abfahrt RÃ¼ckfahrt" />
             </div>
             <div className="widget-subsection">
-              <label className="form-label">Bürotage</label>
+              <label className="form-label">BÃ¼rotage</label>
               <div className="option-grid">
                 {Object.entries(weekdayLabels).map(([day, label]) => (
                   <button key={day} type="button" className={`chip-button ${commute.officeDays.includes(day) ? 'active' : ''}`} onClick={() => toggleDay('officeDays', day)}>

@@ -88,13 +88,13 @@ Die aktuell wichtigen Werte dort sind:
 ```env
 BACKEND_IMAGE=ghcr.io/flathack/openclaw-wiki-backend:latest
 FRONTEND_IMAGE=ghcr.io/flathack/openclaw-wiki-frontend:latest
-APP_URL=http://100.127.251.119:3002
-FRONTEND_URL=http://100.127.251.119:3002
-CORS_ORIGIN=http://100.127.251.119:3002
+APP_URL=https://alpha-nas.tail2b5c2.ts.net:3002
+FRONTEND_URL=https://alpha-nas.tail2b5c2.ts.net:3002
+CORS_ORIGIN=https://alpha-nas.tail2b5c2.ts.net:3002
 NEXTCLOUD_INTERNAL_URL=http://nextcloud
-NEXTCLOUD_PUBLIC_URL=https://100.127.251.119:8443
-OIDC_PUBLIC_ISSUER=https://100.127.251.119:8081/realms/flathackwiki
-OIDC_REDIRECT_URI=http://100.127.251.119:3002/api/v1/auth/oidc/callback
+NEXTCLOUD_PUBLIC_URL=https://alpha-nas.tail2b5c2.ts.net:8443
+OIDC_PUBLIC_ISSUER=https://alpha-nas.tail2b5c2.ts.net:8081/realms/flathackwiki
+OIDC_REDIRECT_URI=https://alpha-nas.tail2b5c2.ts.net:3002/api/v1/auth/oidc/callback
 ```
 
 Wenn du bei `latest` bleibst, reicht in Portainer normalerweise ein Redeploy mit Pull der neuesten Images.
