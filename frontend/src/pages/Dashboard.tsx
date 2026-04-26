@@ -27,7 +27,7 @@ import { widgetDefinitionMap, widgetDefinitions } from '../components/dashboard/
 import { useAuthStore } from '../context/auth.store';
 
 const defaultSubtitle =
-  'Baue dir eine persÃ¶nliche Startseite fÃ¼r das Wiki mit Widgets, Lesezeichen, favorisierten Bereichen und Notizen.';
+  'Baue dir eine persönliche Startseite für das Wiki mit Widgets, Lesezeichen, favorisierten Bereichen und Notizen.';
 const weekdayLabels: Record<string, string> = {
   MONDAY: 'Mo',
   TUESDAY: 'Di',
@@ -82,7 +82,7 @@ function formatDateTimeLocal(value: string) {
 }
 
 function formatCalendarTimeRange(event: CalendarEvent) {
-  if (event.isAllDay) return 'GanztÃ¤gig';
+  if (event.isAllDay) return 'Ganztägig';
 
   const start = new Date(event.startAt);
   const end = new Date(event.endAt);
@@ -190,7 +190,7 @@ function CommuteRouteMap({ route }: { route: CommuteRoute }) {
       </div>
       {osmUrl ? (
         <a className="btn btn-secondary commute-map-link" href={osmUrl} target="_blank" rel="noreferrer">
-          In OpenStreetMap Ã¶ffnen
+          In OpenStreetMap öffnen
         </a>
       ) : null}
     </div>
@@ -553,7 +553,7 @@ export default function Dashboard() {
     setProfileError('');
     setProfileMessage('');
     if (!profileName.trim()) {
-      setProfileError('Bitte hinterlege einen Namen fÃ¼r die persÃ¶nliche BegrÃ¼ÃŸung.');
+      setProfileError('Bitte hinterlege einen Namen für die persönliche Begrüßung.');
       return;
     }
 
@@ -572,7 +572,7 @@ export default function Dashboard() {
         showDashboardSubtitle: data.showDashboardSubtitle,
         uiRadius: data.uiRadius,
       });
-      setProfileMessage('Profil gespeichert. Die BegrÃ¼ÃŸung wurde aktualisiert.');
+      setProfileMessage('Profil gespeichert. Die Begrüßung wurde aktualisiert.');
     } catch (err: any) {
       setProfileError(err.response?.data?.error?.message || 'Profil konnte nicht gespeichert werden');
     } finally {
@@ -596,7 +596,7 @@ export default function Dashboard() {
       setDashboardWidgets((widgets) => [...widgets, data]);
       setWidgetLibraryOpen(false);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Widget konnte nicht hinzugefÃ¼gt werden');
+      setError(err.response?.data?.error?.message || 'Widget konnte nicht hinzugefügt werden');
     } finally {
       setBusyAction('');
     }
@@ -631,7 +631,7 @@ export default function Dashboard() {
       await dashboardApi.bookmarks.delete(bookmarkId);
       await refreshBookmarks();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht gelÃ¶scht werden');
+      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht gelöscht werden');
       throw err;
     }
   };
@@ -815,7 +815,7 @@ export default function Dashboard() {
     switch (widget.type) {
       case 'CLOCK':
         return (
-          <WidgetShell title={widget.title} subtitle="Aktuelle Zeit fÃ¼r deinen Arbeitstag" badge="Live">
+          <WidgetShell title={widget.title} subtitle="Aktuelle Zeit für deinen Arbeitstag" badge="Live">
             <div className="clock-widget-panel">
               <div className="clock-widget-time">
                 {now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
@@ -886,7 +886,7 @@ export default function Dashboard() {
                 className="btn btn-primary"
                 onClick={runWidgetWebSearch}
               >
-                Ã–ffnen
+                Öffnen
               </button>
             </div>
             {renderBookmarkSuggestions(true)}
@@ -903,7 +903,7 @@ export default function Dashboard() {
             ) : weather ? (
               <div className="weather-widget-grid">
                 <div className="weather-widget-hero">
-                  <div className="weather-widget-temp">{weather.temperatureC} Â°C</div>
+                  <div className="weather-widget-temp">{weather.temperatureC} °C</div>
                   <div className="weather-widget-copy">{weather.description}</div>
                   <div className="weather-widget-copy">{weather.location}</div>
                 </div>
@@ -972,7 +972,7 @@ export default function Dashboard() {
                     <div className="calendar-widget-hero-copy">{formatCalendarTimeRange(primaryEvent)}</div>
                     <div className="calendar-widget-hero-copy">
                       {primaryEvent.calendarName}
-                      {primaryEvent.location ? ` â€¢ ${primaryEvent.location}` : ''}
+                      {primaryEvent.location ? ` • ${primaryEvent.location}` : ''}
                     </div>
                   </div>
                 ) : null}
@@ -1003,7 +1003,7 @@ export default function Dashboard() {
                         <strong>{event.title}</strong>
                         <span>
                           {event.calendarName}
-                          {event.location ? ` â€¢ ${event.location}` : ''}
+                          {event.location ? ` • ${event.location}` : ''}
                         </span>
                       </div>
                       <div className="calendar-widget-item-status">
@@ -1035,7 +1035,7 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="widget-message">WÃ¤hle in den Widget-Einstellungen Bereiche aus, die du immer sehen willst.</div>
+              <div className="widget-message">Wähle in den Widget-Einstellungen Bereiche aus, die du immer sehen willst.</div>
             )}
           </WidgetShell>
         );
@@ -1070,14 +1070,14 @@ export default function Dashboard() {
         );
       case 'STATS':
         return (
-          <WidgetShell title={widget.title} subtitle="Schneller Ãœberblick Ã¼ber dein Wiki">
+          <WidgetShell title={widget.title} subtitle="Schneller Überblick über dein Wiki">
             <div className="widget-stat-grid">
               <div className="widget-stat-box">
                 <span>Bereiche gesamt</span>
                 <strong>{dashboard?.spaces.total ?? 0}</strong>
               </div>
               <div className="widget-stat-box">
-                <span>Ã–ffentliche Bereiche</span>
+                <span>Öffentliche Bereiche</span>
                 <strong>{dashboard?.spaces.publicCount ?? 0}</strong>
               </div>
               <div className="widget-stat-box">
@@ -1108,13 +1108,13 @@ export default function Dashboard() {
         const commute = dashboard?.commute;
         const modeLabel =
           commute?.todayMode === 'office'
-            ? 'BÃ¼rotag'
+            ? 'Bürotag'
             : commute?.todayMode === 'homeOffice'
               ? 'Homeoffice'
               : 'Heute flexibel';
 
         return (
-          <WidgetShell title={widget.title} subtitle="Arbeitsweg, BÃ¼ro-Tage und RÃ¼ckweg" badge={modeLabel}>
+          <WidgetShell title={widget.title} subtitle="Arbeitsweg, Büro-Tage und Rückweg" badge={modeLabel}>
             {!commute?.profile ? (
               <div className="widget-message">Richte deinen Arbeitsweg in den Widget-Einstellungen ein.</div>
             ) : commute.todayMode === 'homeOffice' ? (
@@ -1125,7 +1125,7 @@ export default function Dashboard() {
               <div className="commute-widget">
                 <div className="commute-view-toggle" role="tablist" aria-label="Arbeitsweg Ansicht">
                   <button className={commuteView === 'summary' ? 'active' : ''} onClick={() => setCommuteView('summary')} type="button">
-                    Ãœbersicht
+                    Übersicht
                   </button>
                   <button className={commuteView === 'map' ? 'active' : ''} onClick={() => setCommuteView('map')} type="button">
                     Karte
@@ -1166,7 +1166,7 @@ export default function Dashboard() {
                 {commute.route ? (
                   <div className="commute-view-toggle" role="tablist" aria-label="Arbeitsweg Ansicht">
                     <button className="active" type="button">
-                      Ãœbersicht
+                      Übersicht
                     </button>
                     <button disabled type="button">
                       Karte
@@ -1190,7 +1190,7 @@ export default function Dashboard() {
         const compactRecentEntries = compactTimeTracking?.entries.slice(0, 5) ?? [];
 
         return (
-          <WidgetShell title={widget.title} subtitle="Timer, Tagesstand und schnelle NachtrÃ¤ge" badge={compactRunningEntry ? 'LÃ¤uft' : 'Bereit'}>
+          <WidgetShell title={widget.title} subtitle="Timer, Tagesstand und schnelle Nachträge" badge={compactRunningEntry ? 'Läuft' : 'Bereit'}>
             <div className="time-widget">
               <div className={`time-widget-hero ${compactRunningEntry ? 'is-running' : ''}`}>
                 <div className="time-widget-status">
@@ -1199,12 +1199,12 @@ export default function Dashboard() {
                   <em>
                     {compactRunningEntry
                       ? `${compactRunningEntry.project?.name || 'Projekt'} seit ${new Date(compactRunningEntry!.startTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`
-                      : compactSelectedProject?.name || 'Projekt auswÃ¤hlen'}
+                      : compactSelectedProject?.name || 'Projekt auswählen'}
                   </em>
                 </div>
                 <div className="time-widget-controls">
                   <select className="input" value={timerProjectId} onChange={(e) => setTimerProjectId(e.target.value)} disabled={Boolean(compactRunningEntry)}>
-                    <option value="">Projekt auswÃ¤hlen</option>
+                    <option value="">Projekt auswählen</option>
                     {compactActiveProjects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -1257,7 +1257,7 @@ export default function Dashboard() {
                 <summary>{editingEntryId ? 'Eintrag bearbeiten' : 'Manuellen Eintrag erfassen'}</summary>
                 <div className="widget-form-grid">
                   <select className="input" value={manualEntryForm.projectId} onChange={(e) => setManualEntryForm((current) => ({ ...current, projectId: e.target.value }))}>
-                    <option value="">Projekt auswÃ¤hlen</option>
+                    <option value="">Projekt auswählen</option>
                     {compactActiveProjects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -1270,14 +1270,14 @@ export default function Dashboard() {
                 </div>
                 <div className="widget-toolbar-end">
                   <button className="btn btn-secondary" onClick={saveManualEntry}>
-                    {editingEntryId ? 'Ã„nderung speichern' : 'Eintrag speichern'}
+                    {editingEntryId ? 'Änderung speichern' : 'Eintrag speichern'}
                   </button>
                 </div>
               </details>
 
               <div className="time-widget-history">
                 <div className="time-widget-history-header">
-                  <span>Letzte EintrÃ¤ge</span>
+                  <span>Letzte Einträge</span>
                   <small>{compactRecentEntries.length} sichtbar</small>
                 </div>
                 {compactRecentEntries.length ? (
@@ -1288,7 +1288,7 @@ export default function Dashboard() {
                         <strong>{entry.project?.name || 'Projekt'}</strong>
                         <small>
                           {formatDateLabel(entry.startTime)}
-                          {entry.endTime ? ` bis ${formatDateLabel(entry.endTime)}` : ' â€¢ lÃ¤uft'}
+                          {entry.endTime ? ` bis ${formatDateLabel(entry.endTime)}` : ' • läuft'}
                         </small>
                       </div>
                       <em>{formatMinutes(entry.durationMinutes ?? (entry.endTime ? 0 : compactRunningDurationMinutes))}</em>
@@ -1314,7 +1314,7 @@ export default function Dashboard() {
                             await loadDashboard();
                           }}
                         >
-                          LÃ¶schen
+                          Löschen
                         </button>
                       </div>
                     </div>
@@ -1397,8 +1397,8 @@ export default function Dashboard() {
     }
 
     return (
-      <WidgetShell title={widget.title} subtitle="Dieses Widget ist derzeit nicht verfÃ¼gbar.">
-        <div className="widget-message">FÃ¼r diesen Widget-Typ liegt aktuell noch keine Darstellung vor.</div>
+      <WidgetShell title={widget.title} subtitle="Dieses Widget ist derzeit nicht verfügbar.">
+        <div className="widget-message">Für diesen Widget-Typ liegt aktuell noch keine Darstellung vor.</div>
       </WidgetShell>
     );
   };
@@ -1430,7 +1430,7 @@ export default function Dashboard() {
         <div>
           <div className="dashboard-brand">FlatHacksWiki</div>
           <p className="dashboard-brand-copy">
-            PersÃ¶nlicher Arbeitsbereich fÃ¼r Wissen, Links und Mini-Anwendungen.
+            Persönlicher Arbeitsbereich für Wissen, Links und Mini-Anwendungen.
           </p>
         </div>
         <div className="dashboard-topbar-actions">
@@ -1450,7 +1450,7 @@ export default function Dashboard() {
             {editMode ? 'Layout-Modus beenden' : 'Layout bearbeiten'}
           </button>
           <button className="btn btn-secondary" onClick={() => setWidgetLibraryOpen(true)}>
-            Widget hinzufÃ¼gen
+            Widget hinzufügen
           </button>
           <button className="btn btn-secondary" onClick={() => setSettingsOpen(true)}>
             Profil & Dashboard
@@ -1465,12 +1465,12 @@ export default function Dashboard() {
         <section className="dashboard-hero-card">
           <div className="dashboard-hero-content">
             <div>
-              <div className="dashboard-hero-label">PersÃ¶nliche Startseite</div>
+              <div className="dashboard-hero-label">Persönliche Startseite</div>
               <h1 className="dashboard-hero-title">{greeting}</h1>
               {shouldShowSubtitle && subtitleText && <p className="dashboard-hero-copy">{subtitleText}</p>}
               {!greetingName && (
                 <p className="dashboard-hero-hint">
-                  Hinterlege deinen Namen im Profil, damit die BegrÃ¼ÃŸung persÃ¶nlicher wird.
+                  Hinterlege deinen Namen im Profil, damit die Begrüßung persönlicher wird.
                 </p>
               )}
             </div>
@@ -1498,10 +1498,10 @@ export default function Dashboard() {
                     {weatherWidgetVisible && (
                       <div className="dashboard-weather-chip">
                         {weatherLoading ? (
-                          <span>Wetter lÃ¤dt â€¦</span>
+                          <span>Wetter lädt ...</span>
                         ) : weather ? (
                           <>
-                            <strong>{weather.temperatureC} Â°C</strong>
+                            <strong>{weather.temperatureC} °C</strong>
                             <span>{weather.description}</span>
                           </>
                         ) : weatherError ? (
@@ -1554,7 +1554,7 @@ export default function Dashboard() {
           <section className="dashboard-edit-hint">
             <strong>Layout-Bearbeitung aktiv</strong>
             <span>
-              Widgets lassen sich jetzt mit der Maus verschieben und in der GrÃ¶ÃŸe anpassen. Auf Smartphones
+              Widgets lassen sich jetzt mit der Maus verschieben und in der Größe anpassen. Auf Smartphones
               bleibt das Layout stabil und stapelt sich untereinander.
             </span>
             <div className="dashboard-radius-toolbar">
@@ -1581,10 +1581,10 @@ export default function Dashboard() {
               <div key={widget.id} className="dashboard-widget-frame auto-widget-frame mobile-frame">
                 {editMode && (
                   <div className="dashboard-widget-toolbar">
-                    <div className="widget-drag-handle">â‹®â‹®</div>
+                    <div className="widget-drag-handle">⋮⋮</div>
                     <div className="dashboard-widget-toolbar-actions">
                       <button className="text-button" onClick={() => updateWidget(widget.id, { isCollapsed: !widget.isCollapsed })}>
-                        {widget.isCollapsed ? 'Ã–ffnen' : 'Einklappen'}
+                        {widget.isCollapsed ? 'Öffnen' : 'Einklappen'}
                       </button>
                       <button className="text-button" onClick={() => setWidgetConfigId(widget.id)}>
                         Konfigurieren
@@ -1628,10 +1628,10 @@ export default function Dashboard() {
                   <div key={widget.id} className="dashboard-widget-frame layout-widget-frame">
                     {editMode && (
                       <div className="dashboard-widget-toolbar">
-                        <div className="widget-drag-handle">â‹®â‹®</div>
+                        <div className="widget-drag-handle">⋮⋮</div>
                         <div className="dashboard-widget-toolbar-actions">
                           <button className="text-button" onClick={() => updateWidget(widget.id, { isCollapsed: !widget.isCollapsed })}>
-                            {widget.isCollapsed ? 'Ã–ffnen' : 'Einklappen'}
+                            {widget.isCollapsed ? 'Öffnen' : 'Einklappen'}
                           </button>
                           <button className="text-button" onClick={() => setWidgetConfigId(widget.id)}>
                             Konfigurieren
@@ -1657,10 +1657,10 @@ export default function Dashboard() {
             <div className="dialog-header">
               <div>
                 <div className="dialog-eyebrow">Profil & Dashboard</div>
-                <h2>PersÃ¶nliche Einstellungen</h2>
+                <h2>Persönliche Einstellungen</h2>
               </div>
               <button className="btn btn-secondary" onClick={() => setSettingsOpen(false)}>
-                SchlieÃŸen
+                Schließen
               </button>
             </div>
             <section className="profile-hero-card">
@@ -1805,7 +1805,7 @@ export default function Dashboard() {
               <section className="dialog-card span-2">
                 <h3>Profil</h3>
                 <div className="widget-form-grid">
-                  <input className="input" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name fÃ¼r die BegrÃ¼ÃŸung" />
+                  <input className="input" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Name für die Begrüßung" />
                   <label className="checkbox-row">
                     <input type="checkbox" checked={showProfileSubtitle} onChange={(e) => setShowProfileSubtitle(e.target.checked)} />
                     <span>Untertitel anzeigen</span>
@@ -1856,15 +1856,15 @@ export default function Dashboard() {
             <div className="dialog-header">
               <div>
                 <div className="dialog-eyebrow">Widget-Bibliothek</div>
-                <h2>Widget hinzufÃ¼gen</h2>
+                <h2>Widget hinzufügen</h2>
               </div>
               <button className="btn btn-secondary" onClick={() => setWidgetLibraryOpen(false)}>
-                SchlieÃŸen
+                Schließen
               </button>
             </div>
             <div className="card-list compact-list">
               {availableWidgets.length === 0 ? (
-                <div className="widget-message">Alle verfÃ¼gbaren Widgets sind bereits im Dashboard vorhanden.</div>
+                <div className="widget-message">Alle verfügbaren Widgets sind bereits im Dashboard vorhanden.</div>
               ) : (
                 availableWidgets.map((definition) => (
                   <div key={definition.type} className="mini-card-link static-card">
@@ -1872,7 +1872,7 @@ export default function Dashboard() {
                     <span>{definition.description}</span>
                     <div className="widget-toolbar-end">
                       <button className="btn btn-primary" disabled={busyAction === `add-${definition.type}`} onClick={() => addWidget(definition.type)}>
-                        {busyAction === `add-${definition.type}` ? 'Wird hinzugefÃ¼gt ...' : 'HinzufÃ¼gen'}
+                        {busyAction === `add-${definition.type}` ? 'Wird hinzugefügt ...' : 'Hinzufügen'}
                       </button>
                     </div>
                   </div>
@@ -1937,7 +1937,7 @@ function WidgetSettingsDialog({
       officeDays: ['MONDAY', 'TUESDAY', 'WEDNESDAY'],
       homeOfficeDays: ['THURSDAY', 'FRIDAY'],
       outboundLabel: 'Hinfahrt',
-      returnLabel: 'RÃ¼ckfahrt',
+      returnLabel: 'Rückfahrt',
       departureTime: '08:00',
       returnDepartureTime: '17:00',
     }
@@ -1975,7 +1975,7 @@ function WidgetSettingsDialog({
             <h2>{widgetDefinitionMap[widget.type].label}</h2>
           </div>
           <button className="btn btn-secondary" onClick={onClose}>
-            SchlieÃŸen
+            Schließen
           </button>
         </div>
 
@@ -2134,12 +2134,12 @@ function WidgetSettingsDialog({
                   onChange={(e) => setSettings((current) => ({ ...current, botUsername: e.target.value }))}
                   placeholder="OpenClaw Bot"
                 />
-                <label className="form-label">BegrÃ¼ÃŸungstext</label>
+                <label className="form-label">Begrüßungstext</label>
                 <textarea
                   className="input widget-notes"
                   value={String(settings.greetingText || '')}
                   onChange={(e) => setSettings((current) => ({ ...current, greetingText: e.target.value }))}
-                  placeholder="Optionaler BegrÃ¼ÃŸungstext im Chat-Widget"
+                  placeholder="Optionaler Begrüßungstext im Chat-Widget"
                 />
                 <label className="form-label">Polling in Millisekunden</label>
                 <input
@@ -2156,7 +2156,7 @@ function WidgetSettingsDialog({
                   }
                 />
                 <div className="widget-message">
-                  Das Secret fÃ¼r Telegram bleibt im Backend. Hinterlege dort
+                  Das Secret für Telegram bleibt im Backend. Hinterlege dort
                   `TELEGRAM_BOT_TOKEN` oder `OPENCLAW_BOT_WEBHOOK_URL`.
                 </div>
               </div>
@@ -2170,10 +2170,10 @@ function WidgetSettingsDialog({
               <input className="input" value={commute.sourceAddress} onChange={(e) => setCommute((current) => ({ ...current, sourceAddress: e.target.value }))} placeholder="Startadresse" />
               <input className="input" value={commute.destinationAddress} onChange={(e) => setCommute((current) => ({ ...current, destinationAddress: e.target.value }))} placeholder="Zieladresse" />
               <input className="input" value={commute.departureTime || ''} onChange={(e) => setCommute((current) => ({ ...current, departureTime: e.target.value }))} placeholder="Abfahrt Hinfahrt" />
-              <input className="input" value={commute.returnDepartureTime || ''} onChange={(e) => setCommute((current) => ({ ...current, returnDepartureTime: e.target.value }))} placeholder="Abfahrt RÃ¼ckfahrt" />
+              <input className="input" value={commute.returnDepartureTime || ''} onChange={(e) => setCommute((current) => ({ ...current, returnDepartureTime: e.target.value }))} placeholder="Abfahrt Rückfahrt" />
             </div>
             <div className="widget-subsection">
-              <label className="form-label">BÃ¼rotage</label>
+              <label className="form-label">Bürotage</label>
               <div className="option-grid">
                 {Object.entries(weekdayLabels).map(([day, label]) => (
                   <button key={day} type="button" className={`chip-button ${commute.officeDays.includes(day) ? 'active' : ''}`} onClick={() => toggleDay('officeDays', day)}>
