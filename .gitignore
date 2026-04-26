@@ -30,4 +30,3 @@ backups/
 docker-compose.personal.yml
 docker-compose.ghcr.personal.yml
 docker/nextcloud/Caddyfile.personal
-docker-compose.ghcr.yml
