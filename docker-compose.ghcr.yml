@@ -370,6 +370,8 @@ services:
       OVERWRITECLIURL: "${NEXTCLOUD_PUBLIC_URL:-https://localhost:8443}"
       PHP_MEMORY_LIMIT: "${NEXTCLOUD_PHP_MEMORY_LIMIT:-512M}"
       PHP_UPLOAD_LIMIT: "${NEXTCLOUD_PHP_UPLOAD_LIMIT:-512M}"
+    extra_hosts:
+      - "${OIDC_PUBLIC_HOST_ALIAS:-localhost}:${OIDC_PUBLIC_HOST_IP:-127.0.0.1}"
     volumes:
       - nextcloud_data:/var/www/html/data
       - nextcloud_config:/var/www/html/config
