@@ -6,6 +6,7 @@ const weekdayValues = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', '
 
 const jsonRecordSchema = z.record(z.string(), z.any());
 const bookmarkUrlSchema = z.string().trim().min(1).max(2048);
+const bookmarkTagsSchema = z.array(z.string().trim().min(1).max(50)).max(30);
 const faviconValueSchema = z
   .string()
   .trim()
@@ -65,9 +66,13 @@ export const createBookmarkSchema = z.object({
     title: z.string().trim().min(1).max(255),
     url: bookmarkUrlSchema.nullable().optional(),
     description: z.string().trim().max(4000).nullable().optional(),
+    notes: z.string().trim().max(10000).nullable().optional(),
     category: z.string().trim().max(100).nullable().optional(),
+    tags: bookmarkTagsSchema.optional(),
     faviconUrl: faviconValueSchema.nullable().optional(),
     isFavorite: z.boolean().optional(),
+    isPinned: z.boolean().optional(),
+    isArchived: z.boolean().optional(),
     showInToolbar: z.boolean().optional(),
   }),
 });
@@ -79,10 +84,18 @@ export const updateBookmarkSchema = z.object({
     itemType: z.enum(['BOOKMARK', 'FOLDER']).optional(),
     url: bookmarkUrlSchema.nullable().optional(),
     description: z.string().trim().max(4000).nullable().optional(),
+    notes: z.string().trim().max(10000).nullable().optional(),
     category: z.string().trim().max(100).nullable().optional(),
+    tags: bookmarkTagsSchema.optional(),
     faviconUrl: faviconValueSchema.nullable().optional(),
     isFavorite: z.boolean().optional(),
+    isPinned: z.boolean().optional(),
+    isArchived: z.boolean().optional(),
     showInToolbar: z.boolean().optional(),
+    linkStatus: z.enum(['UNKNOWN', 'OK', 'BROKEN', 'REDIRECTED']).optional(),
+    httpStatus: z.number().int().min(100).max(599).nullable().optional(),
+    lastCheckedAt: z.string().datetime().nullable().optional(),
+    lastOpenedAt: z.string().datetime().nullable().optional(),
     sortOrder: z.number().int().min(0).max(999).optional(),
   }),
   params: z.object({

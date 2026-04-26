@@ -56,37 +56,45 @@ export default function AppHeader({
         <p className="dashboard-brand-copy">{subtitle}</p>
       </div>
       <nav className="dashboard-topbar-actions" aria-label="Hauptnavigation">
-        <ThemeSelector />
-        <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
-          Dashboard
-        </NavLink>
-        <NavLink to="/calendar-contacts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          Kalender & Kontakte
-        </NavLink>
-        {isAdmin && (
-          <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Admin
+        <div className="dashboard-primary-nav">
+          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+            Dashboard
           </NavLink>
-        )}
-        {onToggleEditMode && (
-          <button className={`btn ${editMode ? 'btn-primary' : 'btn-secondary'}`} onClick={onToggleEditMode}>
-            {editMode ? 'Layout beenden' : 'Layout'}
+          <NavLink to="/bookmarks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Lesezeichen
+          </NavLink>
+          <NavLink to="/calendar-contacts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Kalender & Kontakte
+          </NavLink>
+          {isAdmin && (
+            <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+              Admin
+            </NavLink>
+          )}
+        </div>
+
+        <div className="dashboard-utility-nav">
+          <ThemeSelector />
+          {onToggleEditMode && (
+            <button className={`topbar-action-button ${editMode ? 'active' : ''}`} onClick={onToggleEditMode}>
+              {editMode ? 'Layout beenden' : 'Layout'}
+            </button>
+          )}
+          {onOpenWidgetLibrary && (
+            <button className="topbar-action-button" onClick={onOpenWidgetLibrary}>
+              Widget
+            </button>
+          )}
+          {onOpenProfile && (
+            <button className="topbar-action-button" onClick={onOpenProfile}>
+              Profil
+            </button>
+          )}
+          {actions}
+          <button className="topbar-logout-button" onClick={handleLogout}>
+            Abmelden
           </button>
-        )}
-        {onOpenWidgetLibrary && (
-          <button className="btn btn-secondary" onClick={onOpenWidgetLibrary}>
-            Widget
-          </button>
-        )}
-        {onOpenProfile && (
-          <button className="btn btn-secondary" onClick={onOpenProfile}>
-            Profil
-          </button>
-        )}
-        {actions}
-        <button className="text-button danger" onClick={handleLogout}>
-          Abmelden
-        </button>
+        </div>
       </nav>
     </header>
   );

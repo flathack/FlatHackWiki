@@ -132,11 +132,21 @@ export interface BookmarkItem {
   itemType: 'BOOKMARK' | 'FOLDER';
   title: string;
   url?: string | null;
+  normalizedUrl?: string | null;
+  domain?: string | null;
   description?: string | null;
+  notes?: string | null;
   category?: string | null;
+  tags: string[];
   faviconUrl?: string | null;
   isFavorite: boolean;
+  isPinned: boolean;
+  isArchived: boolean;
   showInToolbar: boolean;
+  linkStatus: 'UNKNOWN' | 'OK' | 'BROKEN' | 'REDIRECTED';
+  httpStatus?: number | null;
+  lastCheckedAt?: string | null;
+  lastOpenedAt?: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -149,6 +159,8 @@ export interface BookmarkState {
   bookmarkCount: number;
   folderCount: number;
   favoriteCount: number;
+  archivedCount: number;
+  pinnedCount: number;
 }
 export interface CommuteProfile {
   id: string;
@@ -338,9 +350,13 @@ export const dashboardApi = {
       title: string;
       url?: string | null;
       description?: string | null;
+      notes?: string | null;
       category?: string | null;
+      tags?: string[];
       faviconUrl?: string | null;
       isFavorite?: boolean;
+      isPinned?: boolean;
+      isArchived?: boolean;
       showInToolbar?: boolean;
     }) => api.post<BookmarkItem>('/dashboard/bookmarks', data),
     update: (bookmarkId: string, data: Partial<BookmarkItem>) => api.patch<BookmarkItem>(`/dashboard/bookmarks/${bookmarkId}`, data),

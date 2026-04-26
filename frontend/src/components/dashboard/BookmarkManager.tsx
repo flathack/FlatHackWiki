@@ -538,6 +538,7 @@ export function BookmarkBar({
                           ? 'drop-target'
                           : ''
                       }`}
+                      title={item.title}
                       aria-expanded={openFolderId === item.id}
                       draggable
                       onDragStart={() => setDragState({ itemId: item.id })}
@@ -700,6 +701,7 @@ function BookmarkBarLink({
       rel="noreferrer"
       draggable={draggable}
       className={`bookmark-bar-item ${nested ? 'bookmark-bar-item-nested' : ''} ${isDragging ? 'dragging' : ''}`}
+      title={item.title}
       onDragStart={() => onDragStart?.()}
       onDragEnd={() => onDragEnd?.()}
       onContextMenu={(event) => onContextMenu(event, item)}

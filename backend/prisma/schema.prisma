@@ -193,11 +193,21 @@ model Bookmark {
   itemType    BookmarkItemType @default(BOOKMARK) @map("item_type")
   title       String   @db.VarChar(255)
   url         String?  @db.VarChar(2048)
+  normalizedUrl String? @map("normalized_url") @db.VarChar(2048)
+  domain      String?  @db.VarChar(255)
   description String?  @db.Text
+  notes       String?  @db.Text
   category    String?  @db.VarChar(100)
+  tags        String[] @default([])
   faviconUrl  String?  @map("favicon_url") @db.Text
   isFavorite  Boolean  @default(false) @map("is_favorite")
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  isArchived  Boolean  @default(false) @map("is_archived")
   showInToolbar Boolean @default(true) @map("show_in_toolbar")
+  linkStatus  BookmarkLinkStatus @default(UNKNOWN) @map("link_status")
+  httpStatus  Int?     @map("http_status")
+  lastCheckedAt DateTime? @map("last_checked_at")
+  lastOpenedAt DateTime? @map("last_opened_at")
   sortOrder   Int      @default(0) @map("sort_order")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -207,12 +217,22 @@ model Bookmark {
   children Bookmark[] @relation("BookmarkHierarchy")
 
   @@index([userId, parentId, sortOrder])
+  @@index([userId, isArchived, isFavorite])
+  @@index([userId, normalizedUrl])
+  @@index([userId, domain])
   @@map("bookmarks")
 }
 
 enum BookmarkItemType {
   BOOKMARK
   FOLDER
+}
+
+enum BookmarkLinkStatus {
+  UNKNOWN
+  OK
+  BROKEN
+  REDIRECTED
 }
 
 model CommuteProfile {

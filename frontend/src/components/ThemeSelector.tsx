@@ -1,30 +1,34 @@
+import { useId } from 'react';
 import { useThemeStore, type ThemeName } from '../context/theme.store';
 
-const THEMES: Array<{ value: ThemeName; label: string }> = [
-  { value: 'light', label: 'Hell' },
-  { value: 'sepia', label: 'Sepia' },
-  { value: 'midnight', label: 'Dunkel' },
+const THEMES: Array<{ value: ThemeName; label: string; icon: string }> = [
+  { value: 'light', label: 'Hell', icon: 'H' },
+  { value: 'sepia', label: 'Sepia', icon: 'S' },
+  { value: 'midnight', label: 'Dunkel', icon: 'D' },
 ];
 
 export default function ThemeSelector() {
   const { theme, setTheme } = useThemeStore();
+  const labelId = useId();
 
   return (
-    <div className="theme-selector-inline">
-      <label className="theme-selector-label">
-        Design
-      </label>
-      <select
-        value={theme}
-        onChange={(e) => setTheme(e.target.value as ThemeName)}
-        className="theme-selector-input"
-      >
+    <div className="theme-selector-inline" role="group" aria-labelledby={labelId}>
+      <span id={labelId} className="theme-selector-label">Design</span>
+      <div className="theme-segmented-control">
         {THEMES.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+          <button
+            key={option.value}
+            type="button"
+            className={`theme-segment ${theme === option.value ? 'active' : ''}`}
+            onClick={() => setTheme(option.value)}
+            title={option.label}
+            aria-pressed={theme === option.value}
+          >
+            <span aria-hidden="true">{option.icon}</span>
+            <strong>{option.label}</strong>
+          </button>
         ))}
-      </select>
+      </div>
     </div>
   );
 }

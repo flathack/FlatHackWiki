@@ -106,15 +106,35 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-topbar-actions {
+  @apply flex flex-wrap items-center justify-end gap-2;
+}
+
+.dashboard-primary-nav {
+  @apply flex flex-wrap items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1;
+}
+
+.dashboard-utility-nav {
   @apply flex flex-wrap items-center gap-2;
 }
 
 .nav-link {
-  @apply rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900;
+  @apply rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-white hover:text-gray-900 hover:shadow-sm;
 }
 
 .nav-link.active {
-  @apply bg-sky-100 text-sky-900;
+  @apply bg-white text-sky-900 shadow-sm;
+}
+
+.topbar-action-button {
+  @apply rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition hover:border-sky-300 hover:text-sky-900;
+}
+
+.topbar-action-button.active {
+  @apply border-sky-300 bg-sky-50 text-sky-900;
+}
+
+.topbar-logout-button {
+  @apply rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-100 hover:text-red-800;
 }
 
 .dashboard-main-shell {
@@ -122,15 +142,35 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .theme-selector-inline {
-  @apply inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 shadow-sm;
+  @apply inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 py-1.5 shadow-sm;
 }
 
 .theme-selector-label {
-  @apply text-xs font-semibold uppercase tracking-wide text-gray-500;
+  @apply sr-only;
 }
 
-.theme-selector-input {
-  @apply min-w-28 rounded-md border border-gray-300 bg-white px-2 py-1 text-sm outline-none;
+.theme-segmented-control {
+  @apply grid grid-cols-3 gap-1 rounded-md bg-gray-100 p-1;
+}
+
+.theme-segment {
+  @apply inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-gray-500 transition hover:bg-white hover:text-gray-900 hover:shadow-sm;
+}
+
+.theme-segment span {
+  @apply flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold text-gray-500 shadow-sm;
+}
+
+.theme-segment strong {
+  @apply hidden sm:inline;
+}
+
+.theme-segment.active {
+  @apply bg-white text-sky-800 shadow-sm;
+}
+
+.theme-segment.active span {
+  @apply bg-sky-600 text-white;
 }
 
 .dashboard-hero-card {
@@ -181,8 +221,24 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
 }
 
+.dashboard-hero-meta {
+  @apply flex flex-wrap items-center justify-end gap-2;
+}
+
 .dashboard-search-provider {
   @apply rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200;
+}
+
+.dashboard-weather-chip {
+  @apply flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3 py-2 text-xs text-sky-50 backdrop-blur;
+}
+
+.dashboard-weather-chip strong {
+  @apply text-sm font-semibold text-white;
+}
+
+.dashboard-weather-chip span {
+  @apply text-xs text-sky-100/85;
 }
 
 .web-search-box {
@@ -244,15 +300,15 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-bar-shell {
-  @apply relative z-20 flex items-center gap-2 overflow-visible border border-gray-200 bg-white px-2 py-2 shadow-sm;
+  @apply relative z-20 flex items-center gap-1.5 overflow-visible border border-gray-200 bg-white px-1.5 py-1.5 shadow-sm;
 }
 
 .bookmark-bar-track {
-  @apply flex flex-1 flex-wrap items-center gap-1.5 overflow-visible;
+  @apply flex flex-1 flex-wrap items-center gap-1 overflow-visible;
 }
 
 .bookmark-drop-slot {
-  @apply h-10 w-2 shrink-0 rounded-full border border-dashed border-transparent bg-transparent transition;
+  @apply h-8 w-1.5 shrink-0 rounded-full border border-dashed border-transparent bg-transparent transition;
 }
 
 .bookmark-drop-slot.active {
@@ -264,11 +320,11 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-bar-item {
-  @apply inline-flex max-w-full items-center gap-1.5 border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
+  @apply inline-flex min-w-0 max-w-[9.5rem] shrink-0 items-center gap-1 border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
 }
 
 .bookmark-bar-item-nested {
-  @apply w-full justify-start rounded-lg border-0 bg-transparent px-2 py-2;
+  @apply w-full max-w-none justify-start rounded-md border-0 bg-transparent px-2 py-1.5;
 }
 
 .bookmark-bar-item.dragging,
@@ -282,15 +338,15 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-item-title {
-  @apply truncate;
+  @apply min-w-0 truncate whitespace-nowrap;
 }
 
 .bookmark-favicon {
-  @apply h-4 w-4 shrink-0 rounded-sm;
+  @apply h-3.5 w-3.5 shrink-0 rounded-sm;
 }
 
 .bookmark-favicon-fallback {
-  @apply inline-flex items-center justify-center rounded-md bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700;
+  @apply inline-flex h-3.5 w-3.5 items-center justify-center overflow-hidden rounded-sm bg-sky-100 p-0 text-[0px] font-semibold uppercase text-sky-700;
 }
 
 .bookmark-folder {
@@ -306,7 +362,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-folder-menu {
-  @apply absolute left-0 top-[calc(100%+0.4rem)] z-40 max-h-[min(28rem,70vh)] min-w-[240px] overflow-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-xl;
+  @apply absolute left-0 top-[calc(100%+0.3rem)] z-40 max-h-[min(28rem,70vh)] min-w-[240px] overflow-auto rounded-lg border border-gray-200 bg-white p-1.5 shadow-xl;
 }
 
 .bookmark-folder-empty {
@@ -322,7 +378,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-folder-entry {
-  @apply inline-flex w-full items-center gap-2 rounded-xl border border-transparent bg-transparent px-2 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-100 hover:text-sky-900;
+  @apply inline-flex w-full items-center gap-1.5 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-left text-sm text-gray-700 transition hover:bg-gray-100 hover:text-sky-900;
 }
 
 .bookmark-folder-subtitle {
@@ -330,11 +386,11 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-folder-icon {
-  @apply inline-flex h-5 w-5 shrink-0 items-center justify-center text-slate-700;
+  @apply inline-flex h-4 w-4 shrink-0 items-center justify-center text-slate-700;
 }
 
 .bookmark-folder-icon-svg {
-  @apply h-5 w-5;
+  @apply h-4 w-4;
 }
 
 .bookmark-bar-empty {
@@ -350,11 +406,11 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .bookmark-gear-button {
-  @apply inline-flex shrink-0 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
+  @apply inline-flex shrink-0 items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-1.5 text-sm font-medium text-gray-700 transition hover:border-sky-300 hover:text-sky-900;
 }
 
 .bookmark-gear-icon {
-  @apply h-5 w-5;
+  @apply h-4 w-4;
 }
 
 .bookmark-context-menu {
@@ -441,20 +497,529 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply flex flex-col gap-2;
 }
 
+.bookmark-app-shell {
+  @apply mx-auto flex w-full max-w-[1800px] flex-col gap-5 px-4 pb-8 sm:px-6 lg:px-8;
+}
+
+.bookmark-app-hero {
+  @apply grid gap-4 border border-gray-200 bg-slate-950 p-5 text-white shadow-sm lg:grid-cols-[1fr_460px] lg:items-end;
+}
+
+.bookmark-quick-add {
+  @apply flex flex-col gap-2 sm:flex-row;
+}
+
+.bookmark-manager-layout {
+  @apply grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[280px_minmax(0,1fr)_360px];
+}
+
+.bookmark-sidebar,
+.bookmark-content-panel,
+.bookmark-detail-panel {
+  @apply border border-gray-200 bg-white shadow-sm;
+}
+
+.bookmark-sidebar {
+  @apply flex flex-col gap-5 p-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-auto;
+}
+
+.bookmark-sidebar-section {
+  @apply flex flex-col gap-2;
+}
+
+.bookmark-sidebar-heading {
+  @apply flex items-center justify-between gap-2;
+}
+
+.bookmark-sidebar-title {
+  @apply text-xs font-semibold uppercase tracking-[0.18em] text-gray-500;
+}
+
+.bookmark-sidebar-button {
+  @apply flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-gray-700 transition hover:bg-sky-50 hover:text-sky-800;
+}
+
+.bookmark-sidebar-button.active {
+  @apply bg-sky-100 font-semibold text-sky-900;
+}
+
+.bookmark-sidebar-button strong {
+  @apply text-xs text-gray-500;
+}
+
+.bookmark-tag-cloud {
+  @apply flex flex-wrap gap-2;
+}
+
+.bookmark-tag-filter {
+  @apply w-fit border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-sky-300 hover:text-sky-800;
+}
+
+.bookmark-tag-filter.active {
+  @apply border-sky-300 bg-sky-100 text-sky-900;
+}
+
+.bookmark-content-panel {
+  @apply flex min-h-[640px] flex-col gap-3 p-3;
+}
+
+.bookmark-toolbar {
+  @apply flex flex-col gap-2 border-b border-gray-200 pb-3 xl:flex-row xl:items-center;
+}
+
+.bookmark-view-toggle {
+  @apply flex shrink-0 gap-1 rounded-xl bg-gray-100 p-1;
+}
+
+.bookmark-view-toggle button,
+.bookmark-panel-tabs button {
+  @apply px-3 py-2 text-sm font-semibold text-gray-600 transition;
+}
+
+.bookmark-view-toggle button.active,
+.bookmark-panel-tabs button.active {
+  @apply bg-white text-sky-800 shadow-sm;
+}
+
+.bookmark-bulk-bar {
+  @apply flex flex-wrap items-center gap-2 border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900;
+}
+
+.bookmark-list {
+  @apply flex flex-col gap-2;
+}
+
+.bookmark-card-grid {
+  @apply grid gap-3 xl:grid-cols-2;
+}
+
+.bookmark-result-card {
+  @apply grid cursor-pointer grid-cols-[auto_40px_minmax(0,1fr)] items-start gap-3 border border-gray-200 bg-white p-3 transition hover:border-sky-300 hover:shadow-sm;
+}
+
+.bookmark-result-card.active {
+  @apply border-sky-400 bg-sky-50;
+}
+
+.bookmark-result-card.visual {
+  @apply grid-cols-[auto_48px_minmax(0,1fr)] p-4;
+}
+
+.bookmark-result-icon,
+.bookmark-detail-icon {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center bg-gray-100 object-contain text-xs font-bold text-gray-600;
+}
+
+.bookmark-result-icon.fallback,
+.bookmark-detail-icon.fallback {
+  @apply bg-slate-900 text-white;
+}
+
+.bookmark-result-copy {
+  @apply min-w-0;
+}
+
+.bookmark-result-title-row {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.bookmark-result-title-row strong {
+  @apply max-w-full truncate text-sm text-gray-900;
+}
+
+.bookmark-result-copy span {
+  @apply block truncate text-xs text-gray-500;
+}
+
+.bookmark-result-copy p {
+  @apply mt-1 line-clamp-2 text-sm text-gray-600;
+}
+
+.bookmark-result-tags {
+  @apply mt-2 flex flex-wrap gap-1.5;
+}
+
+.bookmark-result-tags em,
+.bookmark-pill {
+  @apply rounded-full bg-gray-100 px-2 py-1 text-[11px] not-italic text-gray-600;
+}
+
+.bookmark-pill {
+  @apply bg-sky-100 font-semibold text-sky-800;
+}
+
+.bookmark-pill.warning {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.bookmark-result-actions {
+  @apply col-span-3 flex flex-wrap justify-end gap-2 sm:col-span-1 sm:flex-col sm:items-end;
+}
+
+.bookmark-table-wrap {
+  @apply overflow-auto;
+}
+
+.bookmark-table {
+  @apply min-w-full border-collapse text-sm;
+}
+
+.bookmark-table th {
+  @apply border-b border-gray-200 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.16em] text-gray-500;
+}
+
+.bookmark-table td {
+  @apply border-b border-gray-100 px-3 py-2 align-top text-gray-700;
+}
+
+.bookmark-table tr {
+  @apply cursor-pointer hover:bg-sky-50;
+}
+
+.bookmark-table tr.active {
+  @apply bg-sky-50;
+}
+
+.bookmark-table small {
+  @apply mt-1 block max-w-[320px] truncate text-xs text-gray-500;
+}
+
+.bookmark-detail-panel {
+  @apply flex flex-col gap-4 p-3 lg:col-span-2 2xl:col-span-1 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)] 2xl:overflow-auto;
+}
+
+.bookmark-panel-tabs {
+  @apply grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1;
+}
+
+.bookmark-editor,
+.bookmark-detail,
+.bookmark-import-export {
+  @apply flex flex-col gap-3;
+}
+
+.bookmark-editor h2,
+.bookmark-detail h2,
+.bookmark-import-export h3 {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.bookmark-editor textarea {
+  @apply min-h-24;
+}
+
+.bookmark-notes-field {
+  @apply min-h-32;
+}
+
+.bookmark-editor-checks {
+  @apply grid gap-2 text-sm text-gray-700 sm:grid-cols-2;
+}
+
+.bookmark-editor-checks label {
+  @apply flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2;
+}
+
+.bookmark-editor-actions,
+.bookmark-detail-actions,
+.bookmark-export-actions {
+  @apply flex flex-wrap gap-2;
+}
+
+.bookmark-detail-icon {
+  @apply h-14 w-14;
+}
+
+.bookmark-detail > a {
+  @apply break-all text-sm text-sky-700;
+}
+
+.bookmark-detail-text {
+  @apply rounded-xl bg-gray-50 p-3 text-sm text-gray-700;
+}
+
+.bookmark-import-export {
+  @apply border-t border-gray-200 pt-4;
+}
+
+.bookmark-import-export textarea {
+  @apply min-h-28;
+}
+
+.bookmark-app-shell {
+  max-width: none;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(88, 196, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.12), transparent 24%),
+    linear-gradient(180deg, #06101d 0%, #091422 50%, #050b14 100%);
+  color: #edf3ff;
+  position: relative;
+  overflow: hidden;
+}
+
+.bookmark-app-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 92%);
+}
+
+.bookmark-app-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.bookmark-app-hero {
+  border-color: rgba(132, 177, 255, 0.18);
+  background: linear-gradient(180deg, rgba(11, 24, 42, 0.94), rgba(7, 16, 29, 0.94));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
+
+.bookmark-sidebar,
+.bookmark-content-panel,
+.bookmark-detail-panel {
+  border-color: rgba(132, 177, 255, 0.18);
+  background: linear-gradient(180deg, rgba(14, 30, 52, 0.88), rgba(7, 16, 29, 0.9));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.bookmark-sidebar-title,
+.bookmark-result-copy span,
+.bookmark-table th,
+.bookmark-table small,
+.bookmark-detail > a {
+  color: #9fb2cf;
+}
+
+.bookmark-sidebar-button,
+.bookmark-tag-filter,
+.bookmark-result-card,
+.bookmark-table td,
+.bookmark-detail-text,
+.bookmark-editor-checks label,
+.bookmark-view-toggle,
+.bookmark-panel-tabs,
+.bookmark-bulk-bar,
+.bookmark-tree-empty {
+  border-color: rgba(132, 177, 255, 0.16);
+  background: rgba(6, 18, 30, 0.72);
+  color: #dbeafe;
+}
+
+.bookmark-sidebar-button:hover,
+.bookmark-sidebar-button.active,
+.bookmark-tag-filter:hover,
+.bookmark-tag-filter.active,
+.bookmark-result-card:hover,
+.bookmark-result-card.active,
+.bookmark-table tr:hover,
+.bookmark-table tr.active,
+.bookmark-view-toggle button.active,
+.bookmark-panel-tabs button.active {
+  border-color: rgba(88, 196, 255, 0.42);
+  background: rgba(88, 196, 255, 0.14);
+  color: #edf3ff;
+}
+
+.bookmark-result-title-row strong,
+.bookmark-editor h2,
+.bookmark-detail h2,
+.bookmark-import-export h3,
+.bookmark-table td strong,
+.bookmark-detail .profile-detail-list strong {
+  color: #edf3ff;
+}
+
+.bookmark-result-copy p {
+  color: #c7d2fe;
+}
+
+.bookmark-result-icon,
+.bookmark-detail-icon {
+  background: rgba(88, 196, 255, 0.12);
+  color: #89f0ff;
+}
+
+.bookmark-result-icon.fallback,
+.bookmark-detail-icon.fallback {
+  background: linear-gradient(135deg, #58c4ff, #89f0ff);
+  color: #04111f;
+}
+
+.bookmark-pill,
+.bookmark-result-tags em {
+  background: rgba(88, 196, 255, 0.12);
+  color: #89f0ff;
+}
+
+.bookmark-pill.warning {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d;
+}
+
+.bookmark-app-shell .bookmark-quick-add .input,
+.bookmark-app-shell .bookmark-toolbar .input,
+.bookmark-app-shell .bookmark-editor .input,
+.bookmark-app-shell .bookmark-import-export .input,
+.bookmark-app-shell .bookmark-detail-panel select {
+  border-color: rgba(132, 177, 255, 0.18);
+  background: rgba(6, 14, 26, 0.82);
+  color: #edf3ff;
+}
+
+.bookmark-app-shell .bookmark-quick-add .input::placeholder,
+.bookmark-app-shell .bookmark-toolbar .input::placeholder,
+.bookmark-app-shell .bookmark-editor .input::placeholder,
+.bookmark-app-shell .bookmark-import-export .input::placeholder {
+  color: #7488a8;
+}
+
+html:not([data-theme='midnight']) .bookmark-app-shell .input,
+html:not([data-theme='midnight']) .bookmark-app-shell select,
+html:not([data-theme='midnight']) .bookmark-app-shell textarea {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+html:not([data-theme='midnight']) .bookmark-app-shell .input::placeholder,
+html:not([data-theme='midnight']) .bookmark-app-shell textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+html[data-theme='light'] .bookmark-app-shell .bookmark-quick-add input.input,
+html[data-theme='light'] .bookmark-app-shell .bookmark-toolbar input.input,
+html[data-theme='light'] .bookmark-app-shell .bookmark-editor input.input,
+html[data-theme='light'] .bookmark-app-shell .bookmark-editor textarea.input,
+html[data-theme='light'] .bookmark-app-shell .bookmark-import-export textarea.input,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-quick-add input.input,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-toolbar input.input,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor input.input,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor textarea.input,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.input {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+html[data-theme='light'] .bookmark-app-shell .bookmark-quick-add input.input::placeholder,
+html[data-theme='light'] .bookmark-app-shell .bookmark-toolbar input.input::placeholder,
+html[data-theme='light'] .bookmark-app-shell .bookmark-editor input.input::placeholder,
+html[data-theme='light'] .bookmark-app-shell .bookmark-editor textarea.input::placeholder,
+html[data-theme='light'] .bookmark-app-shell .bookmark-import-export textarea.input::placeholder,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-quick-add input.input::placeholder,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-toolbar input.input::placeholder,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor input.input::placeholder,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor textarea.input::placeholder,
+html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+.bookmark-folder-tree {
+  @apply flex flex-col gap-1;
+}
+
+.bookmark-folder-tree-node {
+  @apply flex flex-col gap-1;
+}
+
+.bookmark-folder-tree-row {
+  @apply flex items-center gap-1 border border-transparent py-1 pr-1 transition;
+  border-radius: 10px;
+}
+
+.bookmark-folder-tree-row:hover,
+.bookmark-folder-tree-row.active {
+  border-color: rgba(88, 196, 255, 0.32);
+  background: rgba(88, 196, 255, 0.1);
+}
+
+.bookmark-folder-tree-main {
+  @apply flex min-w-0 flex-1 items-center gap-2 text-left text-sm font-semibold;
+  color: #dbeafe;
+}
+
+.bookmark-folder-tree-caret {
+  @apply flex h-5 w-5 shrink-0 items-center justify-center text-xs;
+  color: #58c4ff;
+}
+
+.bookmark-folder-tree-name {
+  @apply min-w-0 flex-1 truncate;
+}
+
+.bookmark-folder-tree-main strong {
+  @apply shrink-0 text-xs;
+  color: #9fb2cf;
+}
+
+.bookmark-folder-tree-actions {
+  @apply flex shrink-0 items-center gap-1 opacity-70 transition;
+}
+
+.bookmark-folder-tree-row:hover .bookmark-folder-tree-actions {
+  @apply opacity-100;
+}
+
+.bookmark-folder-tree-actions button {
+  @apply flex h-6 w-6 items-center justify-center border border-transparent text-xs font-bold transition;
+  border-radius: 7px;
+  color: #9fb2cf;
+}
+
+.bookmark-folder-tree-actions button:hover {
+  border-color: rgba(88, 196, 255, 0.32);
+  background: rgba(88, 196, 255, 0.14);
+  color: #89f0ff;
+}
+
+.bookmark-tree-empty {
+  @apply px-3 py-3 text-sm;
+  border-radius: 12px;
+}
+
 .dashboard-mobile-stack {
   @apply flex flex-col gap-4;
 }
 
+.dashboard-widget-grid {
+  column-gap: 1rem;
+  column-count: 1;
+}
+
 .dashboard-widget-frame {
-  @apply flex h-full min-h-0 flex-col overflow-hidden border border-gray-200 bg-white shadow-sm;
+  @apply flex min-h-0 flex-col border border-gray-200 bg-white shadow-sm;
+}
+
+.dashboard-widget-grid .dashboard-widget-frame {
+  @apply mb-4;
+  break-inside: avoid;
+}
+
+.auto-widget-frame {
+  @apply h-auto overflow-visible;
+}
+
+.layout-widget-frame {
+  @apply h-full overflow-hidden;
 }
 
 .mobile-frame {
-  @apply overflow-hidden;
+  @apply overflow-visible;
 }
 
 .dashboard-widget-toolbar {
-  @apply flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-3 py-2;
+  @apply flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-3 py-1.5;
 }
 
 .dashboard-widget-toolbar-actions {
@@ -466,11 +1031,15 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-shell {
-  @apply flex h-full min-h-0 flex-1 flex-col gap-4 p-4;
+  @apply flex min-h-0 flex-1 flex-col gap-3 p-3;
+}
+
+.widget-shell-compact {
+  @apply gap-2.5 p-3;
 }
 
 .widget-shell-header {
-  @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+  @apply flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between;
 }
 
 .widget-shell-title-row {
@@ -478,7 +1047,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-shell-title {
-  @apply text-lg font-semibold text-gray-900;
+  @apply text-base font-semibold text-gray-900;
 }
 
 .widget-shell-badge {
@@ -494,15 +1063,55 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-shell-body {
-  @apply flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden pr-1;
+  @apply flex min-h-0 flex-1 flex-col gap-2.5 overflow-x-hidden;
+}
+
+.layout-widget-frame .widget-shell {
+  @apply h-full;
+}
+
+.layout-widget-frame .widget-shell-body {
+  @apply overflow-y-auto pr-1;
+}
+
+.auto-widget-frame .widget-shell {
+  @apply h-auto;
+}
+
+.auto-widget-frame .widget-shell-body {
+  @apply overflow-visible pr-0;
 }
 
 .widget-shell-body > * {
   @apply shrink-0;
 }
 
+@media (min-width: 1024px) {
+  .dashboard-widget-grid {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 1536px) {
+  .dashboard-widget-grid {
+    column-count: 3;
+  }
+}
+
 .widget-inline-form {
   @apply flex flex-col gap-3 sm:flex-row;
+}
+
+.widget-inline-form-compact {
+  @apply items-center gap-2;
+}
+
+.widget-inline-form-compact .input {
+  @apply min-h-[40px];
+}
+
+.widget-inline-button {
+  @apply whitespace-nowrap px-3;
 }
 
 .stretch-mobile {
@@ -510,7 +1119,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-stack {
-  @apply flex min-h-0 flex-col gap-4;
+  @apply flex min-h-0 flex-col gap-3;
 }
 
 .widget-form-grid {
@@ -538,11 +1147,11 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-stat-grid {
-  @apply grid gap-3 sm:grid-cols-2;
+  @apply grid gap-2.5 sm:grid-cols-2;
 }
 
 .widget-stat-box {
-  @apply rounded-2xl bg-gray-50 px-3 py-3;
+  @apply rounded-2xl bg-gray-50 px-3 py-2.5;
 }
 
 .widget-stat-box span {
@@ -550,7 +1159,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .widget-stat-box strong {
-  @apply mt-2 block text-xl font-semibold text-gray-900;
+  @apply mt-1.5 block text-lg font-semibold text-gray-900;
 }
 
 .widget-message {
@@ -566,7 +1175,7 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .card-list {
-  @apply grid gap-3;
+  @apply grid gap-2.5;
 }
 
 .widget-shell-body .card-list,
@@ -969,7 +1578,16 @@ html[data-theme='midnight'] .checkbox-card,
 html[data-theme='midnight'] .widget-drag-handle,
 html[data-theme='midnight'] .bookmark-bar-shell,
 html[data-theme='midnight'] .bookmark-folder-menu,
-html[data-theme='midnight'] .bookmark-tree-row {
+html[data-theme='midnight'] .bookmark-tree-row,
+html[data-theme='midnight'] .bookmark-sidebar,
+html[data-theme='midnight'] .bookmark-content-panel,
+html[data-theme='midnight'] .bookmark-detail-panel,
+html[data-theme='midnight'] .bookmark-result-card,
+html[data-theme='midnight'] .bookmark-table,
+html[data-theme='midnight'] .bookmark-editor-checks label,
+html[data-theme='midnight'] .bookmark-detail-text,
+html[data-theme='midnight'] .bookmark-view-toggle,
+html[data-theme='midnight'] .bookmark-panel-tabs {
   background-color: #111827 !important;
   border-color: #374151 !important;
 }
@@ -982,7 +1600,12 @@ html[data-theme='midnight'] .widget-stat-box strong,
 html[data-theme='midnight'] .form-label,
 html[data-theme='midnight'] .dashboard-brand-copy,
 html[data-theme='midnight'] .widget-subsection h4,
-html[data-theme='midnight'] .bookmark-tree-main strong {
+html[data-theme='midnight'] .bookmark-tree-main strong,
+html[data-theme='midnight'] .bookmark-result-title-row strong,
+html[data-theme='midnight'] .bookmark-editor h2,
+html[data-theme='midnight'] .bookmark-detail h2,
+html[data-theme='midnight'] .bookmark-import-export h3,
+html[data-theme='midnight'] .bookmark-table td strong {
   color: #f3f4f6 !important;
 }
 
@@ -996,7 +1619,14 @@ html[data-theme='midnight'] .checkbox-card,
 html[data-theme='midnight'] .text-button,
 html[data-theme='midnight'] .widget-message,
 html[data-theme='midnight'] .bookmark-bar-empty,
-html[data-theme='midnight'] .bookmark-tree-main span {
+html[data-theme='midnight'] .bookmark-tree-main span,
+html[data-theme='midnight'] .bookmark-sidebar-title,
+html[data-theme='midnight'] .bookmark-sidebar-button,
+html[data-theme='midnight'] .bookmark-result-copy span,
+html[data-theme='midnight'] .bookmark-result-copy p,
+html[data-theme='midnight'] .bookmark-detail-text,
+html[data-theme='midnight'] .bookmark-table td,
+html[data-theme='midnight'] .bookmark-table small {
   color: #cbd5e1 !important;
 }
 
@@ -1004,7 +1634,14 @@ html[data-theme='midnight'] .bookmark-bar-item,
 html[data-theme='midnight'] .bookmark-gear-button,
 html[data-theme='midnight'] .bookmark-folder-subgroup,
 html[data-theme='midnight'] .bookmark-context-menu,
-html[data-theme='midnight'] .bookmark-bar-empty-drop {
+html[data-theme='midnight'] .bookmark-bar-empty-drop,
+html[data-theme='midnight'] .bookmark-sidebar-button:hover,
+html[data-theme='midnight'] .bookmark-sidebar-button.active,
+html[data-theme='midnight'] .bookmark-tag-filter,
+html[data-theme='midnight'] .bookmark-result-card.active,
+html[data-theme='midnight'] .bookmark-result-card:hover,
+html[data-theme='midnight'] .bookmark-view-toggle button.active,
+html[data-theme='midnight'] .bookmark-panel-tabs button.active {
   background-color: #0f172a !important;
   border-color: #334155 !important;
   color: #e2e8f0 !important;
@@ -1061,10 +1698,29 @@ html[data-theme='midnight'] .theme-selector-label {
   color: #cbd5e1 !important;
 }
 
-html[data-theme='midnight'] .theme-selector-input {
+html[data-theme='midnight'] .theme-segmented-control {
   background-color: #0f172a !important;
   border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .theme-segment {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .theme-segment span {
+  background-color: #1f2937 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .theme-segment:hover,
+html[data-theme='midnight'] .theme-segment.active {
+  background-color: rgba(14, 165, 233, 0.2) !important;
   color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .theme-segment.active span {
+  background-color: #38bdf8 !important;
+  color: #0f172a !important;
 }
 
 html[data-theme='midnight'] .bookmark-favicon-fallback,
@@ -1210,11 +1866,17 @@ html[data-theme='midnight'] .react-grid-item.react-grid-placeholder {
   }
 
   .dashboard-topbar-actions {
-    @apply w-full items-stretch;
+    @apply w-full items-stretch justify-start;
   }
 
-  .dashboard-topbar-actions > * {
+  .dashboard-primary-nav,
+  .dashboard-utility-nav {
     @apply w-full;
+  }
+
+  .dashboard-primary-nav > *,
+  .dashboard-utility-nav > * {
+    @apply flex-1 text-center;
   }
 
   .dashboard-user-chip {
@@ -1338,8 +2000,28 @@ html[data-theme='midnight'] .nav-link {
 
 html[data-theme='midnight'] .nav-link:hover,
 html[data-theme='midnight'] .nav-link.active {
-  background-color: rgba(14, 165, 233, 0.18) !important;
+  background-color: rgba(14, 165, 233, 0.2) !important;
   color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .dashboard-primary-nav,
+html[data-theme='midnight'] .topbar-action-button {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .topbar-action-button:hover,
+html[data-theme='midnight'] .topbar-action-button.active {
+  background-color: rgba(14, 165, 233, 0.16) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .topbar-logout-button {
+  background-color: rgba(127, 29, 29, 0.28) !important;
+  border-color: rgba(248, 113, 113, 0.28) !important;
+  color: #fca5a5 !important;
 }
 
 .input {
@@ -1360,6 +2042,19 @@ html[data-theme='midnight'] .nav-link.active {
 .bookmark-folder-entry,
 .bookmark-context-menu,
 .bookmark-bar-empty-drop,
+.bookmark-app-hero,
+.bookmark-sidebar,
+.bookmark-content-panel,
+.bookmark-detail-panel,
+.bookmark-sidebar-button,
+.bookmark-tag-filter,
+.bookmark-bulk-bar,
+.bookmark-result-card,
+.bookmark-result-icon,
+.bookmark-detail-icon,
+.bookmark-result-tags em,
+.bookmark-pill,
+.bookmark-editor-checks label,
 .dashboard-edit-hint,
 .dashboard-hero-clock,
 .dashboard-hero-search,
@@ -1375,11 +2070,35 @@ html[data-theme='midnight'] .nav-link.active {
 .bookmark-favicon,
 .bookmark-favicon-fallback,
 .bookmark-drop-slot,
-.theme-selector-input,
+.theme-segmented-control,
+.theme-segment,
 .btn,
 .input,
 .chip-button {
   border-radius: var(--ui-radius-sm) !important;
+}
+
+.bookmark-bar-shell {
+  border-radius: 8px !important;
+}
+
+.bookmark-bar-item,
+.bookmark-folder-entry,
+.bookmark-bar-empty-drop,
+.bookmark-gear-button,
+.bookmark-context-action {
+  border-radius: 6px !important;
+}
+
+.bookmark-folder-menu,
+.bookmark-context-menu {
+  border-radius: 10px !important;
+}
+
+.bookmark-drop-slot,
+.bookmark-favicon,
+.bookmark-favicon-fallback {
+  border-radius: 3px !important;
 }
 
 html[data-theme='midnight'] .input,
@@ -1471,4 +2190,36 @@ html[data-theme='midnight'] .markdown-content blockquote {
 
 html[data-theme='midnight'] .markdown-content a {
   color: #93c5fd !important;
+}
+
+html[data-theme='light'] .bookmark-app-shell input.input,
+html[data-theme='light'] .bookmark-app-shell textarea.input,
+html[data-theme='light'] .bookmark-app-shell select.input,
+html[data-theme='light'] .bookmark-manager-dialog input.input,
+html[data-theme='light'] .bookmark-manager-dialog textarea.input,
+html[data-theme='light'] .bookmark-manager-dialog select.input,
+html[data-theme='sepia'] .bookmark-app-shell input.input,
+html[data-theme='sepia'] .bookmark-app-shell textarea.input,
+html[data-theme='sepia'] .bookmark-app-shell select.input,
+html[data-theme='sepia'] .bookmark-manager-dialog input.input,
+html[data-theme='sepia'] .bookmark-manager-dialog textarea.input,
+html[data-theme='sepia'] .bookmark-manager-dialog select.input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  border-color: rgba(148, 163, 184, 0.55) !important;
+}
+
+html[data-theme='light'] .bookmark-app-shell input.input::placeholder,
+html[data-theme='light'] .bookmark-app-shell textarea.input::placeholder,
+html[data-theme='light'] .bookmark-manager-dialog input.input::placeholder,
+html[data-theme='light'] .bookmark-manager-dialog textarea.input::placeholder,
+html[data-theme='sepia'] .bookmark-app-shell input.input::placeholder,
+html[data-theme='sepia'] .bookmark-app-shell textarea.input::placeholder,
+html[data-theme='sepia'] .bookmark-manager-dialog input.input::placeholder,
+html[data-theme='sepia'] .bookmark-manager-dialog textarea.input::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
 }

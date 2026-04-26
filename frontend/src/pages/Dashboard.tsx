@@ -18,7 +18,7 @@ import {
 } from '../api/client';
 import AppHeader from '../components/AppHeader';
 import ThemeSelector from '../components/ThemeSelector';
-import { BookmarkBar, BookmarkManagerDialog } from '../components/dashboard/BookmarkManager';
+import { BookmarkBar } from '../components/dashboard/BookmarkManager';
 import { WidgetShell } from '../components/dashboard/WidgetShell';
 import { widgetDefinitionMap, widgetDefinitions } from '../components/dashboard/widgetRegistry';
 import { useAuthStore } from '../context/auth.store';
@@ -102,16 +102,21 @@ function scoreBookmarkMatch(bookmark: BookmarkItem, query: string) {
 
   const title = bookmark.title.toLowerCase();
   const url = bookmark.url.toLowerCase();
+  const domain = bookmark.domain?.toLowerCase() ?? '';
   const category = bookmark.category?.toLowerCase() ?? '';
   const description = bookmark.description?.toLowerCase() ?? '';
-  const haystack = `${title} ${url} ${category} ${description}`;
+  const notes = bookmark.notes?.toLowerCase() ?? '';
+  const tags = (bookmark.tags ?? []).join(' ').toLowerCase();
+  const haystack = `${title} ${url} ${domain} ${category} ${description} ${notes} ${tags}`;
 
   if (title === normalizedQuery) return 100;
   if (title.startsWith(normalizedQuery)) return 80;
   if (title.includes(normalizedQuery)) return 60;
+  if (domain.includes(normalizedQuery)) return 45;
   if (url.includes(normalizedQuery)) return 35;
+  if (tags.includes(normalizedQuery)) return 30;
   if (category.includes(normalizedQuery)) return 25;
-  if (description.includes(normalizedQuery)) return 15;
+  if (description.includes(normalizedQuery) || notes.includes(normalizedQuery)) return 15;
   if (normalizedQuery.split(/\s+/).every((part) => haystack.includes(part))) return 10;
 
   return 0;
@@ -139,8 +144,6 @@ export default function Dashboard() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState('');
   const [profileError, setProfileError] = useState('');
-  const [bookmarkManagerOpen, setBookmarkManagerOpen] = useState(false);
-  const [bookmarkEditItem, setBookmarkEditItem] = useState<BookmarkItem | null>(null);
   const [projectForm, setProjectForm] = useState({ name: '', client: '', category: '', color: '#0f766e' });
   const [manualEntryForm, setManualEntryForm] = useState({ projectId: '', startTime: '', endTime: '', note: '' });
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -239,7 +242,9 @@ export default function Dashboard() {
           (widget) =>
             widget.isVisible &&
             widget.type !== 'CLOCK' &&
-            widget.type !== 'WEB_SEARCH'
+            widget.type !== 'WEB_SEARCH' &&
+            widget.type !== 'WEATHER' &&
+            widget.type !== 'BOOKMARKS'
         )
         .sort((a, b) => a.mobileOrder - b.mobileOrder),
     [dashboard?.widgets]
@@ -294,6 +299,9 @@ export default function Dashboard() {
   const subtitleText = user?.dashboardSubtitle || defaultSubtitle;
   const shouldShowSubtitle = user?.showDashboardSubtitle ?? true;
   const webSearchWidget = dashboard?.widgets.find((widget) => widget.type === 'WEB_SEARCH');
+  const weatherWidgetVisible = dashboard?.widgets.some(
+    (widget) => widget.type === 'WEATHER' && widget.isVisible
+  );
   const webSearchProvider =
     typeof webSearchWidget?.settings?.provider === 'string' &&
     webSearchWidget.settings.provider in searchProviders
@@ -491,36 +499,6 @@ export default function Dashboard() {
     }
   };
 
-  const createBookmarkItem = async (payload: {
-    itemType?: 'BOOKMARK' | 'FOLDER';
-    parentId?: string | null;
-    title: string;
-    url?: string | null;
-    description?: string | null;
-    category?: string | null;
-    faviconUrl?: string | null;
-    isFavorite?: boolean;
-    showInToolbar?: boolean;
-  }) => {
-    try {
-      await dashboardApi.bookmarks.create(payload);
-      await refreshBookmarks();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht erstellt werden');
-      throw err;
-    }
-  };
-
-  const updateBookmarkItem = async (bookmarkId: string, payload: Record<string, unknown>) => {
-    try {
-      await dashboardApi.bookmarks.update(bookmarkId, payload);
-      await refreshBookmarks();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Lesezeichen konnte nicht aktualisiert werden');
-      throw err;
-    }
-  };
-
   const deleteBookmarkItem = async (bookmarkId: string) => {
     try {
       await dashboardApi.bookmarks.delete(bookmarkId);
@@ -531,37 +509,12 @@ export default function Dashboard() {
     }
   };
 
-  const openBookmarkEditor = (item: BookmarkItem) => {
-    setBookmarkEditItem(item);
-    setBookmarkManagerOpen(true);
-  };
-
   const reorderBookmarks = async (items: Array<{ id: string; parentId: string | null; sortOrder: number; showInToolbar?: boolean }>) => {
     try {
       const { data } = await dashboardApi.bookmarks.reorder(items);
       setDashboard((current) => (current ? { ...current, bookmarks: data } : current));
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Lesezeichen konnten nicht sortiert werden');
-      throw err;
-    }
-  };
-
-  const importBookmarks = async (html: string, mode: 'append' | 'replace') => {
-    try {
-      const { data } = await dashboardApi.bookmarks.importHtml(html, mode);
-      setDashboard((current) => (current ? { ...current, bookmarks: data.bookmarks } : current));
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Import konnte nicht verarbeitet werden');
-      throw err;
-    }
-  };
-
-  const exportBookmarks = async () => {
-    try {
-      const { data } = await dashboardApi.bookmarks.exportHtml();
-      return data;
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Export konnte nicht erzeugt werden');
       throw err;
     }
   };
@@ -753,8 +706,8 @@ export default function Dashboard() {
         );
       case 'WIKI_SEARCH':
         return (
-          <WidgetShell title={widget.title} subtitle="Suche direkt in Bereichen und Seiten">
-            <div className="widget-inline-form">
+          <WidgetShell title={widget.title} subtitle="Suche direkt in Bereichen und Seiten" compact>
+            <div className="widget-inline-form widget-inline-form-compact">
               <input
                 className="input"
                 value={wikiSearchQuery}
@@ -767,7 +720,7 @@ export default function Dashboard() {
                 placeholder="Wiki durchsuchen"
               />
               <button
-                className="btn btn-primary"
+                className="btn btn-primary widget-inline-button"
                 onClick={() => wikiSearchQuery.trim() && navigate(`/search?q=${encodeURIComponent(wikiSearchQuery.trim())}`)}
               >
                 Suchen
@@ -1099,59 +1052,6 @@ export default function Dashboard() {
           </WidgetShell>
         );
       }
-      case 'BOOKMARKS': {
-        const bookmarkSummary = dashboard?.bookmarks;
-        const rootItems = bookmarkSummary?.toolbar ?? [];
-
-        return (
-          <WidgetShell
-            title={widget.title}
-            subtitle="Zentrale Verwaltung für Browser-Leiste, Ordner und Import/Export"
-            actions={
-              <button className="btn btn-primary" onClick={() => setBookmarkManagerOpen(true)}>
-                Verwalten
-              </button>
-            }
-          >
-            <div className="widget-stack">
-              <div className="widget-stat-grid">
-                <div className="widget-stat-box">
-                  <span>Einträge gesamt</span>
-                  <strong>{bookmarkSummary?.totalCount ?? 0}</strong>
-                </div>
-                <div className="widget-stat-box">
-                  <span>Ordner</span>
-                  <strong>{bookmarkSummary?.folderCount ?? 0}</strong>
-                </div>
-                <div className="widget-stat-box">
-                  <span>Favoriten</span>
-                  <strong>{bookmarkSummary?.favoriteCount ?? 0}</strong>
-                </div>
-                <div className="widget-stat-box">
-                  <span>Leisten-Einträge</span>
-                  <strong>{rootItems.length}</strong>
-                </div>
-              </div>
-              <div className="card-list compact-list">
-                {rootItems.length === 0 ? (
-                  <div className="widget-message">Lege oben über das Zahnrad deine persönliche Lesezeichenleiste an.</div>
-                ) : (
-                  rootItems.map((item) => (
-                    <div key={item.id} className="mini-card-link static-card">
-                      <strong>{item.title}</strong>
-                      <span>
-                        {item.itemType === 'FOLDER'
-                          ? item.children.length + ' Einträge im Ordner'
-                          : item.url || 'Kein Link hinterlegt'}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </WidgetShell>
-        );
-      }
       case 'TELEGRAM_CHAT': {
         const telegram = dashboard?.telegramChat;
         const greetingText =
@@ -1268,6 +1168,9 @@ export default function Dashboard() {
           <Link to="/calendar-contacts" className="text-button">
             Kalender & Kontakte
           </Link>
+          <Link to="/bookmarks" className="text-button">
+            Lesezeichen
+          </Link>
           <button className={`btn ${editMode ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setEditMode((current) => !current)}>
             {editMode ? 'Layout-Modus beenden' : 'Layout bearbeiten'}
           </button>
@@ -1316,10 +1219,28 @@ export default function Dashboard() {
                   <span className="dashboard-search-provider">
                     {searchProviders[webSearchProvider]}
                   </span>
-                  <span className="dashboard-user-chip compact-chip">
-                    <span>{user?.displayName || user?.name}</span>
-                    <strong>{user?.globalRole}</strong>
-                  </span>
+                  <div className="dashboard-hero-meta">
+                    {weatherWidgetVisible && (
+                      <div className="dashboard-weather-chip">
+                        {weatherLoading ? (
+                          <span>Wetter lädt …</span>
+                        ) : weather ? (
+                          <>
+                            <strong>{weather.temperatureC} °C</strong>
+                            <span>{weather.description}</span>
+                          </>
+                        ) : weatherError ? (
+                          <span>{weatherCity}</span>
+                        ) : (
+                          <span>{weatherCity}</span>
+                        )}
+                      </div>
+                    )}
+                    <span className="dashboard-user-chip compact-chip">
+                      <span>{user?.displayName || user?.name}</span>
+                      <strong>{user?.globalRole}</strong>
+                    </span>
+                  </div>
                 </div>
                 <div className="widget-inline-form stretch-mobile">
                   <input
@@ -1343,11 +1264,8 @@ export default function Dashboard() {
         {dashboard && (
           <BookmarkBar
             bookmarks={dashboard.bookmarks}
-            onOpenManager={() => {
-              setBookmarkEditItem(null);
-              setBookmarkManagerOpen(true);
-            }}
-            onEditItem={openBookmarkEditor}
+            onOpenManager={() => navigate('/bookmarks')}
+            onEditItem={() => navigate('/bookmarks')}
             onDeleteItem={async (item) => {
               await deleteBookmarkItem(item.id);
             }}
@@ -1385,7 +1303,7 @@ export default function Dashboard() {
         {isMobile ? (
           <div className="dashboard-mobile-stack">
             {visibleWidgets.map((widget) => (
-              <div key={widget.id} className="dashboard-widget-frame mobile-frame">
+              <div key={widget.id} className="dashboard-widget-frame auto-widget-frame mobile-frame">
                 {editMode && (
                   <div className="dashboard-widget-toolbar">
                     <div className="widget-drag-handle">⋮⋮</div>
@@ -1402,6 +1320,14 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
+                {!widget.isCollapsed && renderWidgetContent(widget)}
+              </div>
+            ))}
+          </div>
+        ) : !editMode ? (
+          <div className="dashboard-widget-grid">
+            {visibleWidgets.map((widget) => (
+              <div key={widget.id} className="dashboard-widget-frame auto-widget-frame">
                 {!widget.isCollapsed && renderWidgetContent(widget)}
               </div>
             ))}
@@ -1424,7 +1350,7 @@ export default function Dashboard() {
                 onResizeStop={(layout: readonly LayoutItem[]) => persistLayout([...layout])}
               >
                 {visibleWidgets.map((widget) => (
-                  <div key={widget.id} className="dashboard-widget-frame">
+                  <div key={widget.id} className="dashboard-widget-frame layout-widget-frame">
                     {editMode && (
                       <div className="dashboard-widget-toolbar">
                         <div className="widget-drag-handle">⋮⋮</div>
@@ -1574,7 +1500,7 @@ export default function Dashboard() {
                   </button>
                 </div>
                 <div className="profile-widget-list">
-                  {dashboard?.widgets.map((widget) => {
+                  {dashboard?.widgets.filter((widget) => widget.type !== 'BOOKMARKS').map((widget) => {
                     const definition = widgetDefinitionMap[widget.type] ?? {
                       label: widget.type,
                       description: 'Dashboard-Widget',
@@ -1622,7 +1548,7 @@ export default function Dashboard() {
               <section className="dialog-card">
                 <h3>Aktive Widgets</h3>
                 <div className="card-list compact-list">
-                  {dashboard?.widgets.map((widget) => (
+                  {dashboard?.widgets.filter((widget) => widget.type !== 'BOOKMARKS').map((widget) => (
                     <button
                       key={widget.id}
                       className="mini-card-link static-card align-left"
@@ -1631,8 +1557,8 @@ export default function Dashboard() {
                         setSettingsOpen(false);
                       }}
                     >
-                      <strong>{widgetDefinitionMap[widget.type].label}</strong>
-                      <span>{widget.title}</span>
+                      <strong>{widgetDefinitionMap[widget.type]?.label ?? widget.type}</strong>
+                      <span>{widget.title || widgetDefinitionMap[widget.type]?.description || 'Dashboard-Widget'}</span>
                     </button>
                   ))}
                 </div>
@@ -1680,24 +1606,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
-
-      {dashboard && (
-        <BookmarkManagerDialog
-          open={bookmarkManagerOpen}
-          bookmarks={dashboard.bookmarks}
-          onClose={() => {
-            setBookmarkManagerOpen(false);
-            setBookmarkEditItem(null);
-          }}
-          onCreate={createBookmarkItem}
-          onUpdate={updateBookmarkItem}
-          onDelete={deleteBookmarkItem}
-          onReorder={reorderBookmarks}
-          onImport={importBookmarks}
-          onExport={exportBookmarks}
-          initialEditItem={bookmarkEditItem}
-        />
       )}
 
       {activeWidget && dashboard && (
@@ -1804,7 +1712,6 @@ function WidgetSettingsDialog({
           widget.type === 'WEB_SEARCH' ||
           widget.type === 'FAVORITE_SPACES' ||
           widget.type === 'NOTES' ||
-          widget.type === 'BOOKMARKS' ||
           widget.type === 'TELEGRAM_CHAT') && (
           <div className="widget-stack">
             {widget.type === 'WEATHER' && (
@@ -1857,14 +1764,6 @@ function WidgetSettingsDialog({
               <div className="widget-subsection">
                 <label className="form-label">Standardinhalt</label>
                 <textarea className="input widget-notes" value={String(settings.content || '')} onChange={(e) => setSettings((current) => ({ ...current, content: e.target.value }))} />
-              </div>
-            )}
-            {widget.type === 'BOOKMARKS' && (
-              <div className="widget-subsection">
-                <div className="widget-message">
-                  Die eigentliche Verwaltung der Lesezeichen läuft über die Leiste unter dem Begrüßungsbereich
-                  und das Zahnrad rechts daneben.
-                </div>
               </div>
             )}
             {widget.type === 'TELEGRAM_CHAT' && (

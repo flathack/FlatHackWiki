@@ -36,11 +36,21 @@ type BookmarkTreeItem = {
   itemType: 'BOOKMARK' | 'FOLDER';
   title: string;
   url: string | null;
+  normalizedUrl: string | null;
+  domain: string | null;
   description: string | null;
+  notes: string | null;
   category: string | null;
+  tags: string[];
   faviconUrl: string | null;
   isFavorite: boolean;
+  isPinned: boolean;
+  isArchived: boolean;
   showInToolbar: boolean;
+  linkStatus: 'UNKNOWN' | 'OK' | 'BROKEN' | 'REDIRECTED';
+  httpStatus: number | null;
+  lastCheckedAt: Date | null;
+  lastOpenedAt: Date | null;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -250,6 +260,50 @@ function normalizeNullableString(value?: string | null) {
   return trimmed ? trimmed : null;
 }
 
+function normalizeBookmarkUrl(value?: string | null) {
+  const trimmed = normalizeNullableString(value);
+  if (!trimmed) return null;
+
+  try {
+    const parsed = new URL(trimmed);
+    parsed.hash = '';
+    parsed.hostname = parsed.hostname.toLowerCase();
+    if ((parsed.protocol === 'https:' && parsed.port === '443') || (parsed.protocol === 'http:' && parsed.port === '80')) {
+      parsed.port = '';
+    }
+    if (parsed.pathname === '/') {
+      parsed.pathname = '';
+    }
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return trimmed.toLowerCase();
+  }
+}
+
+function getBookmarkDomain(value?: string | null) {
+  const trimmed = normalizeNullableString(value);
+  if (!trimmed) return null;
+
+  try {
+    return new URL(trimmed).hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+function normalizeBookmarkTags(tags?: unknown) {
+  if (!Array.isArray(tags)) return undefined;
+
+  const unique = new Set<string>();
+  for (const tag of tags) {
+    if (typeof tag !== 'string') continue;
+    const normalized = tag.trim().replace(/\s+/g, ' ');
+    if (normalized) unique.add(normalized.slice(0, 50));
+  }
+
+  return [...unique].slice(0, 30);
+}
+
 function sanitizeTelegramMessage(message: TelegramChatMessage) {
   return {
     id: message.id,
@@ -272,11 +326,21 @@ function buildBookmarkTree(items: any[]): BookmarkTreeItem[] {
       itemType: item.itemType as 'BOOKMARK' | 'FOLDER',
       title: item.title,
       url: item.url ?? null,
+      normalizedUrl: item.normalizedUrl ?? null,
+      domain: item.domain ?? getBookmarkDomain(item.url),
       description: item.description ?? null,
+      notes: item.notes ?? null,
       category: item.category ?? null,
+      tags: item.tags ?? [],
       faviconUrl: item.faviconUrl ?? null,
       isFavorite: item.isFavorite,
-      showInToolbar: item.showInToolbar,
+      isPinned: item.isPinned ?? false,
+      isArchived: item.isArchived ?? false,
+      showInToolbar: item.isArchived ? false : item.showInToolbar,
+      linkStatus: item.linkStatus ?? 'UNKNOWN',
+      httpStatus: item.httpStatus ?? null,
+      lastCheckedAt: item.lastCheckedAt ?? null,
+      lastOpenedAt: item.lastOpenedAt ?? null,
       sortOrder: item.sortOrder,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -326,6 +390,8 @@ function getBookmarkStats(nodes: BookmarkTreeItem[]) {
     bookmarkCount: flattened.filter((item) => item.itemType === BOOKMARK_ITEM_TYPES.BOOKMARK).length,
     folderCount: flattened.filter((item) => item.itemType === BOOKMARK_ITEM_TYPES.FOLDER).length,
     favoriteCount: flattened.filter((item) => item.isFavorite).length,
+    archivedCount: flattened.filter((item) => item.isArchived).length,
+    pinnedCount: flattened.filter((item) => item.isPinned).length,
   };
 }
 
@@ -1099,9 +1165,11 @@ class DashboardService {
     };
   }
 
-  async createBookmark(userId: string, data: { itemType?: 'BOOKMARK' | 'FOLDER'; parentId?: string | null; title: string; url?: string | null; description?: string | null; category?: string | null; faviconUrl?: string | null; isFavorite?: boolean; showInToolbar?: boolean }) {
+  async createBookmark(userId: string, data: { itemType?: 'BOOKMARK' | 'FOLDER'; parentId?: string | null; title: string; url?: string | null; description?: string | null; notes?: string | null; category?: string | null; tags?: string[]; faviconUrl?: string | null; isFavorite?: boolean; isPinned?: boolean; isArchived?: boolean; showInToolbar?: boolean }) {
     const itemType = data.itemType ?? BOOKMARK_ITEM_TYPES.BOOKMARK;
     const parentId = data.parentId ?? null;
+    const normalizedUrl = itemType === BOOKMARK_ITEM_TYPES.FOLDER ? null : normalizeBookmarkUrl(data.url);
+    const domain = itemType === BOOKMARK_ITEM_TYPES.FOLDER ? null : getBookmarkDomain(data.url);
 
     if (parentId) {
       const parent = await this.getBookmarkForUser(userId, parentId);
@@ -1110,7 +1178,7 @@ class DashboardService {
       }
     }
 
-    if (itemType === BOOKMARK_ITEM_TYPES.BOOKMARK && !normalizeNullableString(data.url)) {
+    if (itemType === BOOKMARK_ITEM_TYPES.BOOKMARK && !normalizedUrl) {
       throw new ValidationError('Für ein Lesezeichen wird eine URL benötigt');
     }
 
@@ -1130,11 +1198,17 @@ class DashboardService {
         itemType,
         title: data.title.trim(),
         url: itemType === BOOKMARK_ITEM_TYPES.FOLDER ? null : data.url?.trim() ?? null,
+        normalizedUrl,
+        domain,
         description: normalizeNullableString(data.description),
+        notes: normalizeNullableString(data.notes),
         category: normalizeNullableString(data.category),
+        tags: normalizeBookmarkTags(data.tags) ?? [],
         faviconUrl,
         isFavorite: data.isFavorite ?? false,
-        showInToolbar: data.showInToolbar ?? parentId === null,
+        isPinned: data.isPinned ?? false,
+        isArchived: data.isArchived ?? false,
+        showInToolbar: data.isArchived ? false : data.showInToolbar ?? parentId === null,
         sortOrder: currentCount,
       },
     });
@@ -1162,8 +1236,10 @@ class DashboardService {
         : data.url === undefined
           ? bookmark.url
           : normalizeNullableString(data.url);
+    const nextNormalizedUrl = nextItemType === BOOKMARK_ITEM_TYPES.FOLDER ? null : normalizeBookmarkUrl(nextUrl);
+    const nextDomain = nextItemType === BOOKMARK_ITEM_TYPES.FOLDER ? null : getBookmarkDomain(nextUrl);
 
-    if (nextItemType === BOOKMARK_ITEM_TYPES.BOOKMARK && !nextUrl) {
+    if (nextItemType === BOOKMARK_ITEM_TYPES.BOOKMARK && !nextNormalizedUrl) {
       throw new ValidationError('Für ein Lesezeichen wird eine URL benötigt');
     }
 
@@ -1183,11 +1259,21 @@ class DashboardService {
         parentId: data.parentId,
         itemType: data.itemType,
         url: nextUrl,
+        normalizedUrl: data.url === undefined && data.itemType === undefined ? undefined : nextNormalizedUrl,
+        domain: data.url === undefined && data.itemType === undefined ? undefined : nextDomain,
         description: data.description === undefined ? undefined : normalizeNullableString(data.description),
+        notes: data.notes === undefined ? undefined : normalizeNullableString(data.notes),
         category: data.category === undefined ? undefined : normalizeNullableString(data.category),
+        tags: data.tags === undefined ? undefined : normalizeBookmarkTags(data.tags) ?? [],
         faviconUrl: nextFaviconUrl,
         isFavorite: data.isFavorite,
-        showInToolbar: data.showInToolbar,
+        isPinned: data.isPinned,
+        isArchived: data.isArchived,
+        showInToolbar: data.isArchived ? false : data.showInToolbar,
+        linkStatus: data.linkStatus,
+        httpStatus: data.httpStatus,
+        lastCheckedAt: data.lastCheckedAt,
+        lastOpenedAt: data.lastOpenedAt,
         sortOrder: data.sortOrder,
       },
     });
@@ -1249,6 +1335,7 @@ class DashboardService {
               (await downloadFaviconDataUrl(typeof node.url === 'string' ? node.url : null)) ??
               deriveFaviconUrl(typeof node.url === 'string' ? node.url : null)
             : null;
+        const importedUrl = itemType === BOOKMARK_ITEM_TYPES.BOOKMARK ? normalizeNullableString(String(node.url || '')) : null;
 
         const created = await bookmarkDb.create({
           data: {
@@ -1256,7 +1343,9 @@ class DashboardService {
             parentId,
             itemType,
             title: String(node.title || (itemType === BOOKMARK_ITEM_TYPES.FOLDER ? 'Ordner' : 'Lesezeichen')),
-            url: itemType === BOOKMARK_ITEM_TYPES.BOOKMARK ? normalizeNullableString(String(node.url || '')) : null,
+            url: importedUrl,
+            normalizedUrl: normalizeBookmarkUrl(importedUrl),
+            domain: getBookmarkDomain(importedUrl),
             faviconUrl: resolvedFaviconUrl,
             isFavorite: false,
             showInToolbar: parentId === null,
