@@ -26,3 +26,6 @@ Thumbs.db
 
 postgres_data/
 backups/
+
+docker-compose.personal.yml
+docker-compose.ghcr.personal.yml
