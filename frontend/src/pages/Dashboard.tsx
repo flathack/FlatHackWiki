@@ -381,6 +381,11 @@ export default function Dashboard() {
     [dashboard?.widgets]
   );
 
+  const desktopVisibleWidgets = useMemo(
+    () => [...visibleWidgets].sort((a, b) => a.y - b.y || a.x - b.x || a.mobileOrder - b.mobileOrder),
+    [visibleWidgets]
+  );
+
   const widgetLookup = useMemo(
     () => Object.fromEntries((dashboard?.widgets ?? []).map((widget) => [widget.id, widget])) as Record<string, DashboardWidget>,
     [dashboard?.widgets]
@@ -803,9 +808,25 @@ export default function Dashboard() {
 
     try {
       setTelegramSending(true);
-      await dashboardApi.telegram.sendMessage(content);
+      const { data } = await dashboardApi.telegram.sendMessage(content);
       setTelegramDraft('');
-      await loadDashboard();
+      setDashboard((current) => {
+        if (!current) {
+          return current;
+        }
+
+        const messages = [...current.telegramChat.messages, data.sent, data.reply].filter(
+          (message, index, collection) => collection.findIndex((entry) => entry.id === message.id) === index
+        );
+
+        return {
+          ...current,
+          telegramChat: {
+            ...current.telegramChat,
+            messages,
+          },
+        };
+      });
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Telegram-Nachricht konnte nicht gesendet werden');
     } finally {
@@ -1373,23 +1394,23 @@ export default function Dashboard() {
         const greetingText =
           typeof settings.greetingText === 'string'
             ? settings.greetingText
-            : telegram?.settings.greetingText || 'Verbinde dieses Widget mit deinem OpenClaw Telegram Bot.';
+            : telegram?.settings.greetingText || 'Verbinde dieses Widget mit deinem OpenClaw-Assistenten.';
         const botUsername =
           typeof settings.botUsername === 'string'
             ? settings.botUsername
-            : telegram?.settings.botUsername || 'OpenClaw Bot';
+            : telegram?.settings.botUsername || 'OpenClaw Assistent';
 
         return (
           <WidgetShell
             title={widget.title}
-            subtitle="Direkter Bot-Chat im Dashboard"
+            subtitle="Direkter Relay-Chat mit deinem OpenClaw-Container"
             badge={telegram?.configured ? botUsername : 'Setup'}
           >
             <div className="telegram-chat-widget">
               <div className="widget-message">
                 {greetingText}
                 {!telegram?.configured &&
-                  ' Hinterlege im Widget eine Chat-ID und konfiguriere im Backend TELEGRAM_BOT_TOKEN oder OPENCLAW_BOT_WEBHOOK_URL.'}
+                  ' Konfiguriere im Backend OPENCLAW_BOT_WEBHOOK_URL. Eine Konversations-ID im Widget ist optional.'}
               </div>
               <div className="telegram-chat-history">
                 {(telegram?.messages.length ?? 0) === 0 ? (
@@ -1425,7 +1446,7 @@ export default function Dashboard() {
                   value={telegramDraft}
                   onChange={(e) => setTelegramDraft(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendTelegramMessage())}
-                  placeholder="Nachricht an OpenClaw Bot schreiben ..."
+                  placeholder="Nachricht an OpenClaw schreiben ..."
                 />
                 <button className="btn btn-primary" onClick={sendTelegramMessage} disabled={telegramSending}>
                   {telegramSending ? 'Sendet ...' : 'Senden'}
@@ -1640,14 +1661,6 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        ) : !editMode ? (
-          <div className="dashboard-widget-grid">
-            {visibleWidgets.map((widget) => (
-              <div key={widget.id} className="dashboard-widget-frame auto-widget-frame">
-                {!widget.isCollapsed && renderWidgetContent(widget)}
-              </div>
-            ))}
-          </div>
         ) : (
           <div ref={containerRef as any}>
             {mounted && (
@@ -1665,8 +1678,11 @@ export default function Dashboard() {
                 onDragStop={(layout: readonly LayoutItem[]) => persistLayout([...layout])}
                 onResizeStop={(layout: readonly LayoutItem[]) => persistLayout([...layout])}
               >
-                {visibleWidgets.map((widget) => (
-                  <div key={widget.id} className="dashboard-widget-frame layout-widget-frame">
+                {desktopVisibleWidgets.map((widget) => (
+                  <div
+                    key={widget.id}
+                    className={`dashboard-widget-frame ${editMode ? 'layout-widget-frame' : 'auto-widget-frame'}`}
+                  >
                     {editMode && (
                       <div className="dashboard-widget-toolbar">
                         <div className="widget-drag-handle">⋮⋮</div>
@@ -2161,26 +2177,26 @@ function WidgetSettingsDialog({
             )}
             {widget.type === 'TELEGRAM_CHAT' && (
               <div className="widget-subsection">
-                <label className="form-label">Chat-ID</label>
+                <label className="form-label">Konversations-ID (optional)</label>
                 <input
                   className="input"
                   value={String(settings.chatId || '')}
                   onChange={(e) => setSettings((current) => ({ ...current, chatId: e.target.value }))}
-                  placeholder="z. B. 123456789"
+                  placeholder="z. B. default, steve oder ticket-4711"
                 />
-                <label className="form-label">Bot-Name</label>
+                <label className="form-label">Assistent-Name</label>
                 <input
                   className="input"
-                  value={String(settings.botUsername || 'OpenClaw Bot')}
+                  value={String(settings.botUsername || 'OpenClaw Assistent')}
                   onChange={(e) => setSettings((current) => ({ ...current, botUsername: e.target.value }))}
-                  placeholder="OpenClaw Bot"
+                  placeholder="OpenClaw Assistent"
                 />
                 <label className="form-label">Begrüßungstext</label>
                 <textarea
                   className="input widget-notes"
                   value={String(settings.greetingText || '')}
                   onChange={(e) => setSettings((current) => ({ ...current, greetingText: e.target.value }))}
-                  placeholder="Optionaler Begrüßungstext im Chat-Widget"
+                  placeholder="Optionaler Begrüßungstext im OpenClaw-Widget"
                 />
                 <label className="form-label">Polling in Millisekunden</label>
                 <input
@@ -2197,8 +2213,8 @@ function WidgetSettingsDialog({
                   }
                 />
                 <div className="widget-message">
-                  Das Secret für Telegram bleibt im Backend. Hinterlege dort
-                  `TELEGRAM_BOT_TOKEN` oder `OPENCLAW_BOT_WEBHOOK_URL`.
+                  Für die Container-Anbindung reicht im Backend normalerweise
+                  `OPENCLAW_BOT_WEBHOOK_URL`. `TELEGRAM_BOT_TOKEN` bleibt nur für den alten Telegram-Pfad.
                 </div>
               </div>
             )}

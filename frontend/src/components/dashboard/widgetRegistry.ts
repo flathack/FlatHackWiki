@@ -19,7 +19,7 @@ export const widgetDefinitions: WidgetDefinition[] = [
   { type: 'SPACES', label: 'Bereiche', description: 'Bereiche und Schnellzugriffe', singleton: true },
   { type: 'COMMUTE', label: 'Arbeitsweg', description: 'Route, Büro-Tage und Homeoffice', singleton: true },
   { type: 'TIME_TRACKER', label: 'Zeiterfassung', description: 'Projekte, Timer und manuelle Zeiten', singleton: true },
-  { type: 'TELEGRAM_CHAT', label: 'Telegram-Chat', description: 'Chat mit sicherer Backend-Anbindung an deinen OpenClaw Bot', singleton: true },
+  { type: 'TELEGRAM_CHAT', label: 'OpenClaw Chat', description: 'Direkter Chat mit deinem OpenClaw-Container über das Wiki-Backend', singleton: true },
   { type: 'AMAZON_EXPENSES', label: 'Amazon Ausgaben', description: 'Monatsausgaben, Zuordnung und Abrechnung', singleton: true },
 ];
 

@@ -27,6 +27,77 @@ const TELEGRAM_PROVIDERS = {
   OPENCLAW_RELAY: 'OPENCLAW_RELAY',
 } as const;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function extractOpenClawReply(payload: unknown): string | null {
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim();
+    return trimmed || null;
+  }
+
+  if (Array.isArray(payload)) {
+    const parts = payload
+      .map((entry) => extractOpenClawReply(entry))
+      .filter((entry): entry is string => Boolean(entry));
+    return parts.length ? parts.join('\n\n') : null;
+  }
+
+  if (!isRecord(payload)) {
+    return null;
+  }
+
+  if (typeof payload.reply === 'string' && payload.reply.trim()) {
+    return payload.reply.trim();
+  }
+
+  if (typeof payload.output_text === 'string' && payload.output_text.trim()) {
+    return payload.output_text.trim();
+  }
+
+  if (isRecord(payload.text) && typeof payload.text.value === 'string' && payload.text.value.trim()) {
+    return payload.text.value.trim();
+  }
+
+  if (typeof payload.text === 'string' && payload.text.trim()) {
+    return payload.text.trim();
+  }
+
+  if (Array.isArray(payload.output)) {
+    const parts = payload.output
+      .map((entry) => extractOpenClawReply(entry))
+      .filter((entry): entry is string => Boolean(entry));
+    if (parts.length) {
+      return parts.join('\n\n');
+    }
+  }
+
+  if (Array.isArray(payload.content)) {
+    const parts = payload.content
+      .map((entry) => extractOpenClawReply(entry))
+      .filter((entry): entry is string => Boolean(entry));
+    if (parts.length) {
+      return parts.join('\n\n');
+    }
+  }
+
+  if (isRecord(payload.message)) {
+    return extractOpenClawReply(payload.message);
+  }
+
+  if (Array.isArray(payload.choices)) {
+    for (const choice of payload.choices) {
+      const reply = extractOpenClawReply(choice);
+      if (reply) {
+        return reply;
+      }
+    }
+  }
+
+  return null;
+}
+
 const bookmarkDb: any = (db as any).bookmark;
 
 const BOOKMARK_ITEM_TYPES = {
@@ -251,7 +322,7 @@ const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y:
     },
   },
   TELEGRAM_CHAT: {
-    title: 'Telegram-Chat',
+    title: 'OpenClaw Chat',
     x: 0,
     y: 17,
     width: 6,
@@ -261,8 +332,8 @@ const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y:
     settings: {
       chatId: '',
       pollIntervalMs: 15000,
-      greetingText: 'Verbinde dieses Widget mit deinem OpenClaw Telegram Bot.',
-      botUsername: 'OpenClaw Bot',
+      greetingText: 'Verbinde dieses Widget mit deinem OpenClaw-Assistenten.',
+      botUsername: 'OpenClaw Assistent',
     },
   },
   AMAZON_EXPENSES: {
@@ -1454,9 +1525,9 @@ class DashboardService {
           greetingText:
             typeof telegramSettings.greetingText === 'string'
               ? telegramSettings.greetingText
-              : 'Verbinde dieses Widget mit deinem OpenClaw Telegram Bot.',
+              : 'Verbinde dieses Widget mit deinem OpenClaw-Assistenten.',
           botUsername:
-            typeof telegramSettings.botUsername === 'string' ? telegramSettings.botUsername : 'OpenClaw Bot',
+            typeof telegramSettings.botUsername === 'string' ? telegramSettings.botUsername : 'OpenClaw Assistent',
         },
       },
       amazonExpenses,
@@ -1484,27 +1555,50 @@ class DashboardService {
     });
 
     const relayUrl = process.env.OPENCLAW_BOT_WEBHOOK_URL?.trim();
+    const relayToken =
+      process.env.OPENCLAW_BOT_WEBHOOK_BEARER_TOKEN?.trim() ||
+      process.env.OPENCLAW_BOT_WEBHOOK_AUTH_TOKEN?.trim() ||
+      process.env.OPENCLAW_BOT_WEBHOOK_TOKEN?.trim();
     if (relayUrl) {
       try {
+        const usesResponsesApi = /\/v1\/responses\/?$/i.test(relayUrl);
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        };
+
+        if (relayToken) {
+          headers.Authorization = `Bearer ${relayToken}`;
+        }
+
         const response = await fetch(relayUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({
-            userId,
-            chatId: configuredChatId || null,
-            message: trimmedContent,
-          }),
+          headers,
+          body: JSON.stringify(
+            usesResponsesApi
+              ? {
+                  model: 'openclaw',
+                  input: trimmedContent,
+                  metadata: {
+                    userId,
+                    ...(configuredChatId ? { chatId: configuredChatId } : {}),
+                  },
+                }
+              : {
+                  userId,
+                  chatId: configuredChatId || null,
+                  message: trimmedContent,
+                },
+          ),
         });
 
         if (!response.ok) {
-          throw new Error('OpenClaw-Relay nicht erreichbar');
+          const errorBody = await response.text();
+          throw new Error(errorBody.trim() || 'OpenClaw-Relay nicht erreichbar');
         }
 
-        const payload = (await response.json()) as { reply?: string };
-        const reply = payload.reply?.trim() || 'OpenClaw hat geantwortet, aber keinen Text geliefert.';
+        const payload = (await response.json()) as unknown;
+        const reply = extractOpenClawReply(payload) || 'OpenClaw hat geantwortet, aber keinen Text geliefert.';
         const botMessage = await db.telegramChatMessage.create({
           data: {
             userId,
@@ -1562,7 +1656,7 @@ class DashboardService {
             senderRole: TELEGRAM_ROLES.SYSTEM,
             provider: TELEGRAM_PROVIDERS.TELEGRAM_PROXY,
             content:
-              'Nachricht an Telegram gesendet. Für direkte Bot-Antworten im Widget kann optional OPENCLAW_BOT_WEBHOOK_URL im Backend konfiguriert werden.',
+              'Nachricht über den Telegram-Fallback gesendet. Für direkte OpenClaw-Antworten im Widget konfiguriere OPENCLAW_BOT_WEBHOOK_URL im Backend.',
             chatId: configuredChatId,
           },
         });
@@ -1595,7 +1689,7 @@ class DashboardService {
         senderRole: TELEGRAM_ROLES.SYSTEM,
         provider: TELEGRAM_PROVIDERS.LOCAL_PREVIEW,
         content:
-          'Telegram-Integration ist noch nicht vollständig verbunden. Hinterlege eine Chat-ID im Widget und konfiguriere im Backend TELEGRAM_BOT_TOKEN oder OPENCLAW_BOT_WEBHOOK_URL.',
+          'OpenClaw ist noch nicht verbunden. Konfiguriere im Backend OPENCLAW_BOT_WEBHOOK_URL. Eine Konversations-ID im Widget ist optional; TELEGRAM_BOT_TOKEN bleibt nur für den Legacy-Fallback.',
         chatId: configuredChatId || null,
       },
     });
