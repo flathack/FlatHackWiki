@@ -63,6 +63,9 @@ export default function AppHeader({
           <NavLink to="/bookmarks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             Lesezeichen
           </NavLink>
+          <NavLink to="/amazon-expenses" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Amazon
+          </NavLink>
           <NavLink to="/calendar-contacts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             Kalender & Kontakte
           </NavLink>

@@ -66,6 +66,10 @@ function formatMinutes(totalMinutes: number) {
   return `${hours} h ${minutes.toString().padStart(2, '0')} min`;
 }
 
+function formatCurrency(value: number, currency = 'EUR') {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(value || 0);
+}
+
 function formatDateLabel(value: string) {
   return new Date(value).toLocaleString('de-DE', {
     dateStyle: 'short',
@@ -1324,6 +1328,43 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
+          </WidgetShell>
+        );
+      }
+      case 'AMAZON_EXPENSES': {
+        const amazon = dashboard?.amazonExpenses;
+        const maxPersonSpend = Math.max(1, ...(amazon?.byPerson ?? []).map((item) => item.total));
+
+        return (
+          <WidgetShell
+            title={widget.title}
+            subtitle="Aktueller Monat, Zuordnung und Abrechnung"
+            badge={amazon ? `${amazon.currentMonth.orderCount} Orders` : 'Amazon'}
+            actions={<Link className="btn btn-secondary" to="/amazon-expenses">Öffnen</Link>}
+          >
+            <Link to="/amazon-expenses" className="amazon-widget">
+              <div className="amazon-widget-total">
+                <span>Dieser Monat</span>
+                <strong>{formatCurrency(amazon?.currentMonth.total ?? 0)}</strong>
+                <em>{amazon?.currentMonth.unassignedCount ?? 0} nicht zugeordnet</em>
+              </div>
+              <div className="amazon-widget-bars">
+                {(amazon?.byPerson ?? []).slice(0, 4).map((person) => (
+                  <div key={person.personId} className="amazon-widget-bar-row">
+                    <span>{person.displayName}</span>
+                    <div><i style={{ width: `${Math.max(4, (person.total / maxPersonSpend) * 100)}%` }} /></div>
+                    <em>{formatCurrency(person.total)}</em>
+                  </div>
+                ))}
+                {(amazon?.byPerson.length ?? 0) === 0 && (
+                  <div className="widget-message">Importiere CSV-Dateien und lege Personen an, um Ausgaben zu sehen.</div>
+                )}
+              </div>
+              <div className="amazon-widget-footer">
+                <span>Abrechnungstag: {amazon?.billingDay ?? 1}.</span>
+                <span>{formatCurrency(amazon?.currentMonth.unassignedTotal ?? 0)} offen zuzuordnen</span>
+              </div>
+            </Link>
           </WidgetShell>
         );
       }

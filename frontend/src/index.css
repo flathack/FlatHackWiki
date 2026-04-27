@@ -1608,6 +1608,194 @@ html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.in
   @apply rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800;
 }
 
+.amazon-widget {
+  @apply flex flex-col gap-3 rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50 to-sky-50 p-3 text-left transition hover:border-amber-300 hover:shadow-sm;
+}
+
+.amazon-widget-total span,
+.amazon-widget-footer,
+.amazon-widget-bar-row span,
+.amazon-widget-bar-row em {
+  @apply text-xs text-slate-500;
+}
+
+.amazon-widget-total strong {
+  @apply block text-3xl font-bold text-slate-950;
+}
+
+.amazon-widget-total em {
+  @apply text-sm not-italic text-amber-700;
+}
+
+.amazon-widget-bars {
+  @apply grid gap-2;
+}
+
+.amazon-widget-bar-row {
+  @apply grid items-center gap-2 text-xs sm:grid-cols-[90px_minmax(0,1fr)_auto];
+}
+
+.amazon-widget-bar-row div,
+.amazon-chart-row div {
+  @apply h-2 overflow-hidden rounded-full bg-slate-200;
+}
+
+.amazon-widget-bar-row i,
+.amazon-chart-row i {
+  @apply block h-full rounded-full bg-gradient-to-r from-amber-400 to-sky-500;
+}
+
+.amazon-widget-footer {
+  @apply flex flex-wrap items-center justify-between gap-2 border-t border-amber-100 pt-2;
+}
+
+.amazon-page-shell {
+  @apply min-h-screen;
+}
+
+.amazon-dashboard {
+  @apply mx-auto flex max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8;
+}
+
+.amazon-hero {
+  @apply grid gap-4 rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50 to-sky-50 p-5 shadow-sm lg:grid-cols-[minmax(0,1fr)_auto];
+}
+
+.amazon-hero h1 {
+  @apply text-4xl font-bold text-slate-950;
+}
+
+.amazon-hero p {
+  @apply mt-2 text-sm text-slate-600;
+}
+
+.amazon-kpi-grid {
+  @apply grid gap-2 sm:grid-cols-3 lg:min-w-[460px];
+}
+
+.amazon-kpi-grid div,
+.amazon-panel {
+  @apply rounded-2xl border border-gray-200 bg-white p-4 shadow-sm;
+}
+
+.amazon-kpi-grid span,
+.amazon-panel-header span {
+  @apply text-xs font-semibold uppercase tracking-[0.16em] text-slate-500;
+}
+
+.amazon-kpi-grid strong {
+  @apply mt-1 block text-xl font-bold text-slate-950;
+}
+
+.amazon-grid {
+  @apply grid gap-5 lg:grid-cols-2;
+}
+
+.amazon-panel {
+  @apply flex flex-col gap-4;
+}
+
+.amazon-panel-header {
+  @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+}
+
+.amazon-panel-header h2 {
+  @apply text-lg font-semibold text-slate-950;
+}
+
+.amazon-batch-list,
+.amazon-person-list,
+.amazon-settlement-list,
+.amazon-chart-bars {
+  @apply grid gap-2;
+}
+
+.amazon-batch-row,
+.amazon-person-row,
+.amazon-settlement-row {
+  @apply grid gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center;
+}
+
+.amazon-batch-row strong,
+.amazon-person-row strong,
+.amazon-settlement-row strong {
+  @apply block truncate text-slate-900;
+}
+
+.amazon-batch-row span,
+.amazon-person-row span,
+.amazon-settlement-row span {
+  @apply text-xs text-slate-500;
+}
+
+.amazon-settlement-row em {
+  @apply text-base font-semibold not-italic text-slate-900;
+}
+
+.amazon-settlement-row.paid {
+  @apply border-emerald-100 bg-emerald-50;
+}
+
+.amazon-paid-badge {
+  @apply rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800;
+}
+
+.amazon-filter-row {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.amazon-filter-row .input {
+  @apply min-h-[40px] w-auto;
+}
+
+.amazon-manual-form {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.amazon-manual-form label {
+  @apply grid gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500;
+}
+
+.amazon-manual-title {
+  @apply sm:col-span-2;
+}
+
+.amazon-table-wrap {
+  @apply overflow-x-auto;
+}
+
+.amazon-table {
+  @apply min-w-full border-separate border-spacing-0 text-sm;
+}
+
+.amazon-table th {
+  @apply border-b border-gray-200 px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500;
+}
+
+.amazon-table td {
+  @apply border-b border-gray-100 px-3 py-2 align-top text-slate-700;
+}
+
+.amazon-table td strong {
+  @apply block max-w-xl text-slate-900;
+}
+
+.amazon-table td small {
+  @apply block text-xs text-slate-500;
+}
+
+.amazon-chart-row {
+  @apply grid items-center gap-3 text-sm sm:grid-cols-[120px_minmax(0,1fr)_auto];
+}
+
+.amazon-chart-row span {
+  @apply truncate text-slate-600;
+}
+
+.amazon-chart-row strong {
+  @apply text-sm text-slate-900;
+}
+
 .weather-widget-mainline {
   @apply flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between;
 }
@@ -1929,6 +2117,13 @@ html[data-theme='midnight'] .commute-view-toggle,
 html[data-theme='midnight'] .commute-route-card,
 html[data-theme='midnight'] .commute-map-card,
 html[data-theme='midnight'] .commute-map-labels span,
+html[data-theme='midnight'] .amazon-widget,
+html[data-theme='midnight'] .amazon-hero,
+html[data-theme='midnight'] .amazon-kpi-grid div,
+html[data-theme='midnight'] .amazon-panel,
+html[data-theme='midnight'] .amazon-batch-row,
+html[data-theme='midnight'] .amazon-person-row,
+html[data-theme='midnight'] .amazon-settlement-row,
 html[data-theme='midnight'] .checkbox-row,
 html[data-theme='midnight'] .checkbox-card,
 html[data-theme='midnight'] .widget-drag-handle,
@@ -1959,6 +2154,16 @@ html[data-theme='midnight'] .time-entry-main strong,
 html[data-theme='midnight'] .time-widget-history-header,
 html[data-theme='midnight'] .time-widget-panel summary,
 html[data-theme='midnight'] .commute-route-card strong,
+html[data-theme='midnight'] .amazon-widget-total strong,
+html[data-theme='midnight'] .amazon-hero h1,
+html[data-theme='midnight'] .amazon-kpi-grid strong,
+html[data-theme='midnight'] .amazon-panel-header h2,
+html[data-theme='midnight'] .amazon-batch-row strong,
+html[data-theme='midnight'] .amazon-person-row strong,
+html[data-theme='midnight'] .amazon-settlement-row strong,
+html[data-theme='midnight'] .amazon-settlement-row em,
+html[data-theme='midnight'] .amazon-table td strong,
+html[data-theme='midnight'] .amazon-chart-row strong,
 html[data-theme='midnight'] .form-label,
 html[data-theme='midnight'] .dashboard-brand-copy,
 html[data-theme='midnight'] .widget-subsection h4,
@@ -1983,6 +2188,21 @@ html[data-theme='midnight'] .commute-view-toggle button,
 html[data-theme='midnight'] .commute-route-card span,
 html[data-theme='midnight'] .commute-map-labels,
 html[data-theme='midnight'] .commute-map-labels strong,
+html[data-theme='midnight'] .amazon-widget-total span,
+html[data-theme='midnight'] .amazon-widget-total em,
+html[data-theme='midnight'] .amazon-widget-footer,
+html[data-theme='midnight'] .amazon-widget-bar-row span,
+html[data-theme='midnight'] .amazon-widget-bar-row em,
+html[data-theme='midnight'] .amazon-hero p,
+html[data-theme='midnight'] .amazon-kpi-grid span,
+html[data-theme='midnight'] .amazon-panel-header span,
+html[data-theme='midnight'] .amazon-batch-row span,
+html[data-theme='midnight'] .amazon-person-row span,
+html[data-theme='midnight'] .amazon-settlement-row span,
+html[data-theme='midnight'] .amazon-table td,
+html[data-theme='midnight'] .amazon-table td small,
+html[data-theme='midnight'] .amazon-table th,
+html[data-theme='midnight'] .amazon-chart-row span,
 html[data-theme='midnight'] .dialog-eyebrow,
 html[data-theme='midnight'] .dashboard-edit-hint span,
 html[data-theme='midnight'] .checkbox-row,

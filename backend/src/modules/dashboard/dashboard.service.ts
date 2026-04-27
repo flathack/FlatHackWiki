@@ -13,6 +13,7 @@ import ical from 'node-ical';
 import { config } from '../../config/index.js';
 import { db } from '../../config/database.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../core/errors/app.errors.js';
+import { amazonExpensesService } from '../amazon-expenses/amazon-expenses.service.js';
 
 const TELEGRAM_ROLES = {
   USER: 'USER',
@@ -264,6 +265,15 @@ const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y:
       botUsername: 'OpenClaw Bot',
     },
   },
+  AMAZON_EXPENSES: {
+    title: 'Amazon Ausgaben',
+    x: 6,
+    y: 17,
+    width: 6,
+    height: 4,
+    minWidth: 4,
+    minHeight: 3,
+  },
 };
 
 const defaultWidgetOrder = [
@@ -279,6 +289,7 @@ const defaultWidgetOrder = [
   'TIME_TRACKER',
   'BOOKMARKS',
   'TELEGRAM_CHAT',
+  'AMAZON_EXPENSES',
 ] satisfies DashboardWidgetType[];
 
 const weekdayMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const;
@@ -1348,7 +1359,7 @@ class DashboardService {
     const dashboard = await this.ensureDashboard(userId);
     const calendarWidget = dashboard.widgets.find((widget) => widget.type === 'CALENDAR');
     const calendarSettings = normalizeCalendarSettings((calendarWidget?.settings ?? {}) as Record<string, unknown>);
-    const [bookmarksRaw, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages, calendar] = await Promise.all([
+    const [bookmarksRaw, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages, calendar, amazonExpenses] = await Promise.all([
       bookmarkDb.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
       db.commuteProfile.findUnique({ where: { userId } }),
       db.space.findMany({ orderBy: { updatedAt: 'desc' }, include: { owner: { select: { id: true, name: true } } } }),
@@ -1370,6 +1381,7 @@ class DashboardService {
         take: 40,
       }),
       calendarWidget ? fetchNextcloudCalendarStateForUser(userId, calendarSettings) : Promise.resolve(buildCalendarDisabledState()),
+      amazonExpensesService.getSummary(userId),
     ]);
 
     const todayStart = getStartOfDay(new Date());
@@ -1447,6 +1459,7 @@ class DashboardService {
             typeof telegramSettings.botUsername === 'string' ? telegramSettings.botUsername : 'OpenClaw Bot',
         },
       },
+      amazonExpenses,
     };
   }
 
@@ -2213,4 +2226,3 @@ ${renderBookmarksAsHtml(tree)}
 }
 
 export const dashboardService = new DashboardService();
-

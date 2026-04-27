@@ -120,7 +120,8 @@ export type DashboardWidgetType =
   | 'COMMUTE'
   | 'TIME_TRACKER'
   | 'BOOKMARKS'
-  | 'TELEGRAM_CHAT';
+  | 'TELEGRAM_CHAT'
+  | 'AMAZON_EXPENSES';
 export interface DashboardWidget {
   id: string;
   type: DashboardWidgetType;
@@ -253,6 +254,84 @@ export interface TelegramChatMessage {
   metadata?: Record<string, unknown>;
   createdAt: string;
 }
+export interface AmazonExpensePerson {
+  id: string;
+  displayName: string;
+  notes?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface AmazonOrder {
+  id: string;
+  personId?: string | null;
+  person?: AmazonExpensePerson | null;
+  orderId?: string | null;
+  orderDate: string;
+  itemTitle: string;
+  quantity: number;
+  itemAmount: number;
+  refundAmount: number;
+  totalAmount: number;
+  currency: string;
+  paymentInstrument?: string | null;
+  shipmentDate?: string | null;
+  invoiceUrl?: string | null;
+  orderUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface AmazonSettlement {
+  periodKey: string;
+  periodStart: string;
+  periodEnd: string;
+  periodLabel: string;
+  personId: string;
+  personName: string;
+  total: number;
+  orderCount: number;
+  paid: boolean;
+  payment?: {
+    id: string;
+    paidAt?: string | null;
+    paidNote?: string | null;
+    amountSnapshot: number;
+  } | null;
+}
+export interface AmazonExpensesSummary {
+  currentMonth: {
+    start: string;
+    end: string;
+    total: number;
+    orderCount: number;
+    unassignedCount: number;
+    unassignedTotal: number;
+  };
+  byPerson: Array<{ personId: string; displayName: string; total: number }>;
+  billingDay: number;
+}
+export interface AmazonExpensesDashboard {
+  settings: { userId: string; billingDay: number };
+  persons: AmazonExpensePerson[];
+  orders: AmazonOrder[];
+  batches: Array<{
+    id: string;
+    fileName: string;
+    importedRows: number;
+    createdRows: number;
+    duplicateRows: number;
+    invalidRows: number;
+    createdAt: string;
+    errors?: Array<{ row?: number; message: string }>;
+  }>;
+  summary: AmazonExpensesSummary;
+  settlements: AmazonSettlement[];
+  charts: {
+    monthlySpend: Array<{ month: string; total: number }>;
+    personSpend: Array<{ personId: string; label: string; total: number }>;
+    paidVsUnpaid: { paid: number; unpaid: number };
+  };
+}
 export interface DashboardResponse {
   widgets: DashboardWidget[];
   bookmarks: BookmarkState;
@@ -288,6 +367,7 @@ export interface DashboardResponse {
       botUsername: string;
     };
   };
+  amazonExpenses: AmazonExpensesSummary;
 }
 export interface WeatherResponse {
   location: string;
@@ -463,6 +543,44 @@ export const dashboardApi = {
       api.patch<TimeEntry>(`/dashboard/time-tracking/entries/${entryId}`, data),
     deleteEntry: (entryId: string) => api.delete(`/dashboard/time-tracking/entries/${entryId}`),
   },
+};
+
+export const amazonExpensesApi = {
+  dashboard: (params: {
+    personId?: string;
+    assignment?: 'all' | 'assigned' | 'unassigned';
+    from?: string;
+    to?: string;
+    paid?: 'all' | 'paid' | 'unpaid';
+  } = {}) => api.get<AmazonExpensesDashboard>('/amazon-expenses', { params }),
+  summary: () => api.get<AmazonExpensesSummary>('/amazon-expenses/summary'),
+  importCsv: (files: Array<{ fileName: string; content: string }>) =>
+    api.post<{ files: Array<{ fileName: string; importedRows: number; createdRows: number; duplicateRows: number; invalidRows: number; skipped: boolean; errors: Array<{ row?: number; message: string }> }>; dashboard: AmazonExpensesDashboard }>('/amazon-expenses/import', { files }),
+  createOrder: (data: {
+    orderDate: string;
+    itemTitle: string;
+    totalAmount: number;
+    quantity?: number;
+    personId?: string | null;
+    orderId?: string | null;
+    currency?: string;
+    paymentInstrument?: string | null;
+    refundAmount?: number;
+    itemAmount?: number;
+    invoiceUrl?: string | null;
+    orderUrl?: string | null;
+  }) => api.post<AmazonOrder>('/amazon-expenses/orders', data),
+  createPerson: (data: { displayName: string; notes?: string | null }) =>
+    api.post<AmazonExpensePerson>('/amazon-expenses/persons', data),
+  updatePerson: (personId: string, data: Partial<AmazonExpensePerson>) =>
+    api.patch<AmazonExpensePerson>(`/amazon-expenses/persons/${personId}`, data),
+  deletePerson: (personId: string) => api.delete(`/amazon-expenses/persons/${personId}`),
+  assignOrder: (orderId: string, personId: string | null) =>
+    api.patch<AmazonOrder>(`/amazon-expenses/orders/${orderId}/assignment`, { personId }),
+  updateSettings: (data: { billingDay: number }) =>
+    api.patch<{ userId: string; billingDay: number }>('/amazon-expenses/settings', data),
+  markSettlementPaid: (data: { personId: string; periodKey: string; paidNote?: string | null }) =>
+    api.post('/amazon-expenses/settlements/mark-paid', data),
 };
 
 export const adminApi = {

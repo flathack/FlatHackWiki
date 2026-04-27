@@ -43,6 +43,11 @@ model User {
   timeProjects      TimeTrackingProject[]
   timeEntries       TimeEntry[]
   telegramMessages  TelegramChatMessage[]
+  amazonPersons     AmazonExpensePerson[]
+  amazonOrders      AmazonOrder[]
+  amazonImportBatches AmazonOrderImportBatch[]
+  amazonSettings    AmazonExpenseSettings?
+  amazonSettlementPayments AmazonSettlementPayment[]
 
   @@map("users")
 }
@@ -160,6 +165,114 @@ enum DashboardWidgetType {
   TIME_TRACKER
   BOOKMARKS
   TELEGRAM_CHAT
+  AMAZON_EXPENSES
+}
+
+model AmazonExpenseSettings {
+  userId     String   @id @map("user_id")
+  billingDay Int     @default(1) @map("billing_day")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("amazon_expense_settings")
+}
+
+model AmazonExpensePerson {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  displayName String   @map("display_name") @db.VarChar(255)
+  notes       String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders AmazonOrder[]
+  settlementPayments AmazonSettlementPayment[]
+
+  @@index([userId, isActive])
+  @@map("amazon_expense_persons")
+}
+
+model AmazonOrderImportBatch {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  fileName     String   @map("file_name") @db.VarChar(255)
+  fileHash     String   @map("file_hash") @db.VarChar(64)
+  importedRows Int      @default(0) @map("imported_rows")
+  createdRows  Int      @default(0) @map("created_rows")
+  duplicateRows Int     @default(0) @map("duplicate_rows")
+  invalidRows  Int      @default(0) @map("invalid_rows")
+  errors       Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders AmazonOrder[]
+
+  @@index([userId, createdAt])
+  @@unique([userId, fileHash])
+  @@map("amazon_order_import_batches")
+}
+
+model AmazonOrder {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  personId          String?  @map("person_id")
+  importBatchId     String?  @map("import_batch_id")
+  orderId           String?  @map("order_id") @db.VarChar(120)
+  orderDate         DateTime @map("order_date")
+  itemTitle         String   @map("item_title") @db.Text
+  quantity          Int      @default(1)
+  itemAmount        Decimal  @default(0) @map("item_amount") @db.Decimal(12, 2)
+  refundAmount      Decimal  @default(0) @map("refund_amount") @db.Decimal(12, 2)
+  totalAmount       Decimal  @default(0) @map("total_amount") @db.Decimal(12, 2)
+  currency          String   @default("EUR") @db.VarChar(10)
+  paymentInstrument String?  @map("payment_instrument") @db.VarChar(255)
+  shipmentDate      DateTime? @map("shipment_date")
+  invoiceUrl        String?  @map("invoice_url") @db.Text
+  orderUrl          String?  @map("order_url") @db.Text
+  rawData           Json?    @map("raw_data")
+  duplicateKey      String   @map("duplicate_key") @db.VarChar(500)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  person AmazonExpensePerson? @relation(fields: [personId], references: [id], onDelete: SetNull)
+  importBatch AmazonOrderImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, duplicateKey])
+  @@index([userId, orderDate])
+  @@index([userId, personId, orderDate])
+  @@index([userId, orderId])
+  @@map("amazon_orders")
+}
+
+model AmazonSettlementPayment {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  personId       String   @map("person_id")
+  periodKey      String   @map("period_key") @db.VarChar(20)
+  periodStart    DateTime @map("period_start")
+  periodEnd      DateTime @map("period_end")
+  amountSnapshot Decimal  @default(0) @map("amount_snapshot") @db.Decimal(12, 2)
+  status         SettlementPaymentStatus @default(PAID)
+  paidAt         DateTime? @map("paid_at")
+  paidNote       String?   @map("paid_note") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  person AmazonExpensePerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, personId, periodKey])
+  @@index([userId, periodKey])
+  @@map("amazon_settlement_payments")
+}
+
+enum SettlementPaymentStatus {
+  PAID
 }
 
 model TelegramChatMessage {

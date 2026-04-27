@@ -20,6 +20,7 @@ export const widgetDefinitions: WidgetDefinition[] = [
   { type: 'COMMUTE', label: 'Arbeitsweg', description: 'Route, Büro-Tage und Homeoffice', singleton: true },
   { type: 'TIME_TRACKER', label: 'Zeiterfassung', description: 'Projekte, Timer und manuelle Zeiten', singleton: true },
   { type: 'TELEGRAM_CHAT', label: 'Telegram-Chat', description: 'Chat mit sicherer Backend-Anbindung an deinen OpenClaw Bot', singleton: true },
+  { type: 'AMAZON_EXPENSES', label: 'Amazon Ausgaben', description: 'Monatsausgaben, Zuordnung und Abrechnung', singleton: true },
 ];
 
 export const widgetDefinitionMap = Object.fromEntries(
