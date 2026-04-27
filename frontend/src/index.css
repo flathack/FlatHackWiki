@@ -2355,6 +2355,49 @@ html[data-theme='midnight'] .dashboard-edit-hint {
   color: #e0f2fe !important;
 }
 
+html[data-theme='midnight'] .legacy-profile-grid,
+html[data-theme='midnight'] .dashboard-widget-frame,
+html[data-theme='midnight'] .dashboard-widget-toolbar {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .dashboard-widget-toolbar {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .widget-drag-handle,
+html[data-theme='midnight'] .dashboard-user-chip {
+  background-color: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(56, 189, 248, 0.22) !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .dashboard-user-chip strong,
+html[data-theme='midnight'] .dashboard-user-chip span {
+  color: #e5e7eb !important;
+}
+
+html[data-theme='midnight'] .legacy-profile-grid .btn-secondary,
+html[data-theme='midnight'] .legacy-profile-grid .text-button {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .legacy-profile-grid .btn-secondary:hover,
+html[data-theme='midnight'] .legacy-profile-grid .text-button:hover {
+  background-color: rgba(14, 165, 233, 0.16) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .legacy-profile-grid .text-button.danger {
+  background-color: rgba(127, 29, 29, 0.28) !important;
+  border-color: rgba(248, 113, 113, 0.28) !important;
+  color: #fca5a5 !important;
+}
+
 html[data-theme='midnight'] .clock-widget-panel {
   background-image: linear-gradient(135deg, #0f172a 0%, #0b2239 55%, #12304b 100%) !important;
 }
