@@ -19,6 +19,20 @@ const defaultSetup = {
   securityMode: 'SSL_TLS' as MailAccount['securityMode'],
 };
 
+const imapHostPresets: Record<string, string> = {
+  'stevenschoedel.de': 'imap.ionos.de',
+  'ionos.de': 'imap.ionos.de',
+  'ionos.com': 'imap.ionos.de',
+  '1und1.de': 'imap.1und1.de',
+  'gmail.com': 'imap.gmail.com',
+  'googlemail.com': 'imap.gmail.com',
+  'outlook.com': 'outlook.office365.com',
+  'hotmail.com': 'outlook.office365.com',
+  'live.com': 'outlook.office365.com',
+  'icloud.com': 'imap.mail.me.com',
+  'me.com': 'imap.mail.me.com',
+};
+
 function formatMailDate(value: string) {
   return new Date(value).toLocaleString('de-DE', {
     dateStyle: 'short',
@@ -32,6 +46,7 @@ function senderLabel(message: MailMessage) {
 
 function inferImapHost(email: string) {
   const domain = email.split('@')[1]?.trim().toLowerCase();
+  if (domain && imapHostPresets[domain]) return imapHostPresets[domain];
   return domain ? `imap.${domain}` : '';
 }
 
