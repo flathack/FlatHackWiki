@@ -4,6 +4,7 @@ import {
   mailApi,
   type MailAccount,
   type MailboxState,
+  type MailFolder,
   type MailMessage,
   type MailMessageDetail,
 } from '../api/client';
@@ -19,6 +20,22 @@ const defaultSetup = {
   imapHost: '',
   imapPort: 993,
   securityMode: 'SSL_TLS' as MailAccount['securityMode'],
+};
+
+type ComposeMode = 'new' | 'reply' | 'forward';
+
+interface ComposeDraft {
+  mode: ComposeMode;
+  to: string;
+  subject: string;
+  body: string;
+}
+
+const emptyComposeDraft: ComposeDraft = {
+  mode: 'new',
+  to: '',
+  subject: '',
+  body: '',
 };
 
 const imapHostPresets: Record<string, string> = {
@@ -73,8 +90,13 @@ export default function MailPage() {
   const [selectedMessage, setSelectedMessage] = useState<MailMessageDetail | null>(null);
   const [selectedId, setSelectedId] = useState(searchParams.get('message') || '');
   const [accountId, setAccountId] = useState('');
+  const [folderPath, setFolderPath] = useState('INBOX');
   const [filter, setFilter] = useState<'all' | 'unread' | 'flagged' | 'attachments'>('all');
+  const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'sender' | 'subject'>('newest');
   const [query, setQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [composeDraft, setComposeDraft] = useState<ComposeDraft>(emptyComposeDraft);
+  const [composeOpen, setComposeOpen] = useState(false);
   const [setup, setSetup] = useState(defaultSetup);
   const [accountFormOpen, setAccountFormOpen] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -106,6 +128,7 @@ export default function MailPage() {
 
       const { data } = await mailApi.mailbox({
         accountId: accountId || undefined,
+        folder: folderPath || undefined,
         q: query || undefined,
         filter,
         limit: 100,
@@ -123,11 +146,19 @@ export default function MailPage() {
       if (showLoading) setLoading(false);
       if (shouldSync) setSyncing(false);
     }
-  }, [accountId, filter, query, selectedId]);
+  }, [accountId, filter, folderPath, query, selectedId]);
 
   useEffect(() => {
     loadMailbox({ showLoading: true });
   }, [accountId, filter, loadMailbox]);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [accountId, filter, folderPath, query]);
+
+  useEffect(() => {
+    setFolderPath('INBOX');
+  }, [accountId]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => loadMailbox({ showLoading: false }), 300);
@@ -196,9 +227,36 @@ export default function MailPage() {
     [accountId, mailbox?.accounts]
   );
 
+  const availableFolders = useMemo(() => {
+    const folders = mailbox?.folders ?? [];
+    const scopedFolders = accountId ? folders.filter((folder) => folder.accountId === accountId) : folders;
+    const unique = new Map<string, MailFolder>();
+    scopedFolders.forEach((folder) => {
+      if (!unique.has(folder.path)) unique.set(folder.path, folder);
+    });
+    return Array.from(unique.values()).sort((first, second) => {
+      if (first.path === 'INBOX') return -1;
+      if (second.path === 'INBOX') return 1;
+      return first.displayName.localeCompare(second.displayName, 'de');
+    });
+  }, [accountId, mailbox?.folders]);
+
+  const displayedMessages = useMemo(() => {
+    const messages = [...(mailbox?.messages ?? [])];
+    return messages.sort((first, second) => {
+      if (sortMode === 'oldest') return new Date(first.receivedAt).getTime() - new Date(second.receivedAt).getTime();
+      if (sortMode === 'sender') return senderLabel(first).localeCompare(senderLabel(second), 'de');
+      if (sortMode === 'subject') return (first.subject || '').localeCompare(second.subject || '', 'de');
+      return new Date(second.receivedAt).getTime() - new Date(first.receivedAt).getTime();
+    });
+  }, [mailbox?.messages, sortMode]);
+
+  const allVisibleSelected = displayedMessages.length > 0 && displayedMessages.every((message) => selectedIds.has(message.id));
+
   const showSetup = mailbox?.status === 'setup_required' || !mailbox?.accounts.length;
   const accountCount = mailbox?.accounts.length ?? 0;
-  const currentTitle = selectedAccount?.displayName || 'Posteingang';
+  const currentFolder = availableFolders.find((folder) => folder.path === folderPath);
+  const currentTitle = selectedAccount?.displayName || currentFolder?.displayName || 'Posteingang';
   const statusText = syncing ? 'Synchronisiert...' : `Aktualisiert ${formatFullDate(mailbox?.lastSyncedAt || lastLoadedAt)}`;
 
   const handleRefresh = () => loadMailbox({ sync: true, showLoading: false });
@@ -246,6 +304,63 @@ export default function MailPage() {
     }
   };
 
+  const toggleMessageSelection = (messageId: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(messageId)) next.delete(messageId);
+      else next.add(messageId);
+      return next;
+    });
+  };
+
+  const toggleVisibleSelection = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) displayedMessages.forEach((message) => next.delete(message.id));
+      else displayedMessages.forEach((message) => next.add(message.id));
+      return next;
+    });
+  };
+
+  const bulkUpdateMessages = async (patch: { isRead?: boolean; isFlagged?: boolean }) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    try {
+      await Promise.all(ids.map((messageId) => mailApi.updateMessage(messageId, patch)));
+      setSelectedIds(new Set());
+      if (selectedMessage && ids.includes(selectedMessage.id)) setSelectedMessage({ ...selectedMessage, ...patch });
+      await loadMailbox({ showLoading: false });
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Ausgewählte E-Mails konnten nicht aktualisiert werden.');
+    }
+  };
+
+  const openCompose = (mode: ComposeMode, message?: MailMessageDetail) => {
+    if (!message) {
+      setComposeDraft(emptyComposeDraft);
+      setComposeOpen(true);
+      return;
+    }
+
+    const originalSubject = message.subject || '(kein Betreff)';
+    const prefix = mode === 'reply' ? 'Re:' : 'Fwd:';
+    const quotedBody = `\n\n--- Ursprüngliche Nachricht ---\nVon: ${message.fromName || message.fromAddress}\nDatum: ${formatFullDate(message.receivedAt)}\nBetreff: ${originalSubject}\n\n${message.bodyText || message.preview || ''}`;
+    setComposeDraft({
+      mode,
+      to: mode === 'reply' ? message.fromAddress : '',
+      subject: originalSubject.toLowerCase().startsWith(prefix.toLowerCase()) ? originalSubject : `${prefix} ${originalSubject}`,
+      body: quotedBody,
+    });
+    setComposeOpen(true);
+  };
+
+  const sendComposeDraft = () => {
+    const params = new URLSearchParams();
+    if (composeDraft.subject) params.set('subject', composeDraft.subject);
+    if (composeDraft.body) params.set('body', composeDraft.body);
+    window.location.href = `mailto:${encodeURIComponent(composeDraft.to)}?${params.toString()}`;
+  };
+
   const deleteAccount = async (account: MailAccount) => {
     const confirmed = window.confirm(`Mailkonto ${account.displayName} wirklich entfernen? Lokale E-Mail-Kopien werden gelöscht.`);
     if (!confirmed) return;
@@ -273,8 +388,15 @@ export default function MailPage() {
             <option value="flagged">Wichtig</option>
             <option value="attachments">Mit Anhang</option>
           </select>
+          <select value={sortMode} onChange={(event) => setSortMode(event.target.value as typeof sortMode)} aria-label="Sortierung">
+            <option value="newest">Neueste zuerst</option>
+            <option value="oldest">Älteste zuerst</option>
+            <option value="sender">Absender</option>
+            <option value="subject">Betreff</option>
+          </select>
         </div>
         <div className="mail-webmail-top-actions">
+          <button type="button" onClick={() => openCompose('new')}>Neue E-Mail</button>
           <button type="button" onClick={() => setAutoRefresh((current) => !current)}>{autoRefresh ? 'Auto an' : 'Auto aus'}</button>
           <button type="button" onClick={handleRefresh} disabled={syncing}>{syncing ? 'Sync...' : 'Sync'}</button>
         </div>
@@ -282,7 +404,8 @@ export default function MailPage() {
 
       <main className="mail-webmail-main">
         <aside className="mail-webmail-sidebar">
-          <button className="mail-compose-button" type="button" onClick={() => setAccountFormOpen(true)}>Konto verbinden</button>
+          <button className="mail-compose-button" type="button" onClick={() => openCompose('new')}>Neue E-Mail</button>
+          <button className="mail-secondary-compose-button" type="button" onClick={() => setAccountFormOpen(true)}>Konto verbinden</button>
 
           <div className="mail-folder-group">
             <span className="mail-folder-group-title">Konten</span>
@@ -299,6 +422,16 @@ export default function MailPage() {
                 <small>{account.email}</small>
                 {account.lastError ? <em>{account.lastError}</em> : null}
               </div>
+            ))}
+          </div>
+
+          <div className="mail-folder-group">
+            <span className="mail-folder-group-title">Ordner</span>
+            {availableFolders.map((folder) => (
+              <button key={`${folder.accountId}-${folder.path}`} className={`mail-nav-row ${folder.path === folderPath ? 'active' : ''}`} onClick={() => setFolderPath(folder.path)}>
+                <span>{folder.displayName}</span>
+                <strong>{folder.unreadCount || ''}</strong>
+              </button>
             ))}
           </div>
 
@@ -320,9 +453,20 @@ export default function MailPage() {
           <div className="mail-list-heading">
             <div>
               <h1>{currentTitle}</h1>
-              <span>{mailbox?.total ?? 0} Nachrichten</span>
+              <span>{mailbox?.total ?? 0} Nachrichten · {selectedIds.size} ausgewählt</span>
             </div>
             <button type="button" onClick={handleRefresh} disabled={syncing}>{syncing ? 'Lädt' : 'Aktualisieren'}</button>
+          </div>
+
+          <div className="mail-bulk-toolbar">
+            <label>
+              <input type="checkbox" checked={allVisibleSelected} onChange={toggleVisibleSelection} />
+              <span>Alle sichtbaren auswählen</span>
+            </label>
+            <button type="button" onClick={() => bulkUpdateMessages({ isRead: true })} disabled={selectedIds.size === 0}>Gelesen</button>
+            <button type="button" onClick={() => bulkUpdateMessages({ isRead: false })} disabled={selectedIds.size === 0}>Ungelesen</button>
+            <button type="button" onClick={() => bulkUpdateMessages({ isFlagged: true })} disabled={selectedIds.size === 0}>Wichtig</button>
+            <button type="button" onClick={() => setSelectedIds(new Set())} disabled={selectedIds.size === 0}>Auswahl leeren</button>
           </div>
 
           {error ? <div className="mail-webmail-alert error">{error}</div> : null}
@@ -372,13 +516,20 @@ export default function MailPage() {
           <div className="mail-message-table" aria-busy={loading || syncing}>
             {loading ? <div className="mail-list-empty">E-Mails werden geladen...</div> : null}
             {!loading && mailbox?.messages.length === 0 ? <div className="mail-list-empty">Keine E-Mails für diese Auswahl gefunden.</div> : null}
-            {mailbox?.messages.map((message) => (
-              <button
+            {displayedMessages.map((message) => (
+              <div
                 key={message.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 className={`mail-table-row ${message.id === selectedId ? 'active' : ''} ${message.isRead ? '' : 'unread'}`}
                 onClick={() => setSelectedId(message.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') setSelectedId(message.id);
+                }}
               >
+                <span className="mail-row-checkbox" onClick={(event) => event.stopPropagation()}>
+                  <input type="checkbox" checked={selectedIds.has(message.id)} onChange={() => toggleMessageSelection(message.id)} aria-label={`${message.subject || 'E-Mail'} auswählen`} />
+                </span>
                 <span className="mail-row-unread-dot" />
                 <span className="mail-row-avatar">{senderInitials(message)}</span>
                 <span className="mail-row-sender">{senderLabel(message)}</span>
@@ -386,19 +537,22 @@ export default function MailPage() {
                 <span className="mail-row-preview">{messageSnippet(message)}</span>
                 <span className="mail-row-flags">{message.hasAttachments ? 'Anhang' : ''}{message.isFlagged ? ' Wichtig' : ''}</span>
                 <time>{formatListDate(message.receivedAt)}</time>
-              </button>
+              </div>
             ))}
           </div>
         </section>
 
-        <section className="mail-webmail-reader">
+        <section className={`mail-webmail-reader ${selectedMessage ? 'open' : ''}`}>
           {messageLoading ? <div className="mail-reader-empty">E-Mail wird geöffnet...</div> : null}
           {!messageLoading && selectedMessage ? (
             <article className="mail-reader-card">
               <div className="mail-reader-toolbar">
+                <button className="mail-reader-back" type="button" onClick={() => setSelectedId('')}>Zurück</button>
+                <button type="button" onClick={() => openCompose('reply', selectedMessage)}>Antworten</button>
+                <button type="button" onClick={() => openCompose('forward', selectedMessage)}>Weiterleiten</button>
                 <button type="button" onClick={() => updateSelectedMessage({ isRead: !selectedMessage.isRead })}>{selectedMessage.isRead ? 'Ungelesen' : 'Gelesen'}</button>
                 <button type="button" onClick={() => updateSelectedMessage({ isFlagged: !selectedMessage.isFlagged })}>{selectedMessage.isFlagged ? 'Markierung entfernen' : 'Wichtig'}</button>
-                <button type="button" onClick={() => selectedMessage.account && deleteAccount(selectedMessage.account)}>Konto entfernen</button>
+                <button className="mail-danger-action" type="button" onClick={() => selectedMessage.account && deleteAccount(selectedMessage.account)}>Konto entfernen</button>
               </div>
               <header className="mail-reader-header">
                 <span>{selectedMessage.account.displayName}</span>
@@ -407,6 +561,7 @@ export default function MailPage() {
               </header>
               <div className="mail-reader-meta">
                 <span>Von: {selectedMessage.fromAddress}</span>
+                <span>An: {selectedMessage.account.email}</span>
                 <span>Ordner: {selectedMessage.folder.displayName}</span>
                 {selectedMessage.hasAttachments ? <span>Anhang vorhanden</span> : null}
               </div>
@@ -418,6 +573,34 @@ export default function MailPage() {
           {!messageLoading && !selectedMessage ? <div className="mail-reader-empty">Wähle eine E-Mail aus der Liste.</div> : null}
         </section>
       </main>
+
+      {composeOpen ? (
+        <section className="mail-compose-dock" aria-label="E-Mail verfassen">
+          <header>
+            <div>
+              <span>{composeDraft.mode === 'reply' ? 'Antwort' : composeDraft.mode === 'forward' ? 'Weiterleiten' : 'Neue Nachricht'}</span>
+              <strong>E-Mail verfassen</strong>
+            </div>
+            <button type="button" onClick={() => setComposeOpen(false)}>Schließen</button>
+          </header>
+          <label>
+            <span>An</span>
+            <input value={composeDraft.to} onChange={(event) => setComposeDraft({ ...composeDraft, to: event.target.value })} placeholder="name@example.com" />
+          </label>
+          <label>
+            <span>Betreff</span>
+            <input value={composeDraft.subject} onChange={(event) => setComposeDraft({ ...composeDraft, subject: event.target.value })} placeholder="Betreff" />
+          </label>
+          <label>
+            <span>Nachricht</span>
+            <textarea value={composeDraft.body} onChange={(event) => setComposeDraft({ ...composeDraft, body: event.target.value })} placeholder="Schreibe deine Nachricht..." />
+          </label>
+          <div className="mail-compose-actions">
+            <button type="button" onClick={sendComposeDraft} disabled={!composeDraft.to.trim()}>In Mail-App senden</button>
+            <button type="button" onClick={() => setComposeDraft(emptyComposeDraft)}>Leeren</button>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
