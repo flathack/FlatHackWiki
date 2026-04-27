@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { spacesApi } from '../api/client';
+import AppHeader from '../components/AppHeader';
 
 export default function CreateSpace() {
   const [name, setName] = useState('');
@@ -34,7 +35,9 @@ export default function CreateSpace() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="dashboard-page-shell">
+      <AppHeader subtitle="Neuen Wiki-Bereich erstellen." />
+      <main className="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-8">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg">
         <h1 className="text-2xl font-bold mb-6">Neuen Bereich erstellen</h1>
         {error && (
@@ -70,6 +73,7 @@ export default function CreateSpace() {
           </div>
         </form>
       </div>
+      </main>
     </div>
   );
 }

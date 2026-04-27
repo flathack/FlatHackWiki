@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { pagesApi } from '../api/client';
 import RichTextEditor from '../components/editor/RichTextEditor';
 import { PAGE_TEMPLATES, getTemplate } from '../utils/templates';
+import AppHeader from '../components/AppHeader';
 
 export default function PageEditor() {
   const { key, slug, template: templateId } = useParams<{ key: string; slug?: string; template?: string }>();
@@ -72,26 +73,16 @@ export default function PageEditor() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link to={`/spaces/${key}`} className="text-gray-500 hover:text-gray-700">
-              ← {key}
-            </Link>
-            <span className="text-gray-300">/</span>
-            <span className="font-medium">{isNew ? 'Neue Seite' : `Bearbeiten: ${slug}`}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate(`/spaces/${key}`)} className="btn btn-secondary">
-              Abbrechen
-            </button>
-            <button onClick={handleSave} disabled={saving} className="btn btn-primary">
-              {saving ? 'Speichert...' : 'Speichern'}
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="dashboard-page-shell">
+      <AppHeader
+        subtitle={isNew ? `Neue Seite in ${key}` : `Bearbeiten: ${slug}`}
+        actions={(
+          <>
+            <button onClick={() => navigate(`/spaces/${key}`)} className="btn btn-secondary">Abbrechen</button>
+            <button onClick={handleSave} disabled={saving} className="btn btn-primary">{saving ? 'Speichert...' : 'Speichern'}</button>
+          </>
+        )}
+      />
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import ThemeSelector from './ThemeSelector';
 import { useAuthStore } from '../context/auth.store';
@@ -23,6 +24,7 @@ export default function AppHeader({
   onToggleEditMode,
 }: AppHeaderProps) {
   const { user, logout } = useAuthStore();
+  const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = user?.globalRole === 'SUPER_ADMIN' || user?.globalRole === 'SYSTEM_ADMIN';
 
   const handleLogout = async () => {
@@ -51,26 +53,40 @@ export default function AppHeader({
 
   return (
     <header className="dashboard-topbar">
-      <div>
+      <div className="dashboard-header-identity">
         <Link to="/" className="dashboard-brand">{title}</Link>
         <p className="dashboard-brand-copy">{subtitle}</p>
       </div>
-      <nav className="dashboard-topbar-actions" aria-label="Hauptnavigation">
+      <button
+        type="button"
+        className={`dashboard-menu-button ${menuOpen ? 'active' : ''}`}
+        aria-expanded={menuOpen}
+        aria-controls="dashboard-main-navigation"
+        onClick={() => setMenuOpen((current) => !current)}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+      <nav id="dashboard-main-navigation" className={`dashboard-topbar-actions ${menuOpen ? 'open' : ''}`} aria-label="Hauptnavigation">
         <div className="dashboard-primary-nav">
-          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} end>
+          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)} end>
             Dashboard
           </NavLink>
-          <NavLink to="/bookmarks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink to="/bookmarks" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
             Lesezeichen
           </NavLink>
-          <NavLink to="/amazon-expenses" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink to="/mail" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
+            Mail
+          </NavLink>
+          <NavLink to="/amazon-expenses" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
             Amazon
           </NavLink>
-          <NavLink to="/calendar-contacts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <NavLink to="/calendar-contacts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
             Kalender & Kontakte
           </NavLink>
           {isAdmin && (
-            <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
               Admin
             </NavLink>
           )}

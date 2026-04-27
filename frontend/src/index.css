@@ -192,6 +192,205 @@ html[data-theme='midnight'] .text-blue-600 {
   color: #bfdbfe !important;
 }
 
+html[data-theme='oled'] .dashboard-page-shell,
+html[data-theme='oled'] .page-loader,
+html[data-theme='oled'] .amazon-page-shell {
+  background-color: #000 !important;
+}
+
+html[data-theme='oled'] .dashboard-topbar,
+html[data-theme='oled'] .dashboard-topbar-actions,
+html[data-theme='oled'] .dashboard-primary-nav,
+html[data-theme='oled'] .dashboard-utility-nav,
+html[data-theme='oled'] .dashboard-menu-button,
+html[data-theme='oled'] .theme-selector-inline,
+html[data-theme='oled'] .theme-segmented-control,
+html[data-theme='oled'] .topbar-action-button,
+html[data-theme='oled'] .dashboard-widget-frame,
+html[data-theme='oled'] .dashboard-widget-toolbar,
+html[data-theme='oled'] .dialog-panel,
+html[data-theme='oled'] .dialog-card,
+html[data-theme='oled'] .mini-card-link,
+html[data-theme='oled'] .widget-subsection,
+html[data-theme='oled'] .widget-message,
+html[data-theme='oled'] .widget-stat-box,
+html[data-theme='oled'] .time-stat-card,
+html[data-theme='oled'] .time-widget-panel,
+html[data-theme='oled'] .time-widget-history,
+html[data-theme='oled'] .time-entry-row,
+html[data-theme='oled'] .commute-view-toggle,
+html[data-theme='oled'] .commute-route-card,
+html[data-theme='oled'] .commute-map-card,
+html[data-theme='oled'] .commute-map-labels span,
+html[data-theme='oled'] .amazon-widget,
+html[data-theme='oled'] .amazon-hero,
+html[data-theme='oled'] .amazon-kpi-grid div,
+html[data-theme='oled'] .amazon-panel,
+html[data-theme='oled'] .amazon-batch-row,
+html[data-theme='oled'] .amazon-person-row,
+html[data-theme='oled'] .amazon-settlement-row,
+html[data-theme='oled'] .admin-table-card,
+html[data-theme='oled'] .admin-tab.active,
+html[data-theme='oled'] .admin-table thead,
+html[data-theme='oled'] .checkbox-row,
+html[data-theme='oled'] .checkbox-card,
+html[data-theme='oled'] .widget-drag-handle,
+html[data-theme='oled'] .telegram-chat-history,
+html[data-theme='oled'] .telegram-chat-bubble-bot,
+html[data-theme='oled'] .bookmark-bar-shell,
+html[data-theme='oled'] .bookmark-folder-menu,
+html[data-theme='oled'] .bookmark-tree-row,
+html[data-theme='oled'] .bookmark-context-menu,
+html[data-theme='oled'] .bookmark-bar-empty-drop,
+html[data-theme='oled'] .calendar-widget-item,
+html[data-theme='oled'] .mail-widget-row,
+html[data-theme='oled'] .mail-widget-meta em {
+  background-color: #050505 !important;
+  border-color: #202020 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='oled'] .dashboard-hero-card,
+html[data-theme='oled'] .clock-widget-panel,
+html[data-theme='oled'] .weather-widget-hero,
+html[data-theme='oled'] .calendar-widget-hero,
+html[data-theme='oled'] .time-widget-hero,
+html[data-theme='oled'] .commute-map-svg,
+html[data-theme='oled'] .groupware-hero,
+html[data-theme='oled'] .admin-hero {
+  background: #030303 !important;
+  border-color: #202020 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='oled'] .dashboard-brand,
+html[data-theme='oled'] .nav-link.active,
+html[data-theme='oled'] .dashboard-hero-label,
+html[data-theme='oled'] .dashboard-search-provider,
+html[data-theme='oled'] .calendar-widget-hero-label,
+html[data-theme='oled'] .calendar-widget-item-status,
+html[data-theme='oled'] .time-widget-status span,
+html[data-theme='oled'] .text-button:hover {
+  color: #67e8f9 !important;
+}
+
+html[data-theme='oled'] .dashboard-brand-copy,
+html[data-theme='oled'] .nav-link,
+html[data-theme='oled'] .topbar-action-button,
+html[data-theme='oled'] .theme-segment,
+html[data-theme='oled'] .widget-shell-subtitle,
+html[data-theme='oled'] .mini-card-link span,
+html[data-theme='oled'] .widget-stat-box span,
+html[data-theme='oled'] .time-widget-status em,
+html[data-theme='oled'] .time-stat-card span,
+html[data-theme='oled'] .time-entry-main small,
+html[data-theme='oled'] .commute-route-card span,
+html[data-theme='oled'] .amazon-widget-total span,
+html[data-theme='oled'] .amazon-widget-total em,
+html[data-theme='oled'] .amazon-widget-footer,
+html[data-theme='oled'] .amazon-widget-bar-row span,
+html[data-theme='oled'] .amazon-widget-bar-row em,
+html[data-theme='oled'] .amazon-hero p,
+html[data-theme='oled'] .amazon-kpi-grid span,
+html[data-theme='oled'] .amazon-panel-header span,
+html[data-theme='oled'] .amazon-table td,
+html[data-theme='oled'] .amazon-table th,
+html[data-theme='oled'] .admin-table td,
+html[data-theme='oled'] .admin-table th,
+html[data-theme='oled'] .admin-tab,
+html[data-theme='oled'] .calendar-widget-day,
+html[data-theme='oled'] .calendar-widget-time,
+html[data-theme='oled'] .calendar-widget-item-main span,
+html[data-theme='oled'] .calendar-widget-meta,
+html[data-theme='oled'] .mail-widget-main span,
+html[data-theme='oled'] .mail-widget-meta,
+html[data-theme='oled'] .mail-widget-footer {
+  color: #a1a1aa !important;
+}
+
+html[data-theme='oled'] .widget-shell-title,
+html[data-theme='oled'] .mini-card-link strong,
+html[data-theme='oled'] .dialog-header h2,
+html[data-theme='oled'] .dialog-card h3,
+html[data-theme='oled'] .widget-stat-box strong,
+html[data-theme='oled'] .time-widget-status strong,
+html[data-theme='oled'] .time-stat-card strong,
+html[data-theme='oled'] .time-entry-main strong,
+html[data-theme='oled'] .time-widget-history-header,
+html[data-theme='oled'] .time-widget-panel summary,
+html[data-theme='oled'] .commute-route-card strong,
+html[data-theme='oled'] .amazon-widget-total strong,
+html[data-theme='oled'] .amazon-hero h1,
+html[data-theme='oled'] .amazon-kpi-grid strong,
+html[data-theme='oled'] .amazon-panel-header h2,
+html[data-theme='oled'] .amazon-table td strong,
+html[data-theme='oled'] .admin-table td strong,
+html[data-theme='oled'] .dashboard-hero-title,
+html[data-theme='oled'] .dashboard-hero-copy,
+html[data-theme='oled'] .calendar-widget-hero-title,
+html[data-theme='oled'] .calendar-widget-item-main strong,
+html[data-theme='oled'] .clock-widget-time,
+html[data-theme='oled'] .clock-widget-date,
+html[data-theme='oled'] .weather-widget-temp,
+html[data-theme='oled'] .weather-widget-copy,
+html[data-theme='oled'] .mail-widget-main strong {
+  color: #f5f5f5 !important;
+}
+
+html[data-theme='oled'] .nav-link:hover,
+html[data-theme='oled'] .nav-link.active,
+html[data-theme='oled'] .topbar-action-button:hover,
+html[data-theme='oled'] .topbar-action-button.active,
+html[data-theme='oled'] .theme-segment:hover,
+html[data-theme='oled'] .theme-segment.active,
+html[data-theme='oled'] .btn-secondary:hover,
+html[data-theme='oled'] .mini-card-link:hover,
+html[data-theme='oled'] .calendar-widget-item:hover,
+html[data-theme='oled'] .mail-widget-row:hover,
+html[data-theme='oled'] .mail-widget-row-unread,
+html[data-theme='oled'] .commute-view-toggle button.active,
+html[data-theme='oled'] .profile-widget-row:hover,
+html[data-theme='oled'] .bookmark-context-action:hover,
+html[data-theme='oled'] .bookmark-folder-entry:hover,
+html[data-theme='oled'] .bookmark-bar-item.drop-target,
+html[data-theme='oled'] .bookmark-folder-entry.drop-target,
+html[data-theme='oled'] .bookmark-bar-empty-drop.active {
+  background-color: #111 !important;
+  border-color: #2dd4bf !important;
+  color: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='oled'] .input,
+html[data-theme='oled'] input,
+html[data-theme='oled'] textarea,
+html[data-theme='oled'] select,
+html[data-theme='oled'] .btn-secondary,
+html[data-theme='oled'] .chip-button {
+  background-color: #050505 !important;
+  color: #e5e7eb !important;
+  border-color: #202020 !important;
+}
+
+html[data-theme='oled'] input::placeholder,
+html[data-theme='oled'] textarea::placeholder {
+  color: #71717a !important;
+}
+
+html[data-theme='oled'] .topbar-logout-button,
+html[data-theme='oled'] .widget-message-error,
+html[data-theme='oled'] .text-button.danger {
+  background-color: rgba(127, 29, 29, 0.24) !important;
+  border-color: rgba(248, 113, 113, 0.24) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme='oled'] .widget-message-success {
+  background-color: rgba(6, 78, 59, 0.22) !important;
+  border-color: rgba(52, 211, 153, 0.28) !important;
+  color: #86efac !important;
+}
+
 .page-loader {
   @apply flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center text-gray-600;
 }
@@ -201,7 +400,12 @@ html[data-theme='midnight'] .text-blue-600 {
 }
 
 .dashboard-topbar {
-  @apply sticky top-0 z-40 flex flex-col gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between md:px-6;
+  @apply sticky top-0 z-40 grid gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur md:px-6;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.dashboard-header-identity {
+  @apply min-w-0;
 }
 
 .dashboard-brand {
@@ -212,8 +416,30 @@ html[data-theme='midnight'] .text-blue-600 {
   @apply mt-1 text-sm text-gray-500;
 }
 
+.dashboard-menu-button {
+  @apply hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-900;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-menu-button span {
+  @apply block h-0.5 w-5 rounded-full bg-current transition;
+}
+
+.dashboard-menu-button.active span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.dashboard-menu-button.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.dashboard-menu-button.active span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
 .dashboard-topbar-actions {
-  @apply flex flex-wrap items-center justify-end gap-2;
+  @apply col-span-2 flex flex-wrap items-center justify-end gap-2 lg:col-span-1 lg:row-start-1 lg:justify-end;
 }
 
 .dashboard-primary-nav {
@@ -2556,21 +2782,91 @@ html[data-theme='midnight'] .react-grid-item.react-grid-placeholder {
 
 @media (max-width: 767px) {
   .dashboard-topbar {
-    @apply px-4;
+    @apply px-4 py-2.5;
+  }
+
+  .dashboard-brand {
+    @apply text-[0.68rem] tracking-[0.26em];
+  }
+
+  .dashboard-brand-copy {
+    @apply mt-0.5 line-clamp-1 text-xs;
+  }
+
+  .dashboard-menu-button {
+    @apply flex;
   }
 
   .dashboard-topbar-actions {
-    @apply w-full items-stretch justify-start;
+    @apply hidden w-full items-stretch justify-start rounded-2xl border border-gray-200 bg-white p-2 shadow-sm;
+  }
+
+  .dashboard-topbar-actions.open {
+    @apply flex;
   }
 
   .dashboard-primary-nav,
   .dashboard-utility-nav {
-    @apply w-full;
+    @apply w-full flex-col items-stretch;
   }
 
   .dashboard-primary-nav > *,
   .dashboard-utility-nav > * {
     @apply flex-1 text-center;
+  }
+
+  .nav-link,
+  .topbar-action-button,
+  .topbar-logout-button {
+    @apply justify-center text-center;
+  }
+
+  .theme-selector-inline {
+    @apply justify-center;
+  }
+
+  .dashboard-main-shell {
+    @apply gap-3 px-2 py-3;
+  }
+
+  .dashboard-hero-card {
+    @apply px-3 py-3;
+    border-radius: 18px !important;
+  }
+
+  .dashboard-hero-content {
+    @apply gap-3;
+  }
+
+  .dashboard-hero-label {
+    @apply text-[0.68rem] tracking-[0.18em];
+  }
+
+  .dashboard-hero-title {
+    @apply mt-1 text-2xl;
+  }
+
+  .dashboard-hero-copy,
+  .dashboard-hero-hint {
+    @apply mt-1 line-clamp-2 text-xs;
+  }
+
+  .dashboard-hero-tools {
+    @apply gap-2;
+  }
+
+  .dashboard-hero-clock,
+  .dashboard-hero-search {
+    @apply px-3 py-3;
+    border-radius: 16px !important;
+  }
+
+  .dashboard-hero-clock-time {
+    @apply text-2xl;
+  }
+
+  .dashboard-hero-clock-date {
+    @apply mt-1 text-xs;
   }
 
   .dashboard-user-chip {
@@ -3222,6 +3518,17 @@ html[data-theme='midnight'] .mail-setup-grid label {
   color: #a7a7a7;
 }
 
+.mail-header-actions {
+  display: flex;
+  min-width: min(48rem, 100%);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mail-header-actions .mail-webmail-search {
+  min-width: min(28rem, 52vw);
+}
+
 .mail-webmail-top-actions {
   display: flex;
   align-items: center;
@@ -3255,7 +3562,7 @@ html[data-theme='midnight'] .mail-setup-grid label {
 .mail-webmail-main {
   display: grid;
   grid-template-columns: 13rem minmax(28rem, 1fr) minmax(24rem, 38rem);
-  min-height: calc(100vh - 46px);
+  min-height: calc(100vh - var(--header-height));
 }
 
 .mail-webmail-sidebar {
@@ -3670,18 +3977,29 @@ html[data-theme='oled'] .mail-table-row.active {
 }
 
 @media (max-width: 760px) {
-  .mail-webmail-topbar,
   .mail-webmail-main {
     grid-template-columns: 1fr;
   }
 
-  .mail-webmail-topbar {
-    height: auto;
-    padding: 0.75rem;
+  .mail-header-actions {
+    min-width: 0;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
+  .mail-header-actions .mail-webmail-search,
   .mail-webmail-search {
+    min-width: 0;
     width: 100%;
+  }
+
+  .mail-webmail-top-actions {
+    width: 100%;
+  }
+
+  .mail-webmail-top-actions button {
+    flex: 1;
   }
 
   .mail-webmail-sidebar {

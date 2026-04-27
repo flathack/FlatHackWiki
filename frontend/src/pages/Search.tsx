@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { searchApi } from '../api/client';
+import AppHeader from '../components/AppHeader';
 
 interface SearchResult {
   type: string;
@@ -39,11 +40,13 @@ export default function Search() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+    <div className="dashboard-page-shell">
+      <AppHeader subtitle="Seiten, Inhalte und Bereiche durchsuchen." />
+
+      <main className="max-w-4xl mx-auto px-6 py-8">
+        <section className="dialog-card mb-6">
           <h1 className="text-xl font-bold mb-4">Suche</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               value={searchQuery}
@@ -59,10 +62,7 @@ export default function Search() {
               Suchen
             </button>
           </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-6 py-8">
+        </section>
         {loading ? (
           <div className="text-center py-12 text-gray-500">Suche läuft...</div>
         ) : results.length === 0 && query ? (

@@ -2,6 +2,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { pagesApi, Page } from '../api/client';
 import { renderMarkdown } from '../utils/markdown';
+import AppHeader from '../components/AppHeader';
 
 export default function PageView() {
   const { key, slug } = useParams<{ key: string; slug: string }>();
@@ -50,29 +51,17 @@ export default function PageView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link to={`/spaces/${key}`} className="text-gray-500 hover:text-gray-700">
-              ← {key}
-            </Link>
-            <span className="text-gray-300">/</span>
-            <span className="font-medium">{page.title}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              to={`/spaces/${key}/pages/${slug}/edit`}
-              className="btn btn-secondary text-sm"
-            >
-              Bearbeiten
-            </Link>
-            <button onClick={handleDelete} className="btn btn-secondary text-sm text-red-600">
-              Löschen
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="dashboard-page-shell">
+      <AppHeader
+        subtitle={`${key} / ${page.title}`}
+        actions={(
+          <>
+            <Link to={`/spaces/${key}`} className="btn btn-secondary text-sm">Zurück</Link>
+            <Link to={`/spaces/${key}/pages/${slug}/edit`} className="btn btn-secondary text-sm">Bearbeiten</Link>
+            <button onClick={handleDelete} className="btn btn-secondary text-sm text-red-600">Löschen</button>
+          </>
+        )}
+      />
 
       <div className="bg-gray-100 border-b border-gray-200 px-6 py-2">
         <nav className="text-sm text-gray-500">

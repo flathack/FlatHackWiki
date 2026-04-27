@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { spacesApi, pagesApi, Space, Page } from '../api/client';
+import AppHeader from '../components/AppHeader';
 
 interface TreeNode extends Page {
   children: TreeNode[];
@@ -73,18 +74,13 @@ export default function SpacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="flex items-center px-6 py-4">
-          <Link to="/" className="text-gray-500 hover:text-gray-700 mr-4">← Startseite</Link>
-          <div>
-            <h1 className="text-xl font-bold">{space?.name}</h1>
-            <p className="text-sm text-gray-500">{space?.description}</p>
-          </div>
-        </div>
-      </header>
+    <div className="dashboard-page-shell">
+      <AppHeader
+        subtitle={space?.description || `Bereich ${space?.name || key}`}
+        actions={<Link to={`/spaces/${key}/pages/new`} className="btn btn-primary">Neue Seite</Link>}
+      />
 
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         <aside className="w-64 bg-white border-r border-gray-200 min-h-screen p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-700">Seiten</h3>
