@@ -1457,7 +1457,6 @@ class DashboardService {
     }
 
     const todayKey = data.daily?.time?.[0] || new Date().toISOString().slice(0, 10);
-    const now = Date.now();
     const hourlyTimes = data.hourly?.time ?? [];
     const hourlyForecast = hourlyTimes
       .map((time, index) => {
@@ -1473,8 +1472,8 @@ class DashboardService {
           description: getWeatherDescription(data.hourly?.weather_code?.[index]),
         };
       })
-      .filter((entry) => entry.time.startsWith(todayKey) && entry.timestamp >= now - 60 * 60 * 1000)
-      .filter((entry, index) => index === 0 || entry.hour % 3 === 0)
+      .filter((entry) => entry.time.startsWith(todayKey))
+      .filter((entry) => entry.hour >= 6 && entry.hour <= 21 && entry.hour % 3 === 0)
       .slice(0, 8)
       .map((entry) => ({
         time: new Date(entry.time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
