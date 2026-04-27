@@ -11,6 +11,7 @@ import {
   type CalendarEvent,
   type CalendarWidgetState,
   dashboardApi,
+  mailApi,
   type BookmarkItem,
   type CommuteProfile,
   type CommuteRoute,
@@ -519,6 +520,35 @@ export default function Dashboard() {
 
     return () => window.clearInterval(timer);
   }, [dashboard?.widgets, telegramPollInterval]);
+
+  useEffect(() => {
+    const mailWidgetVisible = dashboard?.widgets.some(
+      (widget) => widget.type === 'MAIL' && widget.isVisible
+    );
+
+    if (!mailWidgetVisible) {
+      return;
+    }
+
+    const refreshMail = async () => {
+      if (document.visibilityState !== 'visible') return;
+
+      try {
+        await mailApi.sync();
+        const { data } = await mailApi.widget();
+        setDashboard((current) => (current ? { ...current, mail: data } : current));
+      } catch (pollError) {
+        console.error(pollError);
+      }
+    };
+
+    const timer = window.setInterval(refreshMail, 60 * 1000);
+    window.addEventListener('focus', refreshMail);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshMail);
+    };
+  }, [dashboard?.widgets]);
 
   const setDashboardWidgets = (updater: (widgets: DashboardWidget[]) => DashboardWidget[]) => {
     setDashboard((current) => (current ? { ...current, widgets: updater(current.widgets) } : current));
@@ -1400,7 +1430,7 @@ export default function Dashboard() {
             title={widget.title}
             subtitle="Neueste Nachrichten aus deinem Posteingang"
             badge={mail ? `${mail.unreadCount} ungelesen` : 'Mail'}
-            actions={<Link className="btn btn-secondary" to="/mail">Full</Link>}
+            actions={<Link className="btn btn-secondary" to="/mail">Öffnen</Link>}
           >
             <div className="mail-widget">
               {mail?.status === 'setup_required' ? (

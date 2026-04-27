@@ -2862,6 +2862,31 @@ html[data-theme='midnight'] textarea::placeholder {
   @apply mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-8;
 }
 
+.mail-client-statusbar {
+  @apply grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:grid-cols-[repeat(3,minmax(7rem,auto))_minmax(20rem,1fr)];
+}
+
+.mail-client-statusbar > div:not(.mail-client-sync-state) {
+  @apply rounded-xl border border-slate-100 bg-slate-50 px-4 py-3;
+}
+
+.mail-client-statusbar strong,
+.mail-client-statusbar span {
+  @apply block;
+}
+
+.mail-client-statusbar strong {
+  @apply text-xl font-semibold text-slate-950;
+}
+
+.mail-client-statusbar span {
+  @apply text-xs font-medium text-slate-500;
+}
+
+.mail-client-sync-state {
+  @apply flex flex-wrap items-center justify-start gap-2 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 md:justify-end;
+}
+
 .mail-setup-panel,
 .mail-sidebar,
 .mail-list-pane,
@@ -2917,23 +2942,52 @@ html[data-theme='midnight'] textarea::placeholder {
   @apply flex flex-col gap-2 p-3;
 }
 
-.mail-folder-row {
+.mail-folder-row,
+.mail-account-card {
   @apply rounded-lg border border-transparent px-3 py-2 text-left transition hover:border-blue-200 hover:bg-blue-50;
+}
+
+.mail-account-card {
+  @apply grid gap-2;
+}
+
+.mail-account-main {
+  @apply grid w-full gap-0.5 text-left;
 }
 
 .mail-folder-row span,
 .mail-folder-row strong,
-.mail-folder-row em {
+.mail-folder-row em,
+.mail-account-main span,
+.mail-account-main strong,
+.mail-account-main em,
+.mail-account-card p {
   @apply block truncate;
 }
 
-.mail-folder-row span {
+.mail-folder-row span,
+.mail-account-main span {
   @apply text-sm font-semibold text-slate-900;
 }
 
 .mail-folder-row strong,
-.mail-folder-row em {
+.mail-folder-row em,
+.mail-account-main strong,
+.mail-account-main em,
+.mail-account-card p {
   @apply text-xs font-normal not-italic text-slate-500;
+}
+
+.mail-account-card p {
+  @apply whitespace-normal rounded-md bg-red-50 px-2 py-1 text-red-700;
+}
+
+.mail-account-actions {
+  @apply flex flex-wrap gap-1;
+}
+
+.mail-account-actions .btn {
+  @apply px-2 py-1 text-xs;
 }
 
 .mail-folder-row-active {
@@ -2995,6 +3049,14 @@ html[data-theme='midnight'] textarea::placeholder {
   @apply flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 p-5;
 }
 
+.mail-detail-meta {
+  @apply flex flex-wrap gap-2 border-b border-slate-100 px-5 py-3 text-xs text-slate-500;
+}
+
+.mail-detail-meta span {
+  @apply rounded-md bg-slate-100 px-2 py-1;
+}
+
 .mail-detail-body {
   @apply min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap p-5 leading-7 text-slate-800;
 }
@@ -3004,10 +3066,13 @@ html[data-theme='midnight'] textarea::placeholder {
 }
 
 html[data-theme='midnight'] .mail-widget-row,
+html[data-theme='midnight'] .mail-client-statusbar,
+html[data-theme='midnight'] .mail-client-statusbar > div,
 html[data-theme='midnight'] .mail-setup-panel,
 html[data-theme='midnight'] .mail-sidebar,
 html[data-theme='midnight'] .mail-list-pane,
 html[data-theme='midnight'] .mail-detail-pane,
+html[data-theme='midnight'] .mail-account-card,
 html[data-theme='midnight'] .mail-message-row,
 html[data-theme='midnight'] .mail-folder-row-active,
 html[data-theme='midnight'] .mail-message-row-active,
@@ -3019,13 +3084,16 @@ html[data-theme='midnight'] .mail-message-row-unread {
 html[data-theme='midnight'] .mail-widget-row-unread,
 html[data-theme='midnight'] .mail-widget-row:hover,
 html[data-theme='midnight'] .mail-folder-row:hover,
+html[data-theme='midnight'] .mail-account-card:hover,
 html[data-theme='midnight'] .mail-message-row:hover {
   background-color: rgba(14, 165, 233, 0.14) !important;
   border-color: rgba(56, 189, 248, 0.35) !important;
 }
 
 html[data-theme='midnight'] .mail-widget-main strong,
+html[data-theme='midnight'] .mail-client-statusbar strong,
 html[data-theme='midnight'] .mail-folder-row span,
+html[data-theme='midnight'] .mail-account-main span,
 html[data-theme='midnight'] .mail-message-row strong,
 html[data-theme='midnight'] .mail-message-sender,
 html[data-theme='midnight'] .mail-setup-copy h1,
@@ -3037,8 +3105,12 @@ html[data-theme='midnight'] .mail-detail-body {
 html[data-theme='midnight'] .mail-widget-main span,
 html[data-theme='midnight'] .mail-widget-meta,
 html[data-theme='midnight'] .mail-widget-footer,
+html[data-theme='midnight'] .mail-client-statusbar span,
 html[data-theme='midnight'] .mail-folder-row strong,
 html[data-theme='midnight'] .mail-folder-row em,
+html[data-theme='midnight'] .mail-account-main strong,
+html[data-theme='midnight'] .mail-account-main em,
+html[data-theme='midnight'] .mail-detail-meta,
 html[data-theme='midnight'] .mail-list-context,
 html[data-theme='midnight'] .mail-message-row span,
 html[data-theme='midnight'] .mail-message-row time,

@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { MailAccountStatus, MailSecurityMode, Prisma } from '@prisma/client';
+import type { ParsedMail } from 'mailparser';
 import db from '../../config/database.js';
 import { config } from '../../config/index.js';
 import { NotFoundError, ValidationError } from '../../core/errors/app.errors.js';
@@ -27,6 +28,9 @@ type MailQuery = {
 const INBOX_PATH = 'INBOX';
 const DEFAULT_LIMIT = 50;
 const WIDGET_LIMIT = 20;
+const AUTO_SYNC_STALE_MS = 60 * 1000;
+const SYNC_WINDOW_SIZE = 150;
+const PREVIEW_LENGTH = 240;
 
 function credentialKey() {
   return createHash('sha256').update(config.MAIL_CREDENTIAL_SECRET || config.JWT_SECRET).digest();
@@ -136,6 +140,52 @@ function hasAttachments(bodyStructure: any): boolean {
   return Array.isArray(bodyStructure.childNodes) && bodyStructure.childNodes.some((node: any) => hasAttachments(node));
 }
 
+function textFromHtml(html: string) {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function normalizeBodyText(value: string | null | undefined) {
+  const text = (value ?? '').replace(/\r\n/g, '\n').replace(/[ \t]+\n/g, '\n').trim();
+  return text || null;
+}
+
+function createPreview(value: string | null | undefined) {
+  const preview = (value ?? '').replace(/\s+/g, ' ').trim();
+  return preview ? preview.slice(0, PREVIEW_LENGTH) : null;
+}
+
+async function parseMessageSource(source: Buffer | string | null | undefined) {
+  if (!source) {
+    return { bodyText: null, bodyHtml: null, preview: null, hasAttachments: false };
+  }
+
+  try {
+    const { simpleParser } = await import('mailparser');
+    const parsed = await simpleParser(source) as ParsedMail;
+    const html = typeof parsed.html === 'string' ? parsed.html : null;
+    const bodyText = normalizeBodyText(parsed.text || (html ? textFromHtml(html) : null));
+    return {
+      bodyText,
+      bodyHtml: html,
+      preview: createPreview(bodyText),
+      hasAttachments: parsed.attachments.length > 0,
+    };
+  } catch {
+    return { bodyText: null, bodyHtml: null, preview: null, hasAttachments: false };
+  }
+}
+
 async function createImapClient(input: {
   imapHost: string;
   imapPort: number;
@@ -185,6 +235,38 @@ async function testImapConnection(input: {
 }
 
 class MailService {
+  private readonly syncLocks = new Map<string, Promise<unknown>>();
+
+  private async syncAccountOnce(userId: string, accountId: string) {
+    const key = `${userId}:${accountId}`;
+    const existing = this.syncLocks.get(key);
+    if (existing) {
+      await existing;
+      return this.getAccount(userId, accountId);
+    }
+
+    const promise = this.syncAccount(userId, accountId).finally(() => {
+      this.syncLocks.delete(key);
+    });
+    this.syncLocks.set(key, promise);
+    return promise;
+  }
+
+  private async syncStaleAccounts(userId: string, accountId?: string) {
+    const staleBefore = new Date(Date.now() - AUTO_SYNC_STALE_MS);
+    const accounts = await db.mailAccount.findMany({
+      where: {
+        userId,
+        id: accountId,
+        status: { not: MailAccountStatus.DISABLED },
+        OR: [{ lastSyncAt: null }, { lastSyncAt: { lt: staleBefore } }, { status: MailAccountStatus.NEEDS_ATTENTION }],
+      },
+      select: { id: true },
+    });
+
+    await Promise.all(accounts.map((account) => this.syncAccountOnce(userId, account.id).catch(() => null)));
+  }
+
   async testAccount(input: MailAccountInput) {
     try {
       return await testImapConnection(input);
@@ -266,6 +348,8 @@ class MailService {
   }
 
   async getMailbox(userId: string, query: MailQuery = {}) {
+    await this.syncStaleAccounts(userId, query.accountId);
+
     const limit = query.limit ?? DEFAULT_LIMIT;
     const offset = query.offset ?? 0;
     const accounts = await db.mailAccount.findMany({ where: { userId }, orderBy: { displayName: 'asc' } });
@@ -357,7 +441,7 @@ class MailService {
     const accounts = await db.mailAccount.findMany({ where: { userId, status: { not: MailAccountStatus.DISABLED } } });
     const results = [];
     for (const account of accounts) {
-      results.push(await this.syncAccount(userId, account.id));
+      results.push(await this.syncAccountOnce(userId, account.id));
     }
     return { accounts: results };
   }
@@ -400,16 +484,19 @@ class MailService {
       });
 
       const exists = Number(mailbox.exists ?? 0);
-      const start = Math.max(1, exists - 99);
+      const start = Math.max(1, exists - (SYNC_WINDOW_SIZE - 1));
       if (exists > 0) {
         for await (const message of client.fetch(`${start}:*`, {
           uid: true,
           envelope: true,
           flags: true,
           bodyStructure: true,
+          source: true,
         })) {
           const sender = normalizeAddress(message.envelope?.from);
           const flags = Array.from(message.flags ?? []).map((flag) => String(flag));
+          const parsed = await parseMessageSource(message.source);
+          const messageHasAttachments = hasAttachments(message.bodyStructure) || parsed.hasAttachments;
           await db.mailMessage.upsert({
             where: {
               userId_accountId_folderId_uid: {
@@ -428,21 +515,26 @@ class MailService {
               fromName: sender.name,
               fromAddress: sender.address,
               subject: message.envelope?.subject ? String(message.envelope.subject) : '',
-              preview: null,
+              preview: parsed.preview,
               receivedAt: message.envelope?.date ? new Date(message.envelope.date) : new Date(),
               isRead: flags.includes('\\Seen'),
               isFlagged: flags.includes('\\Flagged'),
-              hasAttachments: hasAttachments(message.bodyStructure),
+              hasAttachments: messageHasAttachments,
+              bodyText: parsed.bodyText,
+              bodyHtml: parsed.bodyHtml,
               rawFlags: flags,
             },
             update: {
               fromName: sender.name,
               fromAddress: sender.address,
               subject: message.envelope?.subject ? String(message.envelope.subject) : '',
+              preview: parsed.preview,
               receivedAt: message.envelope?.date ? new Date(message.envelope.date) : new Date(),
               isRead: flags.includes('\\Seen'),
               isFlagged: flags.includes('\\Flagged'),
-              hasAttachments: hasAttachments(message.bodyStructure),
+              hasAttachments: messageHasAttachments,
+              bodyText: parsed.bodyText,
+              bodyHtml: parsed.bodyHtml,
               rawFlags: flags,
             },
           });
