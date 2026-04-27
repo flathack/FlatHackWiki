@@ -95,7 +95,11 @@ NEXTCLOUD_INTERNAL_URL=http://nextcloud
 NEXTCLOUD_PUBLIC_URL=https://alpha-nas.tail2b5c2.ts.net:8443
 OIDC_PUBLIC_ISSUER=https://alpha-nas.tail2b5c2.ts.net:8081/realms/flathackwiki
 OIDC_REDIRECT_URI=https://alpha-nas.tail2b5c2.ts.net:3002/api/v1/auth/oidc/callback
+OPENCLAW_BOT_WEBHOOK_URL=http://100.127.251.119:18789/v1/responses
+OPENCLAW_BOT_WEBHOOK_BEARER_TOKEN=<secret>
 ```
+
+Fuer den OpenClaw-Chat muessen die `OPENCLAW_*` Werte nicht nur in `stack.env` stehen, sondern auch in der Compose-Datei an den `api` Service durchgereicht werden. Die aktuelle [docker-compose.ghcr.yml](../docker-compose.ghcr.yml) enthaelt diese Pass-through-Werte bereits; bei einer manuell gepflegten Portainer-Compose-Datei dieselben Zeilen im `api.environment` Block behalten.
 
 Wenn du bei `latest` bleibst, reicht in Portainer normalerweise ein Redeploy mit Pull der neuesten Images.
 
