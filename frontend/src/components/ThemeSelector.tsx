@@ -3,7 +3,7 @@ import { useThemeStore, type ThemeName } from '../context/theme.store';
 
 const THEMES: Array<{ value: ThemeName; label: string; icon: string }> = [
   { value: 'light', label: 'Hell', icon: 'H' },
-  { value: 'sepia', label: 'Sepia', icon: 'S' },
+  { value: 'oled', label: 'OLED', icon: 'O' },
   { value: 'midnight', label: 'Dunkel', icon: 'D' },
 ];
 

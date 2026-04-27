@@ -23,11 +23,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const theme = useThemeStore((state) => state.theme);
+  const setTheme = useThemeStore((state) => state.setTheme);
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
+    const normalizedTheme = (theme as string) === 'sepia' ? 'oled' : theme;
+    if (normalizedTheme !== theme) {
+      setTheme(normalizedTheme);
+      return;
+    }
+    document.documentElement.dataset.theme = normalizedTheme;
+  }, [setTheme, theme]);
 
   useEffect(() => {
     const radius = Math.min(40, Math.max(8, user?.uiRadius ?? 28));

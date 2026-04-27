@@ -46,54 +46,71 @@ body {
   @apply bg-gray-50 text-gray-900;
 }
 
-html[data-theme='sepia'] body {
-  background-color: #f4ecd8 !important;
-  color: #4d3c2d !important;
+html[data-theme='oled'] body {
+  background-color: #000 !important;
+  color: #f5f7fa !important;
 }
 
-html[data-theme='sepia'] {
-  --bookmark-app-bg:
-    radial-gradient(circle at 0% 0%, rgba(180, 120, 32, 0.14), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(120, 74, 34, 0.1), transparent 24%),
-    linear-gradient(180deg, #f6eddc 0%, #efe4cf 50%, #f8f0e1 100%);
-  --bookmark-grid-line: rgba(120, 74, 34, 0.08);
-  --bookmark-shell-text: #4d3c2d;
-  --bookmark-hero-border: rgba(120, 74, 34, 0.16);
-  --bookmark-hero-bg: linear-gradient(180deg, rgba(250, 242, 228, 0.96), rgba(241, 229, 206, 0.94));
-  --bookmark-panel-border: rgba(120, 74, 34, 0.2);
-  --bookmark-panel-bg: linear-gradient(180deg, rgba(249, 241, 226, 0.94), rgba(245, 235, 217, 0.96));
-  --bookmark-panel-shadow: 0 24px 80px rgba(92, 70, 50, 0.14);
-  --bookmark-muted-text: #7a6049;
-  --bookmark-card-border: rgba(120, 74, 34, 0.18);
-  --bookmark-card-bg: rgba(250, 242, 228, 0.9);
-  --bookmark-card-text: #4d3c2d;
-  --bookmark-card-active-border: rgba(180, 120, 32, 0.32);
-  --bookmark-card-active-bg: rgba(180, 120, 32, 0.12);
-  --bookmark-strong-text: #3f2f22;
-  --bookmark-copy-text: #6b533f;
-  --bookmark-icon-bg: rgba(180, 120, 32, 0.14);
-  --bookmark-icon-text: #9a5b16;
-  --bookmark-icon-fallback-bg: linear-gradient(135deg, #b7791f, #e7b35b);
-  --bookmark-icon-fallback-text: #fff8ec;
-  --bookmark-pill-bg: rgba(180, 120, 32, 0.14);
-  --bookmark-pill-text: #8a5417;
-  --bookmark-hero-label: #9a5b16;
-  --bookmark-hero-copy: #6b533f;
-  --bookmark-warning-pill-bg: rgba(180, 120, 32, 0.16);
-  --bookmark-warning-pill-text: #8a5417;
+html[data-theme='oled'] {
+  --bookmark-app-bg: #000;
+  --bookmark-grid-line: rgba(255, 255, 255, 0.03);
+  --bookmark-shell-text: #f8fafc;
+  --bookmark-hero-border: rgba(255, 255, 255, 0.12);
+  --bookmark-hero-bg: #050505;
+  --bookmark-panel-border: rgba(255, 255, 255, 0.1);
+  --bookmark-panel-bg: #050505;
+  --bookmark-panel-shadow: none;
+  --bookmark-muted-text: #9ca3af;
+  --bookmark-card-border: rgba(255, 255, 255, 0.1);
+  --bookmark-card-bg: #070707;
+  --bookmark-card-text: #e5e7eb;
+  --bookmark-card-active-border: rgba(34, 211, 238, 0.5);
+  --bookmark-card-active-bg: rgba(34, 211, 238, 0.1);
+  --bookmark-strong-text: #f8fafc;
+  --bookmark-copy-text: #cbd5e1;
+  --bookmark-icon-bg: rgba(34, 211, 238, 0.12);
+  --bookmark-icon-text: #67e8f9;
+  --bookmark-icon-fallback-bg: #0e7490;
+  --bookmark-icon-fallback-text: #ecfeff;
+  --bookmark-pill-bg: rgba(34, 211, 238, 0.12);
+  --bookmark-pill-text: #67e8f9;
+  --bookmark-hero-label: #67e8f9;
+  --bookmark-hero-copy: #cbd5e1;
+  --bookmark-warning-pill-bg: rgba(250, 204, 21, 0.12);
+  --bookmark-warning-pill-text: #fde047;
+  color-scheme: dark;
 }
 
-html[data-theme='sepia'] .bg-gray-50,
-html[data-theme='sepia'] .bg-gray-100,
-html[data-theme='sepia'] .bg-white {
-  background-color: #f7efe1 !important;
+html[data-theme='oled'] .bg-gray-50,
+html[data-theme='oled'] .bg-gray-100,
+html[data-theme='oled'] .bg-white,
+html[data-theme='oled'] .bg-white\/90,
+html[data-theme='oled'] .bg-slate-100 {
+  background-color: #000 !important;
 }
 
-html[data-theme='sepia'] .text-gray-900,
-html[data-theme='sepia'] .text-gray-700,
-html[data-theme='sepia'] .text-gray-600,
-html[data-theme='sepia'] .text-gray-500 {
-  color: #5c4632 !important;
+html[data-theme='oled'] .text-gray-900,
+html[data-theme='oled'] .text-gray-700,
+html[data-theme='oled'] .text-gray-600,
+html[data-theme='oled'] .text-gray-500,
+html[data-theme='oled'] .text-slate-900,
+html[data-theme='oled'] .text-slate-700,
+html[data-theme='oled'] .text-slate-600 {
+  color: #e5e7eb !important;
+}
+
+html[data-theme='oled'] .border-gray-200,
+html[data-theme='oled'] .border-gray-300,
+html[data-theme='oled'] .border-slate-200 {
+  border-color: #202020 !important;
+}
+
+html[data-theme='oled'] .shadow-sm,
+html[data-theme='oled'] .shadow-md,
+html[data-theme='oled'] .shadow-lg,
+html[data-theme='oled'] .shadow-xl,
+html[data-theme='oled'] .shadow-2xl {
+  box-shadow: none !important;
 }
 
 html[data-theme='midnight'] body {
@@ -998,12 +1015,7 @@ html[data-theme='light'] .bookmark-app-shell .bookmark-quick-add input.input,
 html[data-theme='light'] .bookmark-app-shell .bookmark-toolbar input.input,
 html[data-theme='light'] .bookmark-app-shell .bookmark-editor input.input,
 html[data-theme='light'] .bookmark-app-shell .bookmark-editor textarea.input,
-html[data-theme='light'] .bookmark-app-shell .bookmark-import-export textarea.input,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-quick-add input.input,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-toolbar input.input,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor input.input,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor textarea.input,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.input {
+html[data-theme='light'] .bookmark-app-shell .bookmark-import-export textarea.input {
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
   caret-color: #0f172a !important;
@@ -1014,12 +1026,7 @@ html[data-theme='light'] .bookmark-app-shell .bookmark-quick-add input.input::pl
 html[data-theme='light'] .bookmark-app-shell .bookmark-toolbar input.input::placeholder,
 html[data-theme='light'] .bookmark-app-shell .bookmark-editor input.input::placeholder,
 html[data-theme='light'] .bookmark-app-shell .bookmark-editor textarea.input::placeholder,
-html[data-theme='light'] .bookmark-app-shell .bookmark-import-export textarea.input::placeholder,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-quick-add input.input::placeholder,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-toolbar input.input::placeholder,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor input.input::placeholder,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-editor textarea.input::placeholder,
-html[data-theme='sepia'] .bookmark-app-shell .bookmark-import-export textarea.input::placeholder {
+html[data-theme='light'] .bookmark-app-shell .bookmark-import-export textarea.input::placeholder {
   color: #64748b !important;
   -webkit-text-fill-color: #64748b !important;
 }
@@ -3147,6 +3154,552 @@ html[data-theme='midnight'] .mail-setup-grid label {
   }
 }
 
+.mail-webmail-shell {
+  min-height: 100vh;
+  background: #151515;
+  color: #d6d6d6;
+}
+
+.mail-webmail-topbar {
+  display: grid;
+  grid-template-columns: 13rem minmax(18rem, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  height: 46px;
+  border-bottom: 1px solid #242424;
+  background: #0f0f0f;
+  padding: 0 1rem;
+}
+
+.mail-webmail-brand {
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-decoration: none;
+}
+
+.mail-webmail-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: min(100%, 48rem);
+  justify-self: center;
+  border: 1px solid #2c2c2c;
+  border-radius: 5px;
+  background: #1f1f1f;
+  padding: 0.35rem 0.6rem;
+}
+
+.mail-webmail-search span,
+.mail-webmail-search input,
+.mail-webmail-search select {
+  font-size: 0.82rem;
+}
+
+.mail-webmail-search span {
+  color: #8a8a8a;
+}
+
+.mail-webmail-search input,
+.mail-webmail-search select,
+.mail-setup-drawer input,
+.mail-setup-drawer select {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #e8e8e8;
+  outline: none;
+}
+
+.mail-webmail-search input::placeholder,
+.mail-setup-drawer input::placeholder {
+  color: #737373;
+}
+
+.mail-webmail-search select {
+  color: #a7a7a7;
+}
+
+.mail-webmail-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.mail-webmail-top-actions button,
+.mail-list-heading button,
+.mail-reader-toolbar button,
+.mail-setup-actions-row button {
+  border: 1px solid #353535;
+  border-radius: 5px;
+  background: #202020;
+  color: #d8d8d8;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.mail-webmail-top-actions button:hover,
+.mail-list-heading button:hover,
+.mail-reader-toolbar button:hover,
+.mail-setup-actions-row button:hover {
+  border-color: #5a5a5a;
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.mail-webmail-main {
+  display: grid;
+  grid-template-columns: 13rem minmax(28rem, 1fr) minmax(24rem, 38rem);
+  min-height: calc(100vh - 46px);
+}
+
+.mail-webmail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-right: 1px solid #242424;
+  background: #111;
+  padding: 0.75rem 0.55rem;
+}
+
+.mail-compose-button {
+  width: 100%;
+  border: 0;
+  border-radius: 5px;
+  background: #555;
+  color: #fff;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.mail-folder-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mail-folder-group-title {
+  color: #8c8c8c;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0 0.45rem;
+  text-transform: uppercase;
+}
+
+.mail-nav-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #c8c8c8;
+  padding: 0.35rem 0.45rem;
+  text-align: left;
+  font-size: 0.78rem;
+}
+
+.mail-nav-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-nav-row strong {
+  color: #d8d8d8;
+  font-size: 0.72rem;
+}
+
+.mail-nav-row:hover,
+.mail-nav-row.active {
+  background: #3b3b3b;
+  color: #fff;
+}
+
+.mail-account-nav {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.mail-account-nav small,
+.mail-account-nav em {
+  overflow: hidden;
+  padding: 0 0.45rem;
+  color: #8f8f8f;
+  font-size: 0.68rem;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-account-nav em {
+  color: #fca5a5;
+}
+
+.mail-sidebar-footer {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: auto;
+  border-top: 1px solid #252525;
+  padding: 0.75rem 0.45rem 0;
+  color: #8e8e8e;
+  font-size: 0.68rem;
+}
+
+.mail-webmail-list-pane {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  background: #171717;
+}
+
+.mail-list-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #2b2b2b;
+  padding: 2.6rem 0.85rem 0.75rem;
+}
+
+.mail-list-heading h1 {
+  margin: 0;
+  color: #e8e8e8;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.mail-list-heading span {
+  color: #9a9a9a;
+  font-size: 0.78rem;
+}
+
+.mail-webmail-alert {
+  margin: 0.65rem 0.85rem 0;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.mail-webmail-alert.error {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(127, 29, 29, 0.25);
+  color: #fecaca;
+}
+
+.mail-webmail-alert.success {
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(6, 78, 59, 0.25);
+  color: #bbf7d0;
+}
+
+.mail-setup-drawer {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0.75rem 0.85rem;
+  border: 1px solid #353535;
+  border-radius: 8px;
+  background: #1f1f1f;
+  padding: 0.85rem;
+}
+
+.mail-setup-drawer h2 {
+  margin: 0;
+  color: #f5f5f5;
+  font-size: 1rem;
+}
+
+.mail-setup-drawer > div > span,
+.mail-setup-form-grid label span {
+  color: #9a9a9a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mail-setup-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.mail-setup-form-grid label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.mail-setup-form-grid input,
+.mail-setup-form-grid select {
+  border: 1px solid #363636;
+  border-radius: 5px;
+  background: #111;
+  padding: 0.45rem 0.55rem;
+}
+
+.mail-setup-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.mail-message-table {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.65rem 0.85rem 1rem;
+}
+
+.mail-table-row {
+  display: grid;
+  grid-template-columns: 0.6rem 2rem minmax(8rem, 11rem) minmax(12rem, 1.2fr) minmax(10rem, 1fr) minmax(3rem, auto) 4.5rem;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 2rem;
+  border: 0;
+  border-bottom: 1px solid #2a2a2a;
+  border-radius: 4px;
+  background: transparent;
+  color: #bdbdbd;
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.mail-table-row:hover,
+.mail-table-row.active {
+  background: #555;
+  color: #fff;
+}
+
+.mail-table-row.unread {
+  color: #f5f5f5;
+  font-weight: 700;
+}
+
+.mail-row-unread-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.mail-table-row.unread .mail-row-unread-dot {
+  background: #a7a7a7;
+}
+
+.mail-row-avatar {
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #303030;
+  color: #adadad;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.mail-row-sender,
+.mail-row-subject,
+.mail-row-preview,
+.mail-row-flags,
+.mail-table-row time {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+}
+
+.mail-row-subject {
+  color: inherit;
+}
+
+.mail-row-preview,
+.mail-row-flags,
+.mail-table-row time {
+  color: #9a9a9a;
+}
+
+.mail-table-row:hover .mail-row-preview,
+.mail-table-row:hover .mail-row-flags,
+.mail-table-row:hover time,
+.mail-table-row.active .mail-row-preview,
+.mail-table-row.active .mail-row-flags,
+.mail-table-row.active time {
+  color: #efefef;
+}
+
+.mail-list-empty,
+.mail-reader-empty {
+  display: grid;
+  min-height: 12rem;
+  place-items: center;
+  color: #8f8f8f;
+  font-size: 0.85rem;
+}
+
+.mail-webmail-reader {
+  min-width: 0;
+  border-left: 1px solid #242424;
+  background: #141414;
+}
+
+.mail-reader-card {
+  display: flex;
+  height: calc(100vh - 46px);
+  min-height: 0;
+  flex-direction: column;
+}
+
+.mail-reader-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  border-bottom: 1px solid #2b2b2b;
+  padding: 0.8rem;
+}
+
+.mail-reader-header {
+  border-bottom: 1px solid #292929;
+  padding: 1.1rem 1rem 0.85rem;
+}
+
+.mail-reader-header span {
+  color: #8f8f8f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mail-reader-header h2 {
+  margin: 0.25rem 0;
+  color: #f5f5f5;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.mail-reader-header p,
+.mail-reader-meta {
+  color: #9a9a9a;
+  font-size: 0.78rem;
+}
+
+.mail-reader-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-bottom: 1px solid #292929;
+  padding: 0.7rem 1rem;
+}
+
+.mail-reader-meta span {
+  border-radius: 999px;
+  background: #222;
+  padding: 0.25rem 0.55rem;
+}
+
+.mail-reader-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding: 1.2rem 1rem;
+  color: #dedede;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+html[data-theme='oled'] .mail-webmail-shell,
+html[data-theme='oled'] .mail-webmail-topbar,
+html[data-theme='oled'] .mail-webmail-sidebar,
+html[data-theme='oled'] .mail-webmail-list-pane,
+html[data-theme='oled'] .mail-webmail-reader {
+  background: #000 !important;
+}
+
+html[data-theme='oled'] .mail-webmail-topbar,
+html[data-theme='oled'] .mail-webmail-sidebar,
+html[data-theme='oled'] .mail-webmail-reader,
+html[data-theme='oled'] .mail-list-heading,
+html[data-theme='oled'] .mail-reader-toolbar,
+html[data-theme='oled'] .mail-reader-header,
+html[data-theme='oled'] .mail-reader-meta,
+html[data-theme='oled'] .mail-table-row {
+  border-color: #171717 !important;
+}
+
+html[data-theme='oled'] .mail-webmail-search,
+html[data-theme='oled'] .mail-webmail-top-actions button,
+html[data-theme='oled'] .mail-list-heading button,
+html[data-theme='oled'] .mail-reader-toolbar button,
+html[data-theme='oled'] .mail-setup-actions-row button,
+html[data-theme='oled'] .mail-setup-drawer,
+html[data-theme='oled'] .mail-setup-form-grid input,
+html[data-theme='oled'] .mail-setup-form-grid select,
+html[data-theme='oled'] .mail-reader-meta span,
+html[data-theme='oled'] .mail-row-avatar {
+  background: #050505 !important;
+  border-color: #202020 !important;
+}
+
+html[data-theme='oled'] .mail-nav-row:hover,
+html[data-theme='oled'] .mail-nav-row.active,
+html[data-theme='oled'] .mail-table-row:hover,
+html[data-theme='oled'] .mail-table-row.active {
+  background: #1f1f1f !important;
+}
+
+@media (max-width: 1180px) {
+  .mail-webmail-main {
+    grid-template-columns: 12rem minmax(0, 1fr);
+  }
+
+  .mail-webmail-reader {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .mail-webmail-topbar,
+  .mail-webmail-main {
+    grid-template-columns: 1fr;
+  }
+
+  .mail-webmail-topbar {
+    height: auto;
+    padding: 0.75rem;
+  }
+
+  .mail-webmail-search {
+    width: 100%;
+  }
+
+  .mail-webmail-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #242424;
+  }
+
+  .mail-table-row {
+    grid-template-columns: 0.5rem 1.8rem minmax(0, 1fr) 4rem;
+  }
+
+  .mail-row-subject,
+  .mail-row-preview,
+  .mail-row-flags {
+    grid-column: 3 / 5;
+  }
+}
+
 .markdown-content {
   @apply text-gray-800 leading-7;
 }
@@ -3229,13 +3782,7 @@ html[data-theme='light'] .bookmark-app-shell textarea.input,
 html[data-theme='light'] .bookmark-app-shell select.input,
 html[data-theme='light'] .bookmark-manager-dialog input.input,
 html[data-theme='light'] .bookmark-manager-dialog textarea.input,
-html[data-theme='light'] .bookmark-manager-dialog select.input,
-html[data-theme='sepia'] .bookmark-app-shell input.input,
-html[data-theme='sepia'] .bookmark-app-shell textarea.input,
-html[data-theme='sepia'] .bookmark-app-shell select.input,
-html[data-theme='sepia'] .bookmark-manager-dialog input.input,
-html[data-theme='sepia'] .bookmark-manager-dialog textarea.input,
-html[data-theme='sepia'] .bookmark-manager-dialog select.input {
+html[data-theme='light'] .bookmark-manager-dialog select.input {
   background: #ffffff !important;
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a !important;
@@ -3246,11 +3793,7 @@ html[data-theme='sepia'] .bookmark-manager-dialog select.input {
 html[data-theme='light'] .bookmark-app-shell input.input::placeholder,
 html[data-theme='light'] .bookmark-app-shell textarea.input::placeholder,
 html[data-theme='light'] .bookmark-manager-dialog input.input::placeholder,
-html[data-theme='light'] .bookmark-manager-dialog textarea.input::placeholder,
-html[data-theme='sepia'] .bookmark-app-shell input.input::placeholder,
-html[data-theme='sepia'] .bookmark-app-shell textarea.input::placeholder,
-html[data-theme='sepia'] .bookmark-manager-dialog input.input::placeholder,
-html[data-theme='sepia'] .bookmark-manager-dialog textarea.input::placeholder {
+html[data-theme='light'] .bookmark-manager-dialog textarea.input::placeholder {
   color: #64748b !important;
   -webkit-text-fill-color: #64748b !important;
   opacity: 1 !important;

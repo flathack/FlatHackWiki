@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import AppHeader from '../components/AppHeader';
 import {
   mailApi,
   type MailAccount,
@@ -35,16 +34,26 @@ const imapHostPresets: Record<string, string> = {
   'me.com': 'imap.mail.me.com',
 };
 
-function formatMailDate(value?: string | null) {
+function formatFullDate(value?: string | null) {
   if (!value) return 'noch nie';
-  return new Date(value).toLocaleString('de-DE', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  });
+  return new Date(value).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function formatListDate(value: string) {
+  const date = new Date(value);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) {
+    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  }
+  return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 }
 
 function senderLabel(message: MailMessage) {
   return message.fromName || message.fromAddress || 'Unbekannter Absender';
+}
+
+function senderInitials(message: MailMessage) {
+  return senderLabel(message).trim().slice(0, 2).toUpperCase();
 }
 
 function inferImapHost(email: string) {
@@ -54,7 +63,7 @@ function inferImapHost(email: string) {
 }
 
 function messageSnippet(message: MailMessage) {
-  return message.preview || message.fromAddress || 'Keine Vorschau verfuegbar';
+  return message.preview || message.fromAddress || 'Keine Vorschau verfügbar';
 }
 
 export default function MailPage() {
@@ -90,11 +99,8 @@ export default function MailPage() {
       setError('');
 
       if (shouldSync) {
-        if (accountId) {
-          await mailApi.syncAccount(accountId);
-        } else {
-          await mailApi.sync();
-        }
+        if (accountId) await mailApi.syncAccount(accountId);
+        else await mailApi.sync();
       }
 
       const { data } = await mailApi.mailbox({
@@ -107,10 +113,8 @@ export default function MailPage() {
       setMailbox(data);
       setLastLoadedAt(new Date().toISOString());
 
-      const currentSelectionStillVisible = selectedId && data.messages.some((message) => message.id === selectedId);
-      if (!currentSelectionStillVisible) {
-        setSelectedId(data.messages[0]?.id || '');
-      }
+      const selectionStillVisible = selectedId && data.messages.some((message) => message.id === selectedId);
+      if (!selectionStillVisible) setSelectedId(data.messages[0]?.id || '');
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'E-Mails konnten nicht geladen werden.');
     } finally {
@@ -133,9 +137,7 @@ export default function MailPage() {
     if (!autoRefresh || mailbox?.status === 'setup_required') return;
 
     const refresh = () => {
-      if (document.visibilityState === 'visible') {
-        loadMailbox({ sync: true, showLoading: false });
-      }
+      if (document.visibilityState === 'visible') loadMailbox({ sync: true, showLoading: false });
     };
 
     const timer = window.setInterval(refresh, autoRefreshIntervalMs);
@@ -193,10 +195,10 @@ export default function MailPage() {
     [accountId, mailbox?.accounts]
   );
 
-  const activeFolder = useMemo(() => {
-    if (!accountId) return null;
-    return mailbox?.folders.find((folder) => folder.accountId === accountId && folder.path === 'INBOX') ?? null;
-  }, [accountId, mailbox?.folders]);
+  const showSetup = mailbox?.status === 'setup_required' || !mailbox?.accounts.length;
+  const accountCount = mailbox?.accounts.length ?? 0;
+  const currentTitle = selectedAccount?.displayName || 'Posteingang';
+  const statusText = syncing ? 'Synchronisiert...' : `Aktualisiert ${formatFullDate(mailbox?.lastSyncedAt || lastLoadedAt)}`;
 
   const handleRefresh = () => loadMailbox({ sync: true, showLoading: false });
 
@@ -223,7 +225,7 @@ export default function MailPage() {
       await mailApi.createAccount({ ...setup, syncNow: true });
       setSetup(defaultSetup);
       setAccountFormOpen(false);
-      setTestMessage('Konto wurde verbunden und der Posteingang wird synchronisiert.');
+      setTestMessage('Konto wurde verbunden und synchronisiert.');
       await loadMailbox({ sync: true, showLoading: true });
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Konto konnte nicht gespeichert werden.');
@@ -256,155 +258,163 @@ export default function MailPage() {
     }
   };
 
-  const showSetup = mailbox?.status === 'setup_required' || !mailbox?.accounts.length;
-  const accountCount = mailbox?.accounts.length ?? 0;
-
   return (
-    <div className="dashboard-page-shell mail-page-shell">
-      <AppHeader title="E-Mail" subtitle="IMAP-Posteingang mit Auto-Sync, Suche, Markierungen und persönlicher Kontoeinrichtung." />
+    <div className="mail-webmail-shell">
+      <header className="mail-webmail-topbar">
+        <Link className="mail-webmail-brand" to="/dashboard">MAIL</Link>
+        <div className="mail-webmail-search">
+          <span aria-hidden="true">Suchen</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="In E-Mail suchen" />
+          <select value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)} aria-label="Filter">
+            <option value="all">Alle</option>
+            <option value="unread">Ungelesen</option>
+            <option value="flagged">Wichtig</option>
+            <option value="attachments">Mit Anhang</option>
+          </select>
+        </div>
+        <div className="mail-webmail-top-actions">
+          <button type="button" onClick={() => setAutoRefresh((current) => !current)}>{autoRefresh ? 'Auto an' : 'Auto aus'}</button>
+          <button type="button" onClick={handleRefresh} disabled={syncing}>{syncing ? 'Sync...' : 'Sync'}</button>
+        </div>
+      </header>
 
-      <main className="mail-client">
-        <section className="mail-client-statusbar">
-          <div><strong>{mailbox?.unreadCount ?? 0}</strong><span>ungelesen</span></div>
-          <div><strong>{mailbox?.total ?? 0}</strong><span>Nachrichten</span></div>
-          <div><strong>{accountCount}</strong><span>Konto{accountCount === 1 ? '' : 'en'}</span></div>
-          <div className="mail-client-sync-state">
-            <span>{syncing ? 'Synchronisiert gerade ...' : `Stand ${formatMailDate(mailbox?.lastSyncedAt || lastLoadedAt)}`}</span>
-            <button className="btn btn-secondary" onClick={() => setAutoRefresh((current) => !current)}>Auto {autoRefresh ? 'an' : 'aus'}</button>
-            <button className="btn btn-primary" onClick={handleRefresh} disabled={syncing}>{syncing ? 'Lädt ...' : 'Jetzt synchronisieren'}</button>
-            {!showSetup ? <button className="btn btn-secondary" onClick={() => setAccountFormOpen((current) => !current)}>Konto hinzufügen</button> : null}
+      <main className="mail-webmail-main">
+        <aside className="mail-webmail-sidebar">
+          <button className="mail-compose-button" type="button" onClick={() => setAccountFormOpen(true)}>Konto verbinden</button>
+
+          <div className="mail-folder-group">
+            <span className="mail-folder-group-title">Konten</span>
+            <button className={`mail-nav-row ${!accountId ? 'active' : ''}`} onClick={() => setAccountId('')}>
+              <span>Posteingang</span>
+              <strong>{mailbox?.unreadCount ?? 0}</strong>
+            </button>
+            {mailbox?.accounts.map((account) => (
+              <div key={account.id} className="mail-account-nav">
+                <button className={`mail-nav-row ${account.id === accountId ? 'active' : ''}`} onClick={() => setAccountId(account.id)}>
+                  <span>{account.displayName}</span>
+                  <strong>{account.status === 'NEEDS_ATTENTION' ? '!' : ''}</strong>
+                </button>
+                <small>{account.email}</small>
+                {account.lastError ? <em>{account.lastError}</em> : null}
+              </div>
+            ))}
+          </div>
+
+          <div className="mail-folder-group">
+            <span className="mail-folder-group-title">Ansichten</span>
+            <button className={`mail-nav-row ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}><span>Alle Nachrichten</span></button>
+            <button className={`mail-nav-row ${filter === 'unread' ? 'active' : ''}`} onClick={() => setFilter('unread')}><span>Ungelesen</span></button>
+            <button className={`mail-nav-row ${filter === 'flagged' ? 'active' : ''}`} onClick={() => setFilter('flagged')}><span>Wichtig</span></button>
+            <button className={`mail-nav-row ${filter === 'attachments' ? 'active' : ''}`} onClick={() => setFilter('attachments')}><span>Mit Anhang</span></button>
+          </div>
+
+          <div className="mail-sidebar-footer">
+            <span>{accountCount} Konto{accountCount === 1 ? '' : 'en'}</span>
+            <span>{statusText}</span>
+          </div>
+        </aside>
+
+        <section className="mail-webmail-list-pane">
+          <div className="mail-list-heading">
+            <div>
+              <h1>{currentTitle}</h1>
+              <span>{mailbox?.total ?? 0} Nachrichten</span>
+            </div>
+            <button type="button" onClick={handleRefresh} disabled={syncing}>{syncing ? 'Lädt' : 'Aktualisieren'}</button>
+          </div>
+
+          {error ? <div className="mail-webmail-alert error">{error}</div> : null}
+          {testMessage && !error ? <div className="mail-webmail-alert success">{testMessage}</div> : null}
+
+          {(showSetup || accountFormOpen) ? (
+            <section className="mail-setup-drawer">
+              <div>
+                <span>IMAP</span>
+                <h2>{showSetup ? 'E-Mail-Konto verbinden' : 'Weiteres Konto verbinden'}</h2>
+              </div>
+              <div className="mail-setup-form-grid">
+                <label><span>Anzeigename</span><input value={setup.displayName} onChange={(event) => setSetup({ ...setup, displayName: event.target.value })} placeholder="Privat, Arbeit, Verein" /></label>
+                <label>
+                  <span>E-Mail-Adresse</span>
+                  <input
+                    type="email"
+                    value={setup.email}
+                    onChange={(event) => {
+                      const email = event.target.value;
+                      setSetup((current) => ({ ...current, email, username: current.username || email, imapHost: current.imapHost || inferImapHost(email) }));
+                    }}
+                    placeholder="name@example.com"
+                  />
+                </label>
+                <label><span>Benutzername</span><input value={setup.username} onChange={(event) => setSetup({ ...setup, username: event.target.value })} /></label>
+                <label><span>Passwort oder App-Passwort</span><input type="password" value={setup.password} onChange={(event) => setSetup({ ...setup, password: event.target.value })} /></label>
+                <label><span>IMAP-Server</span><input value={setup.imapHost} onChange={(event) => setSetup({ ...setup, imapHost: event.target.value })} placeholder="imap.example.com" /></label>
+                <label><span>Port</span><input type="number" min={1} max={65535} value={setup.imapPort} onChange={(event) => setSetup({ ...setup, imapPort: Number(event.target.value) })} /></label>
+                <label>
+                  <span>Verschlüsselung</span>
+                  <select value={setup.securityMode} onChange={(event) => setSetup({ ...setup, securityMode: event.target.value as MailAccount['securityMode'] })}>
+                    <option value="SSL_TLS">SSL/TLS</option>
+                    <option value="STARTTLS">STARTTLS</option>
+                    <option value="NONE">Keine Verschlüsselung</option>
+                  </select>
+                </label>
+              </div>
+              <div className="mail-setup-actions-row">
+                <button type="button" onClick={handleTest} disabled={setupBusy}>Testen</button>
+                <button type="button" onClick={handleCreateAccount} disabled={setupBusy}>Speichern</button>
+                {!showSetup ? <button type="button" onClick={() => setAccountFormOpen(false)}>Schließen</button> : null}
+              </div>
+            </section>
+          ) : null}
+
+          <div className="mail-message-table" aria-busy={loading || syncing}>
+            {loading ? <div className="mail-list-empty">E-Mails werden geladen...</div> : null}
+            {!loading && mailbox?.messages.length === 0 ? <div className="mail-list-empty">Keine E-Mails für diese Auswahl gefunden.</div> : null}
+            {mailbox?.messages.map((message) => (
+              <button
+                key={message.id}
+                type="button"
+                className={`mail-table-row ${message.id === selectedId ? 'active' : ''} ${message.isRead ? '' : 'unread'}`}
+                onClick={() => setSelectedId(message.id)}
+              >
+                <span className="mail-row-unread-dot" />
+                <span className="mail-row-avatar">{senderInitials(message)}</span>
+                <span className="mail-row-sender">{senderLabel(message)}</span>
+                <span className="mail-row-subject">{message.subject || '(kein Betreff)'}</span>
+                <span className="mail-row-preview">{messageSnippet(message)}</span>
+                <span className="mail-row-flags">{message.hasAttachments ? 'Anhang' : ''}{message.isFlagged ? ' Wichtig' : ''}</span>
+                <time>{formatListDate(message.receivedAt)}</time>
+              </button>
+            ))}
           </div>
         </section>
 
-        {error && <div className="widget-message widget-message-error">{error}</div>}
-        {testMessage && !error && <div className="widget-message widget-message-success">{testMessage}</div>}
-
-        {(showSetup || accountFormOpen) ? (
-          <section className="mail-setup-panel">
-            <div className="mail-setup-copy">
-              <span className="dialog-eyebrow">IMAP Einrichtung</span>
-              <h1>{showSetup ? 'E-Mail-Konto verbinden' : 'Weiteres Konto verbinden'}</h1>
-              <p>Die Konfiguration ist nur für dein Benutzerkonto sichtbar. Zugangsdaten werden verschlüsselt gespeichert.</p>
-            </div>
-            <div className="mail-setup-grid">
-              <label><span>Anzeigename</span><input className="input" value={setup.displayName} onChange={(event) => setSetup({ ...setup, displayName: event.target.value })} placeholder="Privat, Arbeit, Verein" /></label>
-              <label>
-                <span>E-Mail-Adresse</span>
-                <input
-                  className="input"
-                  type="email"
-                  value={setup.email}
-                  onChange={(event) => {
-                    const email = event.target.value;
-                    setSetup((current) => ({ ...current, email, username: current.username || email, imapHost: current.imapHost || inferImapHost(email) }));
-                  }}
-                  placeholder="name@example.com"
-                />
-              </label>
-              <label><span>Benutzername</span><input className="input" value={setup.username} onChange={(event) => setSetup({ ...setup, username: event.target.value })} /></label>
-              <label><span>Passwort oder App-Passwort</span><input className="input" type="password" value={setup.password} onChange={(event) => setSetup({ ...setup, password: event.target.value })} /></label>
-              <label><span>IMAP-Server</span><input className="input" value={setup.imapHost} onChange={(event) => setSetup({ ...setup, imapHost: event.target.value })} placeholder="imap.example.com" /></label>
-              <label><span>Port</span><input className="input" type="number" min={1} max={65535} value={setup.imapPort} onChange={(event) => setSetup({ ...setup, imapPort: Number(event.target.value) })} /></label>
-              <label>
-                <span>Verschlüsselung</span>
-                <select className="input" value={setup.securityMode} onChange={(event) => setSetup({ ...setup, securityMode: event.target.value as MailAccount['securityMode'] })}>
-                  <option value="SSL_TLS">SSL/TLS</option>
-                  <option value="STARTTLS">STARTTLS</option>
-                  <option value="NONE">Keine Verschlüsselung</option>
-                </select>
-              </label>
-            </div>
-            <div className="mail-setup-actions">
-              <button className="btn btn-secondary" onClick={handleTest} disabled={setupBusy}>Verbindung testen</button>
-              <button className="btn btn-primary" onClick={handleCreateAccount} disabled={setupBusy}>Konto speichern</button>
-              {!showSetup ? <button className="btn btn-secondary" onClick={() => setAccountFormOpen(false)}>Schließen</button> : null}
-            </div>
-          </section>
-        ) : null}
-
-        {!showSetup ? (
-          <section className="mail-layout">
-            <aside className="mail-sidebar">
-              <button className={`mail-folder-row ${!accountId ? 'mail-folder-row-active' : ''}`} onClick={() => setAccountId('')}>
-                <span>Alle Posteingänge</span>
-                <strong>{mailbox?.unreadCount ?? 0} ungelesen</strong>
-                <em>{mailbox?.messages.length ?? 0} geladen</em>
-              </button>
-              {mailbox?.accounts.map((account) => (
-                <div key={account.id} className={`mail-account-card ${account.id === accountId ? 'mail-folder-row-active' : ''}`}>
-                  <button className="mail-account-main" onClick={() => setAccountId(account.id)}>
-                    <span>{account.displayName}</span>
-                    <strong>{account.status === 'NEEDS_ATTENTION' ? 'Fehler' : account.email}</strong>
-                    <em>Sync {formatMailDate(account.lastSyncAt)}</em>
-                  </button>
-                  {account.lastError ? <p>{account.lastError}</p> : null}
-                  <div className="mail-account-actions">
-                    <button className="btn btn-secondary" onClick={() => { setAccountId(account.id); loadMailbox({ sync: true, showLoading: false }); }} disabled={syncing}>Sync</button>
-                    <button className="btn btn-secondary" onClick={() => deleteAccount(account)}>Entfernen</button>
-                  </div>
-                </div>
-              ))}
-            </aside>
-
-            <section className="mail-list-pane">
-              <div className="mail-toolbar">
-                <input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Suche nach Absender, Betreff oder Vorschau" />
-                <select className="input" value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}>
-                  <option value="all">Alle</option>
-                  <option value="unread">Ungelesen</option>
-                  <option value="flagged">Wichtig</option>
-                  <option value="attachments">Mit Anhang</option>
-                </select>
+        <section className="mail-webmail-reader">
+          {messageLoading ? <div className="mail-reader-empty">E-Mail wird geöffnet...</div> : null}
+          {!messageLoading && selectedMessage ? (
+            <article className="mail-reader-card">
+              <div className="mail-reader-toolbar">
+                <button type="button" onClick={() => updateSelectedMessage({ isRead: !selectedMessage.isRead })}>{selectedMessage.isRead ? 'Ungelesen' : 'Gelesen'}</button>
+                <button type="button" onClick={() => updateSelectedMessage({ isFlagged: !selectedMessage.isFlagged })}>{selectedMessage.isFlagged ? 'Markierung entfernen' : 'Wichtig'}</button>
+                <button type="button" onClick={() => selectedMessage.account && deleteAccount(selectedMessage.account)}>Konto entfernen</button>
               </div>
-              <div className="mail-list-context">
-                <span>{selectedAccount?.displayName || 'Alle Konten'}</span>
-                <span>{activeFolder ? `${activeFolder.unreadCount} ungelesen / ${activeFolder.totalCount} total` : `${mailbox?.total ?? 0} Nachrichten`}</span>
+              <header className="mail-reader-header">
+                <span>{selectedMessage.account.displayName}</span>
+                <h2>{selectedMessage.subject || '(kein Betreff)'}</h2>
+                <p>{selectedMessage.fromName || selectedMessage.fromAddress} · {formatFullDate(selectedMessage.receivedAt)}</p>
+              </header>
+              <div className="mail-reader-meta">
+                <span>Von: {selectedMessage.fromAddress}</span>
+                <span>Ordner: {selectedMessage.folder.displayName}</span>
+                {selectedMessage.hasAttachments ? <span>Anhang vorhanden</span> : null}
               </div>
-              <div className="mail-message-list">
-                {loading ? <div className="page-loader">E-Mails werden geladen ...</div> : null}
-                {mailbox?.messages.map((message) => (
-                  <button key={message.id} className={`mail-message-row ${message.id === selectedId ? 'mail-message-row-active' : ''} ${message.isRead ? '' : 'mail-message-row-unread'}`} onClick={() => setSelectedId(message.id)}>
-                    <span className="mail-message-sender">{senderLabel(message)}</span>
-                    <strong>{message.subject || '(kein Betreff)'}</strong>
-                    <span>{messageSnippet(message)}</span>
-                    <time>{formatMailDate(message.receivedAt)}</time>
-                    <em>{message.hasAttachments ? 'Anhang' : ''}{message.isFlagged ? ' Wichtig' : ''}</em>
-                  </button>
-                ))}
-                {!loading && mailbox?.messages.length === 0 ? <div className="widget-message">Keine E-Mails für diese Auswahl gefunden.</div> : null}
+              <div className="mail-reader-body">
+                {selectedMessage.bodyText || selectedMessage.preview || 'Für diese Nachricht konnte kein lesbarer Text synchronisiert werden.'}
               </div>
-            </section>
-
-            <section className="mail-detail-pane">
-              {messageLoading ? <div className="mail-detail-empty">E-Mail wird geöffnet ...</div> : null}
-              {!messageLoading && selectedMessage ? (
-                <article className="mail-detail">
-                  <div className="mail-detail-header">
-                    <div>
-                      <span className="dialog-eyebrow">{selectedMessage.account.displayName}</span>
-                      <h1>{selectedMessage.subject || '(kein Betreff)'}</h1>
-                      <p>{selectedMessage.fromName || selectedMessage.fromAddress} · {formatMailDate(selectedMessage.receivedAt)}</p>
-                    </div>
-                    <div className="mail-detail-actions">
-                      <button className="btn btn-secondary" onClick={() => updateSelectedMessage({ isRead: !selectedMessage.isRead })}>{selectedMessage.isRead ? 'Ungelesen' : 'Gelesen'}</button>
-                      <button className="btn btn-secondary" onClick={() => updateSelectedMessage({ isFlagged: !selectedMessage.isFlagged })}>{selectedMessage.isFlagged ? 'Nicht wichtig' : 'Wichtig'}</button>
-                      <Link className="btn btn-primary" to="/dashboard">Zur Hauptseite</Link>
-                    </div>
-                  </div>
-                  <div className="mail-detail-meta">
-                    <span>Von: {selectedMessage.fromAddress}</span>
-                    <span>Ordner: {selectedMessage.folder.displayName}</span>
-                    {selectedMessage.hasAttachments ? <span>Anhänge vorhanden</span> : null}
-                  </div>
-                  <div className="mail-detail-body">
-                    {selectedMessage.bodyText || selectedMessage.preview || 'Für diese Nachricht konnte kein lesbarer Text synchronisiert werden.'}
-                  </div>
-                </article>
-              ) : null}
-              {!messageLoading && !selectedMessage ? <div className="mail-detail-empty">Wähle eine E-Mail aus der Liste.</div> : null}
-            </section>
-          </section>
-        ) : null}
+            </article>
+          ) : null}
+          {!messageLoading && !selectedMessage ? <div className="mail-reader-empty">Wähle eine E-Mail aus der Liste.</div> : null}
+        </section>
       </main>
     </div>
   );
