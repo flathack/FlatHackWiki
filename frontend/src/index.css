@@ -39,6 +39,20 @@
   --bookmark-hero-copy: #475569;
   --bookmark-warning-pill-bg: rgba(245, 158, 11, 0.18);
   --bookmark-warning-pill-text: #b45309;
+  --mail-shell-bg: #f8fafc;
+  --mail-sidebar-bg: #f1f5f9;
+  --mail-panel-bg: #ffffff;
+  --mail-panel-alt-bg: #f8fafc;
+  --mail-panel-muted-bg: #f1f5f9;
+  --mail-border: #e2e8f0;
+  --mail-border-strong: #cbd5e1;
+  --mail-text: #0f172a;
+  --mail-muted-text: #64748b;
+  --mail-subtle-text: #94a3b8;
+  --mail-hover-bg: #e0f2fe;
+  --mail-active-bg: #dbeafe;
+  --mail-accent: #0284c7;
+  --mail-accent-contrast: #ffffff;
   color-scheme: light;
 }
 
@@ -78,6 +92,20 @@ html[data-theme='oled'] {
   --bookmark-hero-copy: #cbd5e1;
   --bookmark-warning-pill-bg: rgba(250, 204, 21, 0.12);
   --bookmark-warning-pill-text: #fde047;
+  --mail-shell-bg: #000;
+  --mail-sidebar-bg: #000;
+  --mail-panel-bg: #050505;
+  --mail-panel-alt-bg: #0a0a0a;
+  --mail-panel-muted-bg: #111;
+  --mail-border: #1f1f1f;
+  --mail-border-strong: #2a2a2a;
+  --mail-text: #f5f5f5;
+  --mail-muted-text: #a1a1aa;
+  --mail-subtle-text: #71717a;
+  --mail-hover-bg: #111;
+  --mail-active-bg: #161616;
+  --mail-accent: #22d3ee;
+  --mail-accent-contrast: #001014;
   color-scheme: dark;
 }
 
@@ -148,6 +176,20 @@ html[data-theme='midnight'] {
   --bookmark-hero-copy: #c7d2fe;
   --bookmark-warning-pill-bg: rgba(245, 158, 11, 0.16);
   --bookmark-warning-pill-text: #fcd34d;
+  --mail-shell-bg: #0f172a;
+  --mail-sidebar-bg: #111827;
+  --mail-panel-bg: #111827;
+  --mail-panel-alt-bg: #0f172a;
+  --mail-panel-muted-bg: #1f2937;
+  --mail-border: #334155;
+  --mail-border-strong: #475569;
+  --mail-text: #f8fafc;
+  --mail-muted-text: #cbd5e1;
+  --mail-subtle-text: #94a3b8;
+  --mail-hover-bg: rgba(14, 165, 233, 0.16);
+  --mail-active-bg: rgba(14, 165, 233, 0.22);
+  --mail-accent: #38bdf8;
+  --mail-accent-contrast: #082f49;
   color-scheme: dark;
 }
 
@@ -400,20 +442,20 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .dashboard-topbar {
-  @apply sticky top-0 z-40 grid gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur md:px-6;
+  @apply sticky top-0 z-40 grid gap-3 border-b border-gray-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur md:px-5;
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .dashboard-header-identity {
-  @apply min-w-0;
+  @apply flex min-w-0 items-center gap-3;
 }
 
 .dashboard-brand {
-  @apply text-xs font-semibold uppercase tracking-[0.35em] text-sky-600;
+  @apply inline-flex min-h-10 items-center rounded-xl bg-slate-950 px-3 text-xs font-semibold uppercase tracking-[0.24em] text-white no-underline shadow-sm;
 }
 
 .dashboard-brand-copy {
-  @apply mt-1 text-sm text-gray-500;
+  @apply m-0 hidden max-w-[32rem] truncate text-sm text-gray-500 md:block;
 }
 
 .dashboard-menu-button {
@@ -443,7 +485,7 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .dashboard-primary-nav {
-  @apply flex flex-wrap items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1;
+  @apply flex flex-wrap items-center gap-1 rounded-xl border border-gray-200 bg-gray-50/90 p-1;
 }
 
 .dashboard-utility-nav {
@@ -451,7 +493,7 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .nav-link {
-  @apply rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-white hover:text-gray-900 hover:shadow-sm;
+  @apply inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 no-underline transition hover:bg-white hover:text-gray-900 hover:shadow-sm;
 }
 
 .nav-link.active {
@@ -459,7 +501,7 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .topbar-action-button {
-  @apply rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition hover:border-sky-300 hover:text-sky-900;
+  @apply inline-flex min-h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:border-sky-300 hover:text-sky-900;
 }
 
 .topbar-action-button.active {
@@ -467,7 +509,7 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .topbar-logout-button {
-  @apply rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-100 hover:text-red-800;
+  @apply inline-flex min-h-9 items-center justify-center rounded-lg border border-red-100 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:border-red-200 hover:bg-red-100 hover:text-red-800;
 }
 
 .dashboard-main-shell {
@@ -3562,7 +3604,7 @@ html[data-theme='midnight'] .mail-setup-grid label {
 .mail-webmail-main {
   display: grid;
   grid-template-columns: 13rem minmax(28rem, 1fr) minmax(24rem, 38rem);
-  min-height: calc(100vh - var(--header-height));
+  min-height: calc(100vh - var(--header-height) - 54px);
 }
 
 .mail-webmail-sidebar {
@@ -3863,7 +3905,7 @@ html[data-theme='midnight'] .mail-setup-grid label {
 
 .mail-reader-card {
   display: flex;
-  height: calc(100vh - 46px);
+  height: calc(100vh - var(--header-height) - 54px);
   min-height: 0;
   flex-direction: column;
 }
@@ -3966,6 +4008,129 @@ html[data-theme='oled'] .mail-table-row.active {
   background: #1f1f1f !important;
 }
 
+.mail-webmail-shell {
+  background: var(--mail-shell-bg) !important;
+  color: var(--mail-text) !important;
+}
+
+.mail-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--mail-border);
+  background: var(--mail-panel-bg);
+  padding: 0.65rem 1rem;
+}
+
+.mail-webmail-sidebar,
+.mail-webmail-list-pane,
+.mail-webmail-reader,
+.mail-reader-card {
+  background: var(--mail-panel-bg) !important;
+  color: var(--mail-text) !important;
+}
+
+.mail-webmail-sidebar {
+  background: var(--mail-sidebar-bg) !important;
+}
+
+.mail-webmail-sidebar,
+.mail-webmail-reader,
+.mail-list-heading,
+.mail-reader-toolbar,
+.mail-reader-header,
+.mail-reader-meta,
+.mail-sidebar-footer,
+.mail-table-row {
+  border-color: var(--mail-border) !important;
+}
+
+.mail-webmail-search,
+.mail-webmail-top-actions button,
+.mail-list-heading button,
+.mail-reader-toolbar button,
+.mail-setup-actions-row button,
+.mail-setup-drawer,
+.mail-setup-form-grid input,
+.mail-setup-form-grid select,
+.mail-reader-meta span,
+.mail-row-avatar {
+  background: var(--mail-panel-alt-bg) !important;
+  border-color: var(--mail-border) !important;
+  color: var(--mail-text) !important;
+}
+
+.mail-compose-button,
+.mail-webmail-top-actions button:hover,
+.mail-list-heading button:hover,
+.mail-reader-toolbar button:hover,
+.mail-setup-actions-row button:hover {
+  background: var(--mail-accent) !important;
+  border-color: var(--mail-accent) !important;
+  color: var(--mail-accent-contrast) !important;
+}
+
+.mail-nav-row,
+.mail-table-row {
+  color: var(--mail-text) !important;
+}
+
+.mail-nav-row:hover,
+.mail-nav-row.active,
+.mail-table-row:hover,
+.mail-table-row.active {
+  background: var(--mail-active-bg) !important;
+  color: var(--mail-text) !important;
+}
+
+.mail-row-preview,
+.mail-row-flags,
+.mail-table-row time,
+.mail-account-nav small,
+.mail-sidebar-footer,
+.mail-list-heading span,
+.mail-reader-header p,
+.mail-reader-meta,
+.mail-list-empty,
+.mail-reader-empty,
+.mail-folder-group-title,
+.mail-webmail-search span,
+.mail-webmail-search select,
+.mail-setup-drawer > div > span,
+.mail-setup-form-grid label span {
+  color: var(--mail-muted-text) !important;
+}
+
+.mail-list-heading h1,
+.mail-setup-drawer h2,
+.mail-reader-header h2,
+.mail-reader-body,
+.mail-table-row.unread,
+.mail-nav-row strong {
+  color: var(--mail-text) !important;
+}
+
+.mail-table-row.unread .mail-row-unread-dot {
+  background: var(--mail-accent) !important;
+}
+
+.mail-reader-body {
+  background: var(--mail-panel-bg) !important;
+}
+
+.mail-webmail-search input,
+.mail-webmail-search select,
+.mail-setup-drawer input,
+.mail-setup-drawer select {
+  color: var(--mail-text) !important;
+}
+
+.mail-webmail-search input::placeholder,
+.mail-setup-drawer input::placeholder {
+  color: var(--mail-subtle-text) !important;
+}
+
 @media (max-width: 1180px) {
   .mail-webmail-main {
     grid-template-columns: 12rem minmax(0, 1fr);
@@ -3986,6 +4151,12 @@ html[data-theme='oled'] .mail-table-row.active {
     width: 100%;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .mail-command-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.6rem 0.75rem;
   }
 
   .mail-header-actions .mail-webmail-search,

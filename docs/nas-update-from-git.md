@@ -128,13 +128,15 @@ c:/Users/steve/Github/FL-Lingo/.venv/Scripts/python.exe scripts/nas-docker.py do
 Danach den Portainer-Compose-Ordner direkt neu starten:
 
 ```powershell
-c:/Users/steve/Github/FL-Lingo/.venv/Scripts/python.exe scripts/nas-docker.py shell "cd /Volume1/@apps/Portainer/compose/21 && /Volume1/@apps/DockerEngine/dockerd/bin/docker-compose up -d"
+c:/Users/steve/Github/FL-Lingo/.venv/Scripts/python.exe scripts/nas-docker.py shell "cd /Volume1/@apps/Portainer/compose/21 && /Volume1/@apps/DockerEngine/dockerd/bin/docker-compose --env-file stack.env up -d"
 ```
 
-Falls du `stack.env` geaendert hast:
+Wichtig: Der NAS-Stack braucht `stack.env` auch bei normalen Redeploys. Ohne `--env-file stack.env` greifen Compose-Defaults wie `localhost`, wodurch Login-Redirects und CORS falsch werden koennen.
+
+Falls du zusaetzlich eine lokale `.env` im Compose-Ordner synchronisieren willst:
 
 ```powershell
-c:/Users/steve/Github/FL-Lingo/.venv/Scripts/python.exe scripts/nas-docker.py shell "cd /Volume1/@apps/Portainer/compose/21 && /Volume1/@apps/DockerEngine/dockerd/bin/docker-compose --env-file stack.env up -d"
+c:/Users/steve/Github/FL-Lingo/.venv/Scripts/python.exe scripts/nas-docker.py shell "cd /Volume1/@apps/Portainer/compose/21 && cp stack.env .env"
 ```
 
 ## 5. Verifikation nach dem Update

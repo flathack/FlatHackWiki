@@ -261,27 +261,24 @@ export default function MailPage() {
 
   return (
     <div className="mail-webmail-shell">
-      <AppHeader
-        subtitle="E-Mail, Lesezeichen und Dashboard in einer Oberfläche."
-        actions={(
-          <div className="mail-header-actions">
-            <div className="mail-webmail-search">
-              <span aria-hidden="true">Suchen</span>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="In E-Mail suchen" />
-              <select value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)} aria-label="Filter">
-                <option value="all">Alle</option>
-                <option value="unread">Ungelesen</option>
-                <option value="flagged">Wichtig</option>
-                <option value="attachments">Mit Anhang</option>
-              </select>
-            </div>
-            <div className="mail-webmail-top-actions">
-              <button type="button" onClick={() => setAutoRefresh((current) => !current)}>{autoRefresh ? 'Auto an' : 'Auto aus'}</button>
-              <button type="button" onClick={handleRefresh} disabled={syncing}>{syncing ? 'Sync...' : 'Sync'}</button>
-            </div>
-          </div>
-        )}
-      />
+      <AppHeader subtitle="E-Mail, Lesezeichen und Dashboard in einer Oberfläche." />
+
+      <section className="mail-command-bar">
+        <div className="mail-webmail-search">
+          <span aria-hidden="true">Suchen</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="In E-Mail suchen" />
+          <select value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)} aria-label="Filter">
+            <option value="all">Alle</option>
+            <option value="unread">Ungelesen</option>
+            <option value="flagged">Wichtig</option>
+            <option value="attachments">Mit Anhang</option>
+          </select>
+        </div>
+        <div className="mail-webmail-top-actions">
+          <button type="button" onClick={() => setAutoRefresh((current) => !current)}>{autoRefresh ? 'Auto an' : 'Auto aus'}</button>
+          <button type="button" onClick={handleRefresh} disabled={syncing}>{syncing ? 'Sync...' : 'Sync'}</button>
+        </div>
+      </section>
 
       <main className="mail-webmail-main">
         <aside className="mail-webmail-sidebar">
