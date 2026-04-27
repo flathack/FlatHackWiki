@@ -281,6 +281,34 @@ html[data-theme='midnight'] .amazon-page-shell {
   background: #0f172a !important;
 }
 
+html[data-theme='midnight'] .login-page-shell {
+  background: #0f172a !important;
+}
+
+html[data-theme='midnight'] .login-card {
+  background: #111827 !important;
+  border: 1px solid #374151 !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme='midnight'] .login-title,
+html[data-theme='midnight'] .login-local-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .login-sso-panel {
+  background: linear-gradient(135deg, #020617, #082f49, #164e63) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+}
+
+html[data-theme='midnight'] .login-divider {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='midnight'] .login-divider span {
+  background: #334155 !important;
+}
+
 html[data-theme='midnight'] .bg-blue-100 {
   background-color: #1e3a8a !important;
 }
@@ -292,6 +320,7 @@ html[data-theme='midnight'] .text-blue-600 {
 
 html[data-theme='oled'] .dashboard-page-shell,
 html[data-theme='oled'] .page-loader,
+html[data-theme='oled'] .login-page-shell,
 html[data-theme='oled'] .amazon-page-shell {
   background-color: #000 !important;
 }
@@ -305,6 +334,7 @@ html[data-theme='oled'] .theme-selector-inline,
 html[data-theme='oled'] .theme-segmented-control,
 html[data-theme='oled'] .topbar-action-button,
 html[data-theme='oled'] .dashboard-widget-frame,
+html[data-theme='oled'] .login-card,
 html[data-theme='oled'] .dashboard-widget-toolbar,
 html[data-theme='oled'] .dialog-panel,
 html[data-theme='oled'] .dialog-card,
@@ -407,6 +437,8 @@ html[data-theme='oled'] .mail-widget-footer {
 }
 
 html[data-theme='oled'] .widget-shell-title,
+html[data-theme='oled'] .login-title,
+html[data-theme='oled'] .login-local-title,
 html[data-theme='oled'] .mini-card-link strong,
 html[data-theme='oled'] .dialog-header h2,
 html[data-theme='oled'] .dialog-card h3,
@@ -3107,6 +3139,50 @@ html[data-theme='midnight'] a {
 
 .btn-secondary {
   @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
+}
+
+.login-page-shell {
+  @apply flex min-h-screen items-center justify-center bg-gray-100 px-4 py-8;
+}
+
+.login-card {
+  @apply w-full max-w-md rounded-xl bg-white p-8 shadow-lg;
+}
+
+.login-title {
+  @apply mb-6 text-center text-2xl font-bold text-slate-950;
+}
+
+.login-sso-panel {
+  @apply mb-5 rounded-2xl border border-sky-100 bg-gradient-to-br from-slate-950 via-sky-950 to-cyan-900 p-5 text-white shadow-sm;
+}
+
+.login-sso-panel span {
+  @apply text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200;
+}
+
+.login-sso-panel h2 {
+  @apply mt-2 text-xl font-semibold;
+}
+
+.login-sso-button {
+  @apply mt-4 inline-flex w-full items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50;
+}
+
+.login-divider {
+  @apply my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400;
+}
+
+.login-divider span {
+  @apply h-px flex-1 bg-gray-200;
+}
+
+.login-divider em {
+  @apply not-italic;
+}
+
+.login-local-title {
+  @apply mb-4 text-lg font-semibold text-slate-900;
 }
 
 html[data-theme='midnight'] .btn-secondary {

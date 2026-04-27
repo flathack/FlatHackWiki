@@ -78,25 +78,32 @@ export default function LoginPage() {
   };
 
   const handleOidcLogin = () => {
-    const loginUrl = oidcConfig?.loginUrl;
-    if (!loginUrl) return;
+    const loginUrl = oidcConfig?.loginUrl || '/auth/oidc/login';
 
     const returnTo = new URLSearchParams(window.location.search).get('returnTo') || '/';
     const separator = loginUrl.includes('?') ? '&' : '?';
     window.location.href = `${API_BASE}${loginUrl}${separator}returnTo=${encodeURIComponent(returnTo)}`;
   };
 
+  const oidcEnabled = oidcConfig?.enabled !== false;
+  const oidcProviderName = oidcConfig?.providerName || 'FlathackID';
   const localLoginEnabled = oidcConfig?.localLoginEnabled ?? true;
   const selfRegistrationEnabled = oidcConfig?.selfRegistrationEnabled ?? true;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">FlatHacksWiki</h1>
+    <div className="login-page-shell">
+      <div className="login-card">
+        <h1 className="login-title">FlatHacksWiki</h1>
 
-        <h2 className="text-xl font-semibold mb-4">
-          {localLoginEnabled ? (isRegister ? 'Konto erstellen' : 'Anmelden') : 'Zentral anmelden'}
-        </h2>
+        {oidcEnabled && (
+          <section className="login-sso-panel">
+            <span>{oidcProviderName}</span>
+            <h2>Zentral anmelden</h2>
+            <button type="button" className="login-sso-button" onClick={handleOidcLogin}>
+              Mit Benutzername und Passwort anmelden
+            </button>
+          </section>
+        )}
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -104,23 +111,19 @@ export default function LoginPage() {
           </div>
         )}
 
-        {oidcConfig?.enabled && oidcConfig.loginUrl && (
-          <div className="mb-5">
-            <button type="button" className="btn btn-primary w-full" onClick={handleOidcLogin}>
-              Mit {oidcConfig.providerName} anmelden
-            </button>
-            {localLoginEnabled && (
-              <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
-                <span className="h-px flex-1 bg-gray-200" />
-                <span>oder lokal</span>
-                <span className="h-px flex-1 bg-gray-200" />
-              </div>
-            )}
+        {oidcEnabled && localLoginEnabled && (
+          <div className="login-divider">
+            <span />
+            <em>Lokaler Zugang</em>
+            <span />
           </div>
         )}
 
         {localLoginEnabled ? (
           <>
+            <h2 className="login-local-title">
+              {isRegister ? 'Lokales Konto erstellen' : 'Lokal mit E-Mail anmelden'}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {isRegister && selfRegistrationEnabled && (
                 <div>
