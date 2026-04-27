@@ -225,6 +225,62 @@ html[data-theme='midnight'] .shadow-2xl {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
 }
 
+html[data-theme='midnight'] .dashboard-topbar,
+html[data-theme='midnight'] .dashboard-topbar-actions,
+html[data-theme='midnight'] .dashboard-primary-nav,
+html[data-theme='midnight'] .dashboard-utility-nav,
+html[data-theme='midnight'] .dashboard-menu-button,
+html[data-theme='midnight'] .theme-selector-inline,
+html[data-theme='midnight'] .theme-segmented-control,
+html[data-theme='midnight'] .topbar-action-button {
+  background: #111827 !important;
+  border-color: #374151 !important;
+  color: #d1d5db !important;
+}
+
+html[data-theme='midnight'] .dashboard-brand {
+  background: #020617 !important;
+  color: #7dd3fc !important;
+  box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.16) inset !important;
+}
+
+html[data-theme='midnight'] .nav-link,
+html[data-theme='midnight'] .theme-segment {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .nav-link:hover,
+html[data-theme='midnight'] .nav-link.active,
+html[data-theme='midnight'] .topbar-action-button:hover,
+html[data-theme='midnight'] .topbar-action-button.active,
+html[data-theme='midnight'] .theme-segment:hover,
+html[data-theme='midnight'] .theme-segment.active {
+  background: #0f172a !important;
+  border-color: #38bdf8 !important;
+  color: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='midnight'] .theme-segment span {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='midnight'] .theme-segment.active span {
+  background: #38bdf8 !important;
+  color: #082f49 !important;
+}
+
+html[data-theme='midnight'] .topbar-logout-button {
+  background: rgba(127, 29, 29, 0.28) !important;
+  border-color: rgba(248, 113, 113, 0.28) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme='midnight'] .amazon-page-shell {
+  background: #0f172a !important;
+}
+
 html[data-theme='midnight'] .bg-blue-100 {
   background-color: #1e3a8a !important;
 }
@@ -442,12 +498,11 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .dashboard-topbar {
-  @apply sticky top-0 z-40 grid gap-3 border-b border-gray-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur md:px-5;
-  grid-template-columns: minmax(0, 1fr) auto;
+  @apply sticky top-0 z-40 flex items-center gap-3 border-b border-gray-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur md:px-5;
 }
 
 .dashboard-header-identity {
-  @apply flex min-w-0 items-center gap-3;
+  @apply flex shrink-0 items-center gap-3;
 }
 
 .dashboard-brand {
@@ -455,7 +510,7 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .dashboard-brand-copy {
-  @apply m-0 hidden max-w-[32rem] truncate text-sm text-gray-500 md:block;
+  @apply m-0 hidden max-w-[24rem] truncate text-sm text-gray-500 xl:block;
 }
 
 .dashboard-menu-button {
@@ -481,7 +536,7 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .dashboard-topbar-actions {
-  @apply col-span-2 flex flex-wrap items-center justify-end gap-2 lg:col-span-1 lg:row-start-1 lg:justify-end;
+  @apply flex min-w-0 flex-1 flex-wrap items-center gap-2;
 }
 
 .dashboard-primary-nav {
@@ -489,7 +544,7 @@ html[data-theme='oled'] .widget-message-success {
 }
 
 .dashboard-utility-nav {
-  @apply flex flex-wrap items-center gap-2;
+  @apply ml-auto flex flex-wrap items-center gap-2;
 }
 
 .nav-link {
@@ -2414,8 +2469,41 @@ html[data-theme='midnight'] .bookmark-editor-checks label,
 html[data-theme='midnight'] .bookmark-detail-text,
 html[data-theme='midnight'] .bookmark-view-toggle,
 html[data-theme='midnight'] .bookmark-panel-tabs {
-  background-color: #111827 !important;
+  background: #111827 !important;
   border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .amazon-hero,
+html[data-theme='midnight'] .amazon-widget {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.98), rgba(30, 41, 59, 0.92)) !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .amazon-kpi-grid div,
+html[data-theme='midnight'] .amazon-panel,
+html[data-theme='midnight'] .amazon-batch-row,
+html[data-theme='midnight'] .amazon-person-row,
+html[data-theme='midnight'] .amazon-settlement-row {
+  background: #111827 !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .amazon-settlement-row.paid,
+html[data-theme='midnight'] .amazon-paid-badge {
+  background: rgba(6, 78, 59, 0.34) !important;
+  border-color: rgba(52, 211, 153, 0.26) !important;
+  color: #86efac !important;
+}
+
+html[data-theme='midnight'] .amazon-widget-footer,
+html[data-theme='midnight'] .amazon-table th,
+html[data-theme='midnight'] .amazon-table td {
+  border-color: #334155 !important;
+}
+
+html[data-theme='midnight'] .amazon-widget-bar-row div,
+html[data-theme='midnight'] .amazon-chart-row div {
+  background: #1e293b !important;
 }
 
 html[data-theme='midnight'] .widget-shell-title,
@@ -2824,7 +2912,11 @@ html[data-theme='midnight'] .react-grid-item.react-grid-placeholder {
 
 @media (max-width: 767px) {
   .dashboard-topbar {
-    @apply px-4 py-2.5;
+    @apply flex-wrap px-4 py-2.5;
+  }
+
+  .dashboard-header-identity {
+    @apply min-w-0 flex-1;
   }
 
   .dashboard-brand {
@@ -2836,11 +2928,11 @@ html[data-theme='midnight'] .react-grid-item.react-grid-placeholder {
   }
 
   .dashboard-menu-button {
-    @apply flex;
+    @apply ml-auto flex;
   }
 
   .dashboard-topbar-actions {
-    @apply hidden w-full items-stretch justify-start rounded-2xl border border-gray-200 bg-white p-2 shadow-sm;
+    @apply order-3 hidden w-full flex-none items-stretch justify-start rounded-2xl border border-gray-200 bg-white p-2 shadow-sm;
   }
 
   .dashboard-topbar-actions.open {
