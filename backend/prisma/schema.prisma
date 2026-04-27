@@ -48,6 +48,9 @@ model User {
   amazonImportBatches AmazonOrderImportBatch[]
   amazonSettings    AmazonExpenseSettings?
   amazonSettlementPayments AmazonSettlementPayment[]
+  mailAccounts      MailAccount[]
+  mailFolders       MailFolder[]
+  mailMessages      MailMessage[]
 
   @@map("users")
 }
@@ -166,6 +169,97 @@ enum DashboardWidgetType {
   BOOKMARKS
   TELEGRAM_CHAT
   AMAZON_EXPENSES
+  MAIL
+}
+
+enum MailAccountStatus {
+  ACTIVE
+  NEEDS_ATTENTION
+  DISABLED
+}
+
+enum MailSecurityMode {
+  SSL_TLS
+  STARTTLS
+  NONE
+}
+
+model MailAccount {
+  id                String            @id @default(uuid())
+  userId            String            @map("user_id")
+  displayName       String            @map("display_name") @db.VarChar(255)
+  email             String            @db.VarChar(255)
+  username          String            @db.VarChar(255)
+  imapHost          String            @map("imap_host") @db.VarChar(255)
+  imapPort          Int               @map("imap_port")
+  securityMode      MailSecurityMode  @default(SSL_TLS) @map("security_mode")
+  encryptedPassword String            @map("encrypted_password") @db.Text
+  status            MailAccountStatus @default(ACTIVE)
+  lastSyncAt        DateTime?         @map("last_sync_at")
+  lastError         String?           @map("last_error") @db.Text
+  syncCursor        Json?             @map("sync_cursor")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folders  MailFolder[]
+  messages MailMessage[]
+
+  @@index([userId, status])
+  @@unique([userId, email, imapHost, username])
+  @@map("mail_accounts")
+}
+
+model MailFolder {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  accountId   String   @map("account_id")
+  path        String   @db.VarChar(500)
+  displayName String   @map("display_name") @db.VarChar(255)
+  type        String   @default("CUSTOM") @db.VarChar(50)
+  unreadCount Int      @default(0) @map("unread_count")
+  totalCount  Int      @default(0) @map("total_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  MailAccount   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  messages MailMessage[]
+
+  @@unique([userId, accountId, path])
+  @@index([userId, type])
+  @@map("mail_folders")
+}
+
+model MailMessage {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  accountId      String    @map("account_id")
+  folderId       String    @map("folder_id")
+  uid            Int
+  messageId      String?   @map("message_id") @db.VarChar(500)
+  fromName       String?   @map("from_name") @db.VarChar(255)
+  fromAddress    String    @map("from_address") @db.VarChar(255)
+  subject        String    @default("") @db.Text
+  preview        String?   @db.Text
+  receivedAt     DateTime  @map("received_at")
+  isRead         Boolean   @default(false) @map("is_read")
+  isFlagged      Boolean   @default(false) @map("is_flagged")
+  hasAttachments Boolean   @default(false) @map("has_attachments")
+  bodyText       String?   @map("body_text") @db.Text
+  bodyHtml       String?   @map("body_html") @db.Text
+  rawFlags       String[]  @default([]) @map("raw_flags")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account MailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  folder  MailFolder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, accountId, folderId, uid])
+  @@index([userId, receivedAt])
+  @@index([userId, isRead])
+  @@map("mail_messages")
 }
 
 model AmazonExpenseSettings {

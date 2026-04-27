@@ -14,6 +14,7 @@ import searchRoutes from './modules/search/search.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import amazonExpensesRoutes from './modules/amazon-expenses/amazon-expenses.routes.js';
+import mailRoutes from './modules/mail/mail.routes.js';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/amazon-expenses', amazonExpensesRoutes);
+app.use('/api/v1/mail', mailRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

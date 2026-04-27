@@ -1389,6 +1389,61 @@ export default function Dashboard() {
           </WidgetShell>
         );
       }
+      case 'MAIL': {
+        const mail = dashboard?.mail;
+        const maxItems = typeof settings.maxItems === 'number' ? Math.max(1, Math.min(10, settings.maxItems)) : 5;
+        const privacyMode = settings.privacyMode === true;
+        const visibleMessages = (mail?.messages ?? []).slice(0, maxItems);
+
+        return (
+          <WidgetShell
+            title={widget.title}
+            subtitle="Neueste Nachrichten aus deinem Posteingang"
+            badge={mail ? `${mail.unreadCount} ungelesen` : 'Mail'}
+            actions={<Link className="btn btn-secondary" to="/mail">Full</Link>}
+          >
+            <div className="mail-widget">
+              {mail?.status === 'setup_required' ? (
+                <div className="widget-message">
+                  Noch kein E-Mail-Konto eingerichtet.
+                  <div className="widget-inline-actions">
+                    <Link className="btn btn-primary" to="/mail">Konto einrichten</Link>
+                  </div>
+                </div>
+              ) : mail?.status === 'partial_error' ? (
+                <div className="widget-message widget-message-error">{mail.message || 'Mindestens ein Mailkonto braucht Aufmerksamkeit.'}</div>
+              ) : null}
+              <div className="mail-widget-list">
+                {visibleMessages.map((message) => (
+                  <Link
+                    key={message.id}
+                    className={`mail-widget-row ${message.isRead ? '' : 'mail-widget-row-unread'}`}
+                    to={`/mail?message=${message.id}`}
+                  >
+                    <span className="mail-widget-status" aria-label={message.isRead ? 'Gelesen' : 'Ungelesen'} />
+                    <span className="mail-widget-main">
+                      <strong>{privacyMode ? 'Absender verborgen' : message.fromName || message.fromAddress}</strong>
+                      <span>{privacyMode ? 'Betreff verborgen' : message.subject || '(kein Betreff)'}</span>
+                    </span>
+                    <span className="mail-widget-meta">
+                      {message.hasAttachments ? <em>Clip</em> : null}
+                      {message.isFlagged ? <em>Wichtig</em> : null}
+                      <time>{new Date(message.receivedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</time>
+                    </span>
+                  </Link>
+                ))}
+                {mail && mail.status !== 'setup_required' && visibleMessages.length === 0 ? (
+                  <div className="widget-message">Keine E-Mails im Posteingang gefunden.</div>
+                ) : null}
+              </div>
+              <div className="mail-widget-footer">
+                <span>{mail?.accounts.length ?? 0} Konto{(mail?.accounts.length ?? 0) === 1 ? '' : 'en'}</span>
+                {mail?.lastSyncedAt ? <span>Aktualisiert {formatDateLabel(mail.lastSyncedAt)}</span> : null}
+              </div>
+            </div>
+          </WidgetShell>
+        );
+      }
       case 'TELEGRAM_CHAT': {
         const telegram = dashboard?.telegramChat;
         const greetingText =

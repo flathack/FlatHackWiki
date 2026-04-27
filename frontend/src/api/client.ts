@@ -121,7 +121,8 @@ export type DashboardWidgetType =
   | 'TIME_TRACKER'
   | 'BOOKMARKS'
   | 'TELEGRAM_CHAT'
-  | 'AMAZON_EXPENSES';
+  | 'AMAZON_EXPENSES'
+  | 'MAIL';
 export interface DashboardWidget {
   id: string;
   type: DashboardWidgetType;
@@ -332,6 +333,69 @@ export interface AmazonExpensesDashboard {
     paidVsUnpaid: { paid: number; unpaid: number };
   };
 }
+export interface MailAccount {
+  id: string;
+  displayName: string;
+  email: string;
+  username: string;
+  imapHost: string;
+  imapPort: number;
+  securityMode: 'SSL_TLS' | 'STARTTLS' | 'NONE';
+  status: 'ACTIVE' | 'NEEDS_ATTENTION' | 'DISABLED';
+  lastSyncAt?: string | null;
+  lastError?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface MailFolder {
+  id: string;
+  accountId: string;
+  path: string;
+  displayName: string;
+  type: string;
+  unreadCount: number;
+  totalCount: number;
+}
+export interface MailMessage {
+  id: string;
+  accountId: string;
+  folderId: string;
+  uid: number;
+  messageId?: string | null;
+  fromName?: string | null;
+  fromAddress: string;
+  subject: string;
+  preview?: string | null;
+  receivedAt: string;
+  isRead: boolean;
+  isFlagged: boolean;
+  hasAttachments: boolean;
+}
+export interface MailMessageDetail extends MailMessage {
+  bodyText?: string | null;
+  bodyHtml?: string | null;
+  account: MailAccount;
+  folder: MailFolder;
+}
+export interface MailboxState {
+  status: 'setup_required' | 'ready' | 'partial_error';
+  message?: string | null;
+  accounts: MailAccount[];
+  folders: MailFolder[];
+  messages: MailMessage[];
+  total: number;
+  unreadCount: number;
+  lastSyncedAt?: string | null;
+}
+export interface MailWidgetState {
+  status: MailboxState['status'];
+  message?: string | null;
+  accounts: MailAccount[];
+  messages: MailMessage[];
+  total: number;
+  unreadCount: number;
+  lastSyncedAt?: string | null;
+}
 export interface DashboardResponse {
   widgets: DashboardWidget[];
   bookmarks: BookmarkState;
@@ -368,6 +432,7 @@ export interface DashboardResponse {
     };
   };
   amazonExpenses: AmazonExpensesSummary;
+  mail: MailWidgetState;
 }
 export interface WeatherResponse {
   location: string;
@@ -581,6 +646,44 @@ export const amazonExpensesApi = {
     api.patch<{ userId: string; billingDay: number }>('/amazon-expenses/settings', data),
   markSettlementPaid: (data: { personId: string; periodKey: string; paidNote?: string | null }) =>
     api.post('/amazon-expenses/settlements/mark-paid', data),
+};
+
+export const mailApi = {
+  mailbox: (params: {
+    accountId?: string;
+    folder?: string;
+    q?: string;
+    filter?: 'all' | 'unread' | 'flagged' | 'attachments';
+    limit?: number;
+    offset?: number;
+  } = {}) => api.get<MailboxState>('/mail', { params }),
+  widget: () => api.get<MailWidgetState>('/mail/widget'),
+  accounts: () => api.get<MailAccount[]>('/mail/accounts'),
+  testAccount: (data: {
+    username: string;
+    password: string;
+    imapHost: string;
+    imapPort: number;
+    securityMode: MailAccount['securityMode'];
+  }) => api.post<{ ok: boolean; message: string }>('/mail/accounts/test', data),
+  createAccount: (data: {
+    displayName?: string;
+    email: string;
+    username: string;
+    password: string;
+    imapHost: string;
+    imapPort: number;
+    securityMode: MailAccount['securityMode'];
+    syncNow?: boolean;
+  }) => api.post<MailAccount>('/mail/accounts', data),
+  updateAccount: (accountId: string, data: Partial<MailAccount> & { password?: string }) =>
+    api.patch<MailAccount>(`/mail/accounts/${accountId}`, data),
+  deleteAccount: (accountId: string) => api.delete(`/mail/accounts/${accountId}`),
+  sync: () => api.post('/mail/sync'),
+  syncAccount: (accountId: string) => api.post<MailAccount>(`/mail/accounts/${accountId}/sync`),
+  getMessage: (messageId: string) => api.get<MailMessageDetail>(`/mail/messages/${messageId}`),
+  updateMessage: (messageId: string, data: { isRead?: boolean; isFlagged?: boolean }) =>
+    api.patch<MailMessage>(`/mail/messages/${messageId}`, data),
 };
 
 export const adminApi = {

@@ -2802,6 +2802,279 @@ html[data-theme='midnight'] textarea::placeholder {
   color: #94a3b8 !important;
 }
 
+.mail-widget {
+  @apply flex h-full min-h-0 flex-col gap-3;
+}
+
+.mail-widget-list {
+  @apply flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1;
+  max-height: 18rem;
+}
+
+.mail-widget-row {
+  @apply grid grid-cols-[0.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left no-underline transition hover:border-blue-200 hover:bg-blue-50;
+}
+
+.mail-widget-row-unread {
+  @apply border-blue-200 bg-blue-50;
+}
+
+.mail-widget-status {
+  @apply h-2 w-2 rounded-full bg-slate-300;
+}
+
+.mail-widget-row-unread .mail-widget-status {
+  @apply bg-blue-600;
+}
+
+.mail-widget-main {
+  @apply min-w-0;
+}
+
+.mail-widget-main strong,
+.mail-widget-main span,
+.mail-widget-meta time {
+  @apply block truncate;
+}
+
+.mail-widget-main strong {
+  @apply text-sm text-slate-900;
+}
+
+.mail-widget-main span,
+.mail-widget-meta {
+  @apply text-xs text-slate-500;
+}
+
+.mail-widget-meta {
+  @apply flex flex-col items-end gap-0.5;
+}
+
+.mail-widget-meta em {
+  @apply rounded bg-slate-100 px-1.5 py-0.5 text-[0.65rem] not-italic text-slate-600;
+}
+
+.mail-widget-footer {
+  @apply flex flex-wrap justify-between gap-2 border-t border-slate-100 pt-2 text-xs text-slate-500;
+}
+
+.mail-client {
+  @apply mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-8;
+}
+
+.mail-setup-panel,
+.mail-sidebar,
+.mail-list-pane,
+.mail-detail-pane {
+  @apply border border-slate-200 bg-white shadow-sm;
+  border-radius: var(--ui-radius);
+}
+
+.mail-setup-panel {
+  @apply grid gap-6 p-6;
+}
+
+.mail-setup-copy h1,
+.mail-detail-header h1 {
+  @apply mt-1 text-2xl font-semibold text-slate-950;
+}
+
+.mail-setup-copy p,
+.mail-detail-header p,
+.mail-list-context,
+.mail-message-row span,
+.mail-message-row time,
+.mail-message-row em,
+.mail-detail-empty {
+  @apply text-sm text-slate-500;
+}
+
+.mail-setup-grid {
+  @apply grid gap-4 md:grid-cols-2;
+}
+
+.mail-setup-grid label {
+  @apply grid gap-1 text-sm font-medium text-slate-700;
+}
+
+.mail-setup-actions,
+.mail-detail-actions,
+.mail-toolbar {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.mail-layout {
+  @apply grid min-h-[68vh] gap-4 lg:grid-cols-[15rem_minmax(20rem,26rem)_minmax(0,1fr)];
+}
+
+.mail-sidebar,
+.mail-list-pane,
+.mail-detail-pane {
+  @apply min-h-0 overflow-hidden;
+}
+
+.mail-sidebar {
+  @apply flex flex-col gap-2 p-3;
+}
+
+.mail-folder-row {
+  @apply rounded-lg border border-transparent px-3 py-2 text-left transition hover:border-blue-200 hover:bg-blue-50;
+}
+
+.mail-folder-row span,
+.mail-folder-row strong,
+.mail-folder-row em {
+  @apply block truncate;
+}
+
+.mail-folder-row span {
+  @apply text-sm font-semibold text-slate-900;
+}
+
+.mail-folder-row strong,
+.mail-folder-row em {
+  @apply text-xs font-normal not-italic text-slate-500;
+}
+
+.mail-folder-row-active {
+  @apply border-blue-200 bg-blue-50;
+}
+
+.mail-list-pane {
+  @apply flex flex-col;
+}
+
+.mail-toolbar {
+  @apply border-b border-slate-200 p-3;
+}
+
+.mail-toolbar .input:first-child {
+  @apply min-w-0 flex-1;
+}
+
+.mail-toolbar .input:not(:first-child) {
+  @apply w-auto min-w-32;
+}
+
+.mail-list-context {
+  @apply flex flex-wrap justify-between gap-2 border-b border-slate-100 px-3 py-2;
+}
+
+.mail-message-list {
+  @apply min-h-0 flex-1 overflow-y-auto p-2;
+}
+
+.mail-message-row {
+  @apply mb-2 grid w-full gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-blue-200 hover:bg-blue-50;
+}
+
+.mail-message-row-active,
+.mail-message-row-unread {
+  @apply border-blue-200 bg-blue-50;
+}
+
+.mail-message-row strong,
+.mail-message-sender {
+  @apply truncate text-sm text-slate-950;
+}
+
+.mail-message-row-unread strong,
+.mail-message-row-unread .mail-message-sender {
+  @apply font-bold;
+}
+
+.mail-detail-pane {
+  @apply flex min-h-[28rem] flex-col;
+}
+
+.mail-detail {
+  @apply flex min-h-0 flex-1 flex-col;
+}
+
+.mail-detail-header {
+  @apply flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 p-5;
+}
+
+.mail-detail-body {
+  @apply min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap p-5 leading-7 text-slate-800;
+}
+
+.mail-detail-empty {
+  @apply grid h-full min-h-[24rem] place-items-center p-6 text-center;
+}
+
+html[data-theme='midnight'] .mail-widget-row,
+html[data-theme='midnight'] .mail-setup-panel,
+html[data-theme='midnight'] .mail-sidebar,
+html[data-theme='midnight'] .mail-list-pane,
+html[data-theme='midnight'] .mail-detail-pane,
+html[data-theme='midnight'] .mail-message-row,
+html[data-theme='midnight'] .mail-folder-row-active,
+html[data-theme='midnight'] .mail-message-row-active,
+html[data-theme='midnight'] .mail-message-row-unread {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+html[data-theme='midnight'] .mail-widget-row-unread,
+html[data-theme='midnight'] .mail-widget-row:hover,
+html[data-theme='midnight'] .mail-folder-row:hover,
+html[data-theme='midnight'] .mail-message-row:hover {
+  background-color: rgba(14, 165, 233, 0.14) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+html[data-theme='midnight'] .mail-widget-main strong,
+html[data-theme='midnight'] .mail-folder-row span,
+html[data-theme='midnight'] .mail-message-row strong,
+html[data-theme='midnight'] .mail-message-sender,
+html[data-theme='midnight'] .mail-setup-copy h1,
+html[data-theme='midnight'] .mail-detail-header h1,
+html[data-theme='midnight'] .mail-detail-body {
+  color: #f8fafc !important;
+}
+
+html[data-theme='midnight'] .mail-widget-main span,
+html[data-theme='midnight'] .mail-widget-meta,
+html[data-theme='midnight'] .mail-widget-footer,
+html[data-theme='midnight'] .mail-folder-row strong,
+html[data-theme='midnight'] .mail-folder-row em,
+html[data-theme='midnight'] .mail-list-context,
+html[data-theme='midnight'] .mail-message-row span,
+html[data-theme='midnight'] .mail-message-row time,
+html[data-theme='midnight'] .mail-message-row em,
+html[data-theme='midnight'] .mail-detail-header p,
+html[data-theme='midnight'] .mail-detail-empty,
+html[data-theme='midnight'] .mail-setup-grid label {
+  color: #cbd5e1 !important;
+}
+
+@media (max-width: 1023px) {
+  .mail-layout {
+    @apply grid-cols-1;
+  }
+
+  .mail-sidebar {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+}
+
+@media (max-width: 640px) {
+  .mail-toolbar .input,
+  .mail-toolbar .input:not(:first-child),
+  .mail-toolbar .btn {
+    @apply w-full;
+  }
+
+  .mail-widget-row {
+    @apply grid-cols-[0.5rem_minmax(0,1fr)];
+  }
+
+  .mail-widget-meta {
+    @apply col-start-2 flex-row items-center justify-start;
+  }
+}
+
 .markdown-content {
   @apply text-gray-800 leading-7;
 }

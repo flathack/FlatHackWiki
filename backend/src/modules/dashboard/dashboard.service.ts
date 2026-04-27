@@ -14,6 +14,7 @@ import { config } from '../../config/index.js';
 import { db } from '../../config/database.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../core/errors/app.errors.js';
 import { amazonExpensesService } from '../amazon-expenses/amazon-expenses.service.js';
+import { mailService } from '../mail/mail.service.js';
 
 const TELEGRAM_ROLES = {
   USER: 'USER',
@@ -345,6 +346,19 @@ const widgetDefaults: Record<DashboardWidgetType, { title: string; x: number; y:
     minWidth: 4,
     minHeight: 3,
   },
+  MAIL: {
+    title: 'E-Mail',
+    x: 0,
+    y: 21,
+    width: 6,
+    height: 5,
+    minWidth: 4,
+    minHeight: 4,
+    settings: {
+      maxItems: 5,
+      privacyMode: false,
+    },
+  },
 };
 
 const defaultWidgetOrder = [
@@ -361,6 +375,7 @@ const defaultWidgetOrder = [
   'BOOKMARKS',
   'TELEGRAM_CHAT',
   'AMAZON_EXPENSES',
+  'MAIL',
 ] satisfies DashboardWidgetType[];
 
 const weekdayMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const;
@@ -1430,7 +1445,7 @@ class DashboardService {
     const dashboard = await this.ensureDashboard(userId);
     const calendarWidget = dashboard.widgets.find((widget) => widget.type === 'CALENDAR');
     const calendarSettings = normalizeCalendarSettings((calendarWidget?.settings ?? {}) as Record<string, unknown>);
-    const [bookmarksRaw, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages, calendar, amazonExpenses] = await Promise.all([
+    const [bookmarksRaw, commuteProfile, spaces, projects, recentEntries, runningEntry, telegramMessages, calendar, amazonExpenses, mail] = await Promise.all([
       bookmarkDb.findMany({ where: { userId }, orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
       db.commuteProfile.findUnique({ where: { userId } }),
       db.space.findMany({ orderBy: { updatedAt: 'desc' }, include: { owner: { select: { id: true, name: true } } } }),
@@ -1453,6 +1468,7 @@ class DashboardService {
       }),
       calendarWidget ? fetchNextcloudCalendarStateForUser(userId, calendarSettings) : Promise.resolve(buildCalendarDisabledState()),
       amazonExpensesService.getSummary(userId),
+      mailService.getWidgetState(userId),
     ]);
 
     const todayStart = getStartOfDay(new Date());
@@ -1531,6 +1547,7 @@ class DashboardService {
         },
       },
       amazonExpenses,
+      mail,
     };
   }
 

@@ -21,6 +21,7 @@ export const widgetDefinitions: WidgetDefinition[] = [
   { type: 'TIME_TRACKER', label: 'Zeiterfassung', description: 'Projekte, Timer und manuelle Zeiten', singleton: true },
   { type: 'TELEGRAM_CHAT', label: 'OpenClaw Chat', description: 'Direkter Chat mit deinem OpenClaw-Container über das Wiki-Backend', singleton: true },
   { type: 'AMAZON_EXPENSES', label: 'Amazon Ausgaben', description: 'Monatsausgaben, Zuordnung und Abrechnung', singleton: true },
+  { type: 'MAIL', label: 'E-Mail', description: 'Posteingang mit neuesten IMAP-Nachrichten', singleton: true },
 ];
 
 export const widgetDefinitionMap = Object.fromEntries(

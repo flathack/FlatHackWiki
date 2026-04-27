@@ -27,6 +27,8 @@ const envSchema = z.object({
   NEXTCLOUD_APP_PASSWORD: z.string().optional(),
   NEXTCLOUD_CALENDAR_LOOKAHEAD_DAYS: z.coerce.number().int().min(1).max(90).default(14),
 
+  MAIL_CREDENTIAL_SECRET: z.string().min(32).optional(),
+
   AUTH_LOCAL_LOGIN_ENABLED: envBoolean.default(true),
   AUTH_SELF_REGISTRATION_ENABLED: envBoolean.default(true),
 

@@ -14,6 +14,7 @@ import AdminPage from './pages/Admin';
 import CalendarContacts from './pages/CalendarContacts';
 import BookmarksPage from './pages/Bookmarks';
 import AmazonExpensesPage from './pages/AmazonExpenses';
+import MailPage from './pages/Mail';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/bookmarks" element={<ProtectedRoute><BookmarksPage /></ProtectedRoute>} />
         <Route path="/amazon-expenses" element={<ProtectedRoute><AmazonExpensesPage /></ProtectedRoute>} />
+        <Route path="/mail" element={<ProtectedRoute><MailPage /></ProtectedRoute>} />
         <Route path="/calendar-contacts" element={<ProtectedRoute><CalendarContacts /></ProtectedRoute>} />
         <Route path="/spaces/new" element={<ProtectedRoute><CreateSpace /></ProtectedRoute>} />
         <Route path="/spaces/:key" element={<ProtectedRoute><SpacePage /></ProtectedRoute>} />
