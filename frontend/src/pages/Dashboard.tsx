@@ -284,13 +284,7 @@ export default function Dashboard() {
   const [telegramDraft, setTelegramDraft] = useState('');
   const [telegramSending, setTelegramSending] = useState(false);
   const [commuteView, setCommuteView] = useState<'summary' | 'map'>('summary');
-  const [weather, setWeather] = useState<{
-    location: string;
-    temperatureC: string;
-    description: string;
-    humidity: string;
-    windKph: string;
-  } | null>(null);
+  const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [weatherError, setWeatherError] = useState('');
   const [weatherLoading, setWeatherLoading] = useState(false);
   const webSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -958,9 +952,18 @@ export default function Dashboard() {
             ) : weather ? (
               <div className="weather-widget-grid">
                 <div className="weather-widget-hero">
-                  <div className="weather-widget-temp">{weather.temperatureC} °C</div>
-                  <div className="weather-widget-copy">{weather.description}</div>
-                  <div className="weather-widget-copy">{weather.location}</div>
+                  <div className="weather-widget-mainline">
+                    <div>
+                      <div className="weather-widget-temp">{weather.temperatureC} °C</div>
+                      <div className="weather-widget-copy">{weather.description}</div>
+                    </div>
+                    <span className="weather-widget-location">{weather.location}</span>
+                  </div>
+                  <div className={`weather-sunscreen-card weather-sunscreen-${weather.sunscreenAdvice.level}`}>
+                    <span>Eincremen</span>
+                    <strong>{weather.sunscreenAdvice.label}</strong>
+                    <p>{weather.sunscreenAdvice.detail}</p>
+                  </div>
                 </div>
                 <div className="widget-stat-grid">
                   <div className="widget-stat-box">
@@ -971,7 +974,35 @@ export default function Dashboard() {
                     <span>Wind</span>
                     <strong>{weather.windKph} km/h</strong>
                   </div>
+                  <div className="widget-stat-box">
+                    <span>Regenmenge heute</span>
+                    <strong>{weather.rainMm} mm</strong>
+                  </div>
+                  <div className="widget-stat-box">
+                    <span>Sonnenmenge</span>
+                    <strong>{weather.sunshineHours} h</strong>
+                  </div>
+                  <div className="widget-stat-box">
+                    <span>UV-Maximum</span>
+                    <strong>{weather.uvIndexMax}</strong>
+                  </div>
+                  <div className="widget-stat-box">
+                    <span>Sonne</span>
+                    <strong>{weather.sunrise} - {weather.sunset}</strong>
+                  </div>
                 </div>
+                {weather.hourlyForecast.length > 0 ? (
+                  <div className="weather-hourly-strip" aria-label="Wetter Tagesverlauf">
+                    {weather.hourlyForecast.map((entry) => (
+                      <div className="weather-hourly-card" key={entry.time}>
+                        <span>{entry.time}</span>
+                        <strong>{entry.temperatureC} °C</strong>
+                        <em>{entry.description}</em>
+                        <small>{entry.rainChance}% Regen · {entry.rainMm} mm · UV {entry.uvIndex}</small>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="widget-message">Hinterlege einen Ort in den Widget-Einstellungen.</div>

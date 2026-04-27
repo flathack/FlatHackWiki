@@ -797,6 +797,57 @@ function getWeatherDescription(code?: number) {
   return descriptions[code ?? -1] || 'Unbekannt';
 }
 
+function formatWeatherValue(value?: number, fractionDigits = 0) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '-';
+  return value.toLocaleString('de-DE', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+}
+
+function getSunscreenAdvice(uvIndex?: number, sunshineSeconds?: number) {
+  const uv = typeof uvIndex === 'number' && !Number.isNaN(uvIndex) ? uvIndex : 0;
+  const sunshineHours = typeof sunshineSeconds === 'number' && !Number.isNaN(sunshineSeconds) ? sunshineSeconds / 3600 : 0;
+
+  if (uv >= 8) {
+    return {
+      level: 'high',
+      label: 'Eincremen unbedingt notwendig',
+      detail: 'Sehr hohe UV-Belastung. SPF 50, Kopfbedeckung und Schatten einplanen.',
+    };
+  }
+
+  if (uv >= 6) {
+    return {
+      level: 'high',
+      label: 'Eincremen notwendig',
+      detail: 'Hohe UV-Belastung. SPF 30-50 verwenden und Mittagssonne meiden.',
+    };
+  }
+
+  if (uv >= 3) {
+    return {
+      level: 'medium',
+      label: 'Eincremen empfohlen',
+      detail: 'Mittlere UV-Belastung. Bei längerer Zeit draußen Sonnenschutz nutzen.',
+    };
+  }
+
+  if (sunshineHours >= 5) {
+    return {
+      level: 'low',
+      label: 'Leichter Schutz sinnvoll',
+      detail: 'UV ist niedrig, aber es gibt viel Sonne. Bei empfindlicher Haut eincremen.',
+    };
+  }
+
+  return {
+    level: 'none',
+    label: 'Eincremen heute kaum nötig',
+    detail: 'Niedrige UV-Belastung. Normaler Schutz reicht meist aus.',
+  };
+}
+
 function arrayify<T>(value: T | T[] | undefined | null): T[] {
   if (Array.isArray(value)) return value;
   return value == null ? [] : [value];
@@ -1349,8 +1400,19 @@ class DashboardService {
       throw new ValidationError('Ort für Wetterdaten nicht gefunden');
     }
 
+    const weatherParams = new URLSearchParams({
+      latitude: String(location.latitude),
+      longitude: String(location.longitude),
+      current: 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m',
+      hourly: 'temperature_2m,precipitation_probability,precipitation,weather_code,uv_index',
+      daily: 'precipitation_sum,sunshine_duration,daylight_duration,uv_index_max,sunrise,sunset',
+      wind_speed_unit: 'kmh',
+      forecast_days: '1',
+      timezone: 'auto',
+    });
+
     const weatherResponse = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&wind_speed_unit=kmh`,
+      `https://api.open-meteo.com/v1/forecast?${weatherParams.toString()}`,
       {
         headers: {
           'User-Agent': 'FlatHacksWiki/1.0 (dashboard weather widget)',
@@ -1370,6 +1432,23 @@ class DashboardService {
         weather_code?: number;
         wind_speed_10m?: number;
       };
+      hourly?: {
+        time?: string[];
+        temperature_2m?: number[];
+        precipitation_probability?: number[];
+        precipitation?: number[];
+        weather_code?: number[];
+        uv_index?: number[];
+      };
+      daily?: {
+        time?: string[];
+        precipitation_sum?: number[];
+        sunshine_duration?: number[];
+        daylight_duration?: number[];
+        uv_index_max?: number[];
+        sunrise?: string[];
+        sunset?: string[];
+      };
     };
 
     const current = data.current;
@@ -1377,12 +1456,58 @@ class DashboardService {
       throw new ValidationError('Keine Wetterdaten verfügbar');
     }
 
+    const todayKey = data.daily?.time?.[0] || new Date().toISOString().slice(0, 10);
+    const now = Date.now();
+    const hourlyTimes = data.hourly?.time ?? [];
+    const hourlyForecast = hourlyTimes
+      .map((time, index) => {
+        const forecastDate = new Date(time);
+        return {
+          time,
+          timestamp: forecastDate.getTime(),
+          hour: forecastDate.getHours(),
+          temperatureC: formatWeatherValue(data.hourly?.temperature_2m?.[index]),
+          rainChance: formatWeatherValue(data.hourly?.precipitation_probability?.[index]),
+          rainMm: formatWeatherValue(data.hourly?.precipitation?.[index], 1),
+          uvIndex: formatWeatherValue(data.hourly?.uv_index?.[index], 1),
+          description: getWeatherDescription(data.hourly?.weather_code?.[index]),
+        };
+      })
+      .filter((entry) => entry.time.startsWith(todayKey) && entry.timestamp >= now - 60 * 60 * 1000)
+      .filter((entry, index) => index === 0 || entry.hour % 3 === 0)
+      .slice(0, 8)
+      .map((entry) => ({
+        time: new Date(entry.time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+        temperatureC: entry.temperatureC,
+        rainChance: entry.rainChance,
+        rainMm: entry.rainMm,
+        uvIndex: entry.uvIndex,
+        description: entry.description,
+      }));
+    const precipitationSum = data.daily?.precipitation_sum?.[0];
+    const sunshineDuration = data.daily?.sunshine_duration?.[0];
+    const daylightDuration = data.daily?.daylight_duration?.[0];
+    const uvIndexMax = data.daily?.uv_index_max?.[0];
+    const sunscreenAdvice = getSunscreenAdvice(uvIndexMax, sunshineDuration);
+
     return {
       location: location.country ? `${location.name}, ${location.country}` : location.name,
-      temperatureC: String(current.temperature_2m ?? '-'),
+      temperatureC: formatWeatherValue(current.temperature_2m),
       description: getWeatherDescription(current.weather_code),
-      humidity: String(current.relative_humidity_2m ?? '-'),
-      windKph: String(current.wind_speed_10m ?? '-'),
+      humidity: formatWeatherValue(current.relative_humidity_2m),
+      windKph: formatWeatherValue(current.wind_speed_10m),
+      rainMm: formatWeatherValue(precipitationSum, 1),
+      sunshineHours: formatWeatherValue(typeof sunshineDuration === 'number' ? sunshineDuration / 3600 : undefined, 1),
+      daylightHours: formatWeatherValue(typeof daylightDuration === 'number' ? daylightDuration / 3600 : undefined, 1),
+      uvIndexMax: formatWeatherValue(uvIndexMax, 1),
+      sunrise: data.daily?.sunrise?.[0]
+        ? new Date(data.daily.sunrise[0]).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+        : '-',
+      sunset: data.daily?.sunset?.[0]
+        ? new Date(data.daily.sunset[0]).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+        : '-',
+      sunscreenAdvice,
+      hourlyForecast,
     };
   }
 

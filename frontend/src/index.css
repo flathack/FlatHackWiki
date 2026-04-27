@@ -342,6 +342,7 @@ html[data-theme='oled'] .mini-card-link,
 html[data-theme='oled'] .widget-subsection,
 html[data-theme='oled'] .widget-message,
 html[data-theme='oled'] .widget-stat-box,
+html[data-theme='oled'] .weather-hourly-card,
 html[data-theme='oled'] .time-stat-card,
 html[data-theme='oled'] .time-widget-panel,
 html[data-theme='oled'] .time-widget-history,
@@ -381,6 +382,7 @@ html[data-theme='oled'] .mail-widget-meta em {
 html[data-theme='oled'] .dashboard-hero-card,
 html[data-theme='oled'] .clock-widget-panel,
 html[data-theme='oled'] .weather-widget-hero,
+html[data-theme='oled'] .weather-sunscreen-card,
 html[data-theme='oled'] .calendar-widget-hero,
 html[data-theme='oled'] .time-widget-hero,
 html[data-theme='oled'] .commute-map-svg,
@@ -409,6 +411,9 @@ html[data-theme='oled'] .theme-segment,
 html[data-theme='oled'] .widget-shell-subtitle,
 html[data-theme='oled'] .mini-card-link span,
 html[data-theme='oled'] .widget-stat-box span,
+html[data-theme='oled'] .weather-hourly-card span,
+html[data-theme='oled'] .weather-hourly-card em,
+html[data-theme='oled'] .weather-hourly-card small,
 html[data-theme='oled'] .time-widget-status em,
 html[data-theme='oled'] .time-stat-card span,
 html[data-theme='oled'] .time-entry-main small,
@@ -443,6 +448,9 @@ html[data-theme='oled'] .mini-card-link strong,
 html[data-theme='oled'] .dialog-header h2,
 html[data-theme='oled'] .dialog-card h3,
 html[data-theme='oled'] .widget-stat-box strong,
+html[data-theme='oled'] .weather-hourly-card strong,
+html[data-theme='oled'] .weather-sunscreen-card strong,
+html[data-theme='oled'] .weather-sunscreen-card p,
 html[data-theme='oled'] .time-widget-status strong,
 html[data-theme='oled'] .time-stat-card strong,
 html[data-theme='oled'] .time-entry-main strong,
@@ -1689,6 +1697,59 @@ html[data-theme='light'] .bookmark-app-shell .bookmark-import-export textarea.in
   @apply rounded-[24px] bg-gradient-to-br from-sky-100 via-cyan-50 to-white px-4 py-4;
 }
 
+.weather-sunscreen-card {
+  @apply mt-3 rounded-2xl border px-3 py-3;
+}
+
+.weather-sunscreen-card span {
+  @apply text-xs font-semibold uppercase tracking-[0.16em];
+}
+
+.weather-sunscreen-card strong {
+  @apply mt-1 block text-base font-semibold;
+}
+
+.weather-sunscreen-card p {
+  @apply mt-1 text-sm leading-snug;
+}
+
+.weather-sunscreen-none,
+.weather-sunscreen-low {
+  @apply border-emerald-200 bg-emerald-50 text-emerald-900;
+}
+
+.weather-sunscreen-medium {
+  @apply border-amber-200 bg-amber-50 text-amber-900;
+}
+
+.weather-sunscreen-high {
+  @apply border-rose-200 bg-rose-50 text-rose-900;
+}
+
+.weather-hourly-strip {
+  @apply grid gap-2 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.weather-hourly-card {
+  @apply grid gap-1 rounded-2xl border border-slate-200 bg-white px-3 py-2.5;
+}
+
+.weather-hourly-card span {
+  @apply text-xs font-semibold uppercase tracking-[0.14em] text-slate-500;
+}
+
+.weather-hourly-card strong {
+  @apply text-lg font-semibold text-slate-900;
+}
+
+.weather-hourly-card em {
+  @apply truncate text-xs not-italic text-slate-600;
+}
+
+.weather-hourly-card small {
+  @apply text-[0.7rem] leading-snug text-slate-500;
+}
+
 .telegram-chat-widget {
   @apply flex min-h-0 flex-1 flex-col gap-3;
 }
@@ -2471,6 +2532,8 @@ html[data-theme='midnight'] .mini-card-link,
 html[data-theme='midnight'] .widget-subsection,
 html[data-theme='midnight'] .widget-message,
 html[data-theme='midnight'] .widget-stat-box,
+html[data-theme='midnight'] .weather-hourly-card,
+html[data-theme='midnight'] .weather-sunscreen-card,
 html[data-theme='midnight'] .time-stat-card,
 html[data-theme='midnight'] .time-widget-panel,
 html[data-theme='midnight'] .time-widget-history,
@@ -2543,6 +2606,9 @@ html[data-theme='midnight'] .mini-card-link strong,
 html[data-theme='midnight'] .dialog-header h2,
 html[data-theme='midnight'] .dialog-card h3,
 html[data-theme='midnight'] .widget-stat-box strong,
+html[data-theme='midnight'] .weather-hourly-card strong,
+html[data-theme='midnight'] .weather-sunscreen-card strong,
+html[data-theme='midnight'] .weather-sunscreen-card p,
 html[data-theme='midnight'] .time-widget-status strong,
 html[data-theme='midnight'] .time-stat-card strong,
 html[data-theme='midnight'] .time-entry-main strong,
@@ -2574,6 +2640,9 @@ html[data-theme='midnight'] .bookmark-table td strong {
 html[data-theme='midnight'] .widget-shell-subtitle,
 html[data-theme='midnight'] .mini-card-link span,
 html[data-theme='midnight'] .widget-stat-box span,
+html[data-theme='midnight'] .weather-hourly-card span,
+html[data-theme='midnight'] .weather-hourly-card em,
+html[data-theme='midnight'] .weather-hourly-card small,
 html[data-theme='midnight'] .time-widget-status em,
 html[data-theme='midnight'] .time-stat-card span,
 html[data-theme='midnight'] .time-entry-main small,
@@ -2892,6 +2961,25 @@ html[data-theme='midnight'] .weather-widget-copy {
 
 html[data-theme='midnight'] .weather-widget-hero {
   background-image: linear-gradient(135deg, #0f172a 0%, #082f49 55%, #164e63 100%) !important;
+}
+
+html[data-theme='midnight'] .weather-sunscreen-none,
+html[data-theme='midnight'] .weather-sunscreen-low {
+  background: rgba(6, 78, 59, 0.32) !important;
+  border-color: rgba(52, 211, 153, 0.28) !important;
+  color: #bbf7d0 !important;
+}
+
+html[data-theme='midnight'] .weather-sunscreen-medium {
+  background: rgba(120, 53, 15, 0.34) !important;
+  border-color: rgba(251, 191, 36, 0.28) !important;
+  color: #fde68a !important;
+}
+
+html[data-theme='midnight'] .weather-sunscreen-high {
+  background: rgba(127, 29, 29, 0.34) !important;
+  border-color: rgba(251, 113, 133, 0.3) !important;
+  color: #fecdd3 !important;
 }
 
 html[data-theme='midnight'] .time-widget-hero {

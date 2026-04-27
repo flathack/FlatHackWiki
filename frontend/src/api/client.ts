@@ -440,6 +440,25 @@ export interface WeatherResponse {
   description: string;
   humidity: string;
   windKph: string;
+  rainMm: string;
+  sunshineHours: string;
+  daylightHours: string;
+  uvIndexMax: string;
+  sunrise: string;
+  sunset: string;
+  sunscreenAdvice: {
+    level: 'none' | 'low' | 'medium' | 'high';
+    label: string;
+    detail: string;
+  };
+  hourlyForecast: Array<{
+    time: string;
+    temperatureC: string;
+    rainChance: string;
+    rainMm: string;
+    uvIndex: string;
+    description: string;
+  }>;
 }
 export interface AdminUser {
   id: string;
